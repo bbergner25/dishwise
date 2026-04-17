@@ -302,7 +302,7 @@ async function callAPI(messages: any[]): Promise<any> {
   const res = await fetch("/api/recipe", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 2048, messages }),
+    body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 2048, messages }),
   });
   const raw = await res.text();
   if (!res.ok) throw new Error("HTTP " + res.status + ": " + raw.slice(0, 300));
