@@ -501,7 +501,7 @@ export default function App() {
           <button className="back-btn" onClick={() => setStatus("idle")}>← Try again</button>
         </div>
       )}
-      {status === "done" && recipe && <RecipeView />}
+      {status === "done" && recipe && RecipeView()}
     </>
   );
 
@@ -732,10 +732,10 @@ export default function App() {
             ))}
         </div>
       </nav>
-      {tab === "search" && <SearchView />}
-      {tab === "saved" && <SavedView />}
-      {tab === "week" && <WeekView />}
-      <Modal />
+      {tab === "search" && SearchView()}
+      {tab === "saved" && SavedView()}
+      {tab === "week" && WeekView()}
+      {Modal()}
     </>
   );
 }
