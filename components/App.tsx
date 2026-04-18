@@ -254,6 +254,24 @@ const CSS = `
     .recipe-page{max-width:100%;padding:0;}
     .two-col{grid-template-columns:200px 1fr;gap:24px;}
   }
+
+  /* History */
+  .history-empty{text-align:center;padding:40px 24px;color:#9B8C7E;font-size:14px;line-height:1.6;}
+  .history-empty h3{font-family:'Playfair Display',serif;color:#3D2B1F;font-size:20px;margin-bottom:8px;}
+  .history-list{display:flex;flex-direction:column;gap:10px;margin-top:8px;}
+  .history-item{background:#fff;border:1px solid #E0D8CC;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:14px;transition:all .15s;}
+  .history-item:hover{border-color:#C45E3E;box-shadow:0 3px 12px rgba(61,43,31,.07);}
+  .history-item-main{flex:1;cursor:pointer;min-width:0;}
+  .history-item-title{font-family:'Playfair Display',serif;font-size:16px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .history-item-meta{font-size:11px;color:#9B8C7E;display:flex;gap:10px;flex-wrap:wrap;}
+  .history-item-time{font-size:11px;color:#9B8C7E;white-space:nowrap;}
+  .history-item-save{padding:5px 14px;border-radius:100px;border:1.5px solid #E0D8CC;background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;color:#9B8C7E;transition:all .15s;white-space:nowrap;flex-shrink:0;}
+  .history-item-save:hover{border-color:#C45E3E;color:#C45E3E;}
+  .history-item-save.saved{background:#C45E3E;border-color:#C45E3E;color:#fff;}
+  .history-clear{background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;color:#9B8C7E;text-decoration:underline;text-underline-offset:3px;margin-top:16px;display:block;}
+  .history-tabs{display:flex;gap:0;border-bottom:1px solid #E0D8CC;margin-bottom:24px;}
+  .history-tab{padding:8px 20px;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:#9B8C7E;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;}
+  .history-tab.active{color:#3D2B1F;border-bottom-color:#C45E3E;}
 `;
 
 /* ── CONSTANTS ── */
@@ -381,6 +399,8 @@ export default function App(){
   const [servings,setServings]   = useState<number|null>(null);
   const [errorMsg,setErrorMsg]   = useState("");
   const [saved,setSaved]         = useState<any[]>([]);
+  const [history,setHistory]     = useState<any[]>([]);
+  const [savedTab,setSavedTab]   = useState("saved");
   const [plan,setPlan]           = useState<Record<string,any>>({});
   const [assignDay,setAssignDay] = useState<string|null>(null);
   const [scanPreview,setScanPreview] = useState<string|null>(null);
@@ -413,11 +433,13 @@ export default function App(){
       try{const m=localStorage.getItem("dw-plan");if(m)setPlan(JSON.parse(m));}catch{}
       try{const l=localStorage.getItem("dw-location");if(l)setLocation(l);}catch{}
       try{const fc=localStorage.getItem("dw-family-code");if(fc){setFamilyCode(fc);loadShared(fc);}}catch{}
+      try{const h=localStorage.getItem("dw-history");if(h)setHistory(JSON.parse(h));}catch{}
       setReady(true);
     }
     load();
   },[]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-saved",JSON.stringify(saved));}catch{};},[saved,ready]);
+  useEffect(()=>{if(ready)try{localStorage.setItem("dw-history",JSON.stringify(history.slice(0,30)));}catch{};},[history,ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-plan",JSON.stringify(plan));}catch{};},[plan,ready]);
   useEffect(()=>{if(ready&&location)try{localStorage.setItem("dw-location",location);}catch{};},[location,ready]);
 
@@ -520,7 +542,9 @@ export default function App(){
     setStatus("loading");setRecipe(null);setServings(null);setErrorMsg("");
     try{
       const parsed=await callAPI([{role:"user",content:buildPrompt(q,diets,seasonal,location)}]);
-      setRecipe({...parsed,id:Date.now(),_dish:q});setStatus("done");
+      const r={...parsed,id:Date.now(),_dish:q,_ts:Date.now()};
+      setRecipe(r);setStatus("done");
+      setHistory(h=>[r,...h.filter((x:any)=>x.id!==r.id)].slice(0,30));
     }catch(e:any){setErrorMsg(e.message||String(e));setStatus("error");}
   };
 
@@ -539,7 +563,9 @@ export default function App(){
     setStatus("loading");setRecipe(null);setServings(null);setErrorMsg("");
     try{
       const parsed=await callAPI([{role:"user",content:buildPrompt(suggestion.title,diets,seasonal,location)}]);
-      setRecipe({...parsed,id:Date.now(),_dish:suggestion.title});setStatus("done");
+      const r={...parsed,id:Date.now(),_dish:suggestion.title,_ts:Date.now()};
+      setRecipe(r);setStatus("done");
+      setHistory(h=>[r,...h.filter((x:any)=>x.id!==r.id)].slice(0,30));
     }catch(e:any){setErrorMsg(e.message||String(e));setStatus("error");}
   };
 
@@ -852,13 +878,58 @@ export default function App(){
   }
 
   /* ── SAVED VIEW ── */
+  function timeAgo(ts:number):string{
+    const diff=Date.now()-ts;
+    const mins=Math.floor(diff/60000);
+    const hrs=Math.floor(diff/3600000);
+    const days=Math.floor(diff/86400000);
+    if(mins<1)return"Just now";
+    if(mins<60)return`${mins}m ago`;
+    if(hrs<24)return`${hrs}h ago`;
+    return`${days}d ago`;
+  }
+
   function SavedView(){
     const allRecipes=[...saved,...sharedRecipes.filter(r=>!saved.some(s=>s.id===r.id))];
     return(
       <div className="page">
-        <div className="page-title">Saved Recipes</div>
-        <div className="page-sub">Your collection{familyCode?` + shared with code ${familyCode}`:""} — tap any card to view.</div>
-        {allRecipes.length===0?(
+        <div className="page-title">{savedTab==="saved"?"Saved Recipes":"Recipe History"}</div>
+        <div className="page-sub">{savedTab==="saved"?`Your collection${familyCode?` + shared with code ${familyCode}`:""} — tap any card to view.`:"Every recipe you've generated — tap to view, save to keep permanently."}</div>
+        <div className="history-tabs">
+          <button className={`history-tab${savedTab==="saved"?" active":""}`} onClick={()=>setSavedTab("saved")}>Saved {saved.length>0?`(${saved.length})`:""}</button>
+          <button className={`history-tab${savedTab==="history"?" active":""}`} onClick={()=>setSavedTab("history")}>History {history.length>0?`(${history.length})`:""}</button>
+        </div>
+        {savedTab==="history"?(
+          history.length===0?(
+            <div className="history-empty"><h3>No history yet</h3><p>Every recipe you generate will appear here automatically — no need to save first.</p></div>
+          ):(
+            <>
+              <div className="history-list">
+                {history.map((r:any)=>{
+                  const sv=isSaved(r);
+                  return(
+                    <div key={r.id} className="history-item">
+                      <div className="history-item-main" onClick={()=>{setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
+                        <div className="history-item-title">{r.title}</div>
+                        <div className="history-item-meta">
+                          <span>⏱ {r.prep_time}</span>
+                          <span>🍳 {r.cook_time}</span>
+                          <span>🍽 {r.servings} servings</span>
+                        </div>
+                      </div>
+                      <div className="history-item-time">{r._ts?timeAgo(r._ts):""}</div>
+                      <button className={`history-item-save${sv?" saved":""}`} onClick={()=>toggleSave(r)}>
+                        {sv?"♥ Saved":"♡ Save"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+              <button className="history-clear" onClick={()=>{if(window.confirm("Clear all history?"))setHistory([]);}}>Clear history</button>
+            </>
+          )
+        ):(
+        allRecipes.length===0?(
           <div className="empty-state"><h3>Nothing saved yet</h3><p>Search for a recipe and hit ♡ Save, or scan a recipe card.</p></div>
         ):(
           <div className="cards-grid">
@@ -879,7 +950,7 @@ export default function App(){
               );
             })}
           </div>
-        )}
+        ))}
       </div>
     );
   }
@@ -1060,7 +1131,7 @@ export default function App(){
     <>
       <style>{CSS}</style>
       <nav className="nav">
-        <div className="nav-brand">dish<span>wise</span></div>
+        <button className="nav-brand" style={{background:"none",border:"none",cursor:"pointer"}} onClick={()=>{setTab("search");setStatus("idle");setRecipe(null);setQuery("");}}>dish<span>wise</span></button>
         <div className="nav-tabs">
           {[
             {key:"search",label:"Search"},
