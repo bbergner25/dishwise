@@ -422,48 +422,69 @@ export default function App(){
   useEffect(()=>{if(ready&&location)try{localStorage.setItem("dw-location",location);}catch{};},[location,ready]);
 
   /* family code helpers */
-  const loadShared=(code: string)=>{
+  const loadShared=async(code: string)=>{
     if(!code)return;
     try{
-      const key=`family-${code}-recipes`;
-      const s=localStorage.getItem(key);
-      if(s)setSharedRecipes(JSON.parse(s));
+      const res=await fetch(`/api/family?code=${code}`);
+      if(!res.ok){setSharedRecipes([]);return;}
+      const data=await res.json();
+      if(data.found)setSharedRecipes(data.recipes||[]);
       else setSharedRecipes([]);
     }catch{setSharedRecipes([]);}
   };
 
-  const syncToFamily=(recipes: any[],code: string)=>{
+  const syncToFamily=async(recipes: any[],code: string)=>{
     if(!code)return;
     try{
-      localStorage.setItem(`family-${code}-recipes`,JSON.stringify(recipes));
+      await fetch("/api/family",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({code,recipes}),
+      });
     }catch{}
   };
 
-  const createFamilyCode=()=>{
+  const createFamilyCode=async()=>{
     const code=randomCode();
     setFamilyCode(code);
     try{localStorage.setItem("dw-family-code",code);}catch{}
-    syncToFamily(saved,code);
-    setFamilyStatus("Family code created! Share it with friends or family to link your recipe collections.");
+    setFamilyStatus("Creating code...");
     setFamilyStatusType("ok");
-    loadShared(code);
+    try{
+      const res=await fetch("/api/family",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({code,recipes:saved}),
+      });
+      const data=await res.json();
+      if(!res.ok)throw new Error(JSON.stringify(data));
+      setFamilyStatus("Code created! Share "+code+" with family or friends to link collections.");
+      setFamilyStatusType("ok");
+    }catch(e:any){
+      setFamilyStatus("Save error: "+e.message);
+      setFamilyStatusType("err");
+    }
   };
 
-  const joinFamilyCode=()=>{
+  const joinFamilyCode=async()=>{
     const code=joinInput.trim().toUpperCase();
     if(code.length<4){setFamilyStatus("Please enter a valid code.");setFamilyStatusType("err");return;}
     try{
-      const key=`family-${code}-recipes`;
-      const s=localStorage.getItem(key);
-      if(!s){setFamilyStatus("Code not found. Double-check and try again.");setFamilyStatusType("err");return;}
+      const res=await fetch(`/api/family?code=${code}`);
+      const data=await res.json();
+      if(!res.ok||!data.found){
+        setFamilyStatus("Code not found. Double-check and try again.");
+        setFamilyStatusType("err");
+        return;
+      }
       setFamilyCode(code);
       try{localStorage.setItem("dw-family-code",code);}catch{}
-      syncToFamily(saved,code);
-      setSharedRecipes(JSON.parse(s));
+      await syncToFamily(saved,code);
+      setSharedRecipes(data.recipes||[]);
       setJoinInput("");
       setFamilyStatus(`Joined! You now have access to the shared collection for code ${code}.`);
       setFamilyStatusType("ok");
-    }catch{setFamilyStatus("Something went wrong. Try again.");setFamilyStatusType("err");}
+    }catch(e:any){setFamilyStatus("Error: "+e.message);setFamilyStatusType("err");}
   };
 
   const leaveFamilyCode=()=>{
@@ -474,7 +495,7 @@ export default function App(){
   /* keep shared in sync when saved changes */
   useEffect(()=>{
     if(ready&&familyCode)syncToFamily(saved,familyCode);
-  },[saved,ready,familyCode]); // eslint-disable-line
+  },[saved,ready]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* detect location */
   const detectLocation=()=>{
