@@ -1,3 +1,4 @@
+"use client";
 import { useState, useEffect, useRef } from "react";
 
 const C = {
@@ -352,9 +353,9 @@ function buildScanPrompt(): string{
 }
 
 async function callAPI(messages: any[]): Promise<any>{
-  const res=await fetch("https://api.anthropic.com/v1/messages",{
+  const res=await fetch("/api/recipe",{
     method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:2048,messages}),
+    body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:2048,messages}),
   });
   const raw=await res.text();
   if(!res.ok)throw new Error("HTTP "+res.status+": "+raw.slice(0,300));
@@ -407,73 +408,73 @@ export default function App(){
 
   /* storage load */
   useEffect(()=>{
-    async function load(){
-      try{const s=await window.storage.get("dw-saved");if(s)setSaved(JSON.parse(s.value));}catch{}
-      try{const m=await window.storage.get("dw-plan");if(m)setPlan(JSON.parse(m.value));}catch{}
-      try{const l=await window.storage.get("dw-location");if(l)setLocation(l.value);}catch{}
-      try{const fc=await window.storage.get("dw-family-code");if(fc){setFamilyCode(fc.value);loadShared(fc.value);}}catch{}
+    function load(){
+      try{const s=localStorage.getItem("dw-saved");if(s)setSaved(JSON.parse(s));}catch{}
+      try{const m=localStorage.getItem("dw-plan");if(m)setPlan(JSON.parse(m));}catch{}
+      try{const l=localStorage.getItem("dw-location");if(l)setLocation(l);}catch{}
+      try{const fc=localStorage.getItem("dw-family-code");if(fc){setFamilyCode(fc);loadShared(fc);}}catch{}
       setReady(true);
     }
     load();
   },[]);
-  useEffect(()=>{if(ready)window.storage.set("dw-saved",JSON.stringify(saved)).catch(()=>{});},[saved,ready]);
-  useEffect(()=>{if(ready)window.storage.set("dw-plan",JSON.stringify(plan)).catch(()=>{});},[plan,ready]);
-  useEffect(()=>{if(ready&&location)window.storage.set("dw-location",location).catch(()=>{});},[location,ready]);
+  useEffect(()=>{if(ready)try{localStorage.setItem("dw-saved",JSON.stringify(saved));}catch{};},[saved,ready]);
+  useEffect(()=>{if(ready)try{localStorage.setItem("dw-plan",JSON.stringify(plan));}catch{};},[plan,ready]);
+  useEffect(()=>{if(ready&&location)try{localStorage.setItem("dw-location",location);}catch{};},[location,ready]);
 
   /* family code helpers */
-  const loadShared=async(code: string)=>{
+  const loadShared=(code: string)=>{
     if(!code)return;
     try{
       const key=`family-${code}-recipes`;
-      const s=await window.storage.get(key,true);
-      if(s)setSharedRecipes(JSON.parse(s.value));
+      const s=localStorage.getItem(key);
+      if(s)setSharedRecipes(JSON.parse(s));
       else setSharedRecipes([]);
     }catch{setSharedRecipes([]);}
   };
 
-  const syncToFamily=async(recipes: any[],code: string)=>{
+  const syncToFamily=(recipes: any[],code: string)=>{
     if(!code)return;
     try{
-      await window.storage.set(`family-${code}-recipes`,JSON.stringify(recipes),true);
+      localStorage.setItem(`family-${code}-recipes`,JSON.stringify(recipes));
     }catch{}
   };
 
-  const createFamilyCode=async()=>{
+  const createFamilyCode=()=>{
     const code=randomCode();
     setFamilyCode(code);
-    await window.storage.set("dw-family-code",code).catch(()=>{});
-    await syncToFamily(saved,code);
+    try{localStorage.setItem("dw-family-code",code);}catch{}
+    syncToFamily(saved,code);
     setFamilyStatus("Family code created! Share it with friends or family to link your recipe collections.");
     setFamilyStatusType("ok");
     loadShared(code);
   };
 
-  const joinFamilyCode=async()=>{
+  const joinFamilyCode=()=>{
     const code=joinInput.trim().toUpperCase();
     if(code.length<4){setFamilyStatus("Please enter a valid code.");setFamilyStatusType("err");return;}
     try{
       const key=`family-${code}-recipes`;
-      const s=await window.storage.get(key,true);
+      const s=localStorage.getItem(key);
       if(!s){setFamilyStatus("Code not found. Double-check and try again.");setFamilyStatusType("err");return;}
       setFamilyCode(code);
-      await window.storage.set("dw-family-code",code).catch(()=>{});
-      await syncToFamily(saved,code);
-      setSharedRecipes(JSON.parse(s.value));
+      try{localStorage.setItem("dw-family-code",code);}catch{}
+      syncToFamily(saved,code);
+      setSharedRecipes(JSON.parse(s));
       setJoinInput("");
       setFamilyStatus(`Joined! You now have access to the shared collection for code ${code}.`);
       setFamilyStatusType("ok");
     }catch{setFamilyStatus("Something went wrong. Try again.");setFamilyStatusType("err");}
   };
 
-  const leaveFamilyCode=async()=>{
+  const leaveFamilyCode=()=>{
     setFamilyCode("");setSharedRecipes([]);setFamilyStatus("");
-    await window.storage.set("dw-family-code","").catch(()=>{});
+    try{localStorage.removeItem("dw-family-code");}catch{}
   };
 
   /* keep shared in sync when saved changes */
   useEffect(()=>{
     if(ready&&familyCode)syncToFamily(saved,familyCode);
-  },[saved,ready,familyCode]);
+  },[saved,ready,familyCode]); // eslint-disable-line
 
   /* detect location */
   const detectLocation=()=>{
