@@ -1,29 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Upstash Redis REST API - auto-injected when you connect via Vercel Storage
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
 
 async function kvGet(key: string): Promise<string | null> {
-  if (!KV_URL || !KV_TOKEN) throw new Error("KV not configured");
+  if (!KV_URL || !KV_TOKEN) throw new Error("KV_REST_API_URL or KV_REST_API_TOKEN not set");
   const res = await fetch(`${KV_URL}/get/${encodeURIComponent(key)}`, {
     headers: { Authorization: `Bearer ${KV_TOKEN}` },
     cache: "no-store",
   });
+  if (!res.ok) throw new Error(`KV GET failed: ${res.status}`);
   const data = await res.json();
   return data.result ?? null;
 }
 
 async function kvSet(key: string, value: string): Promise<void> {
-  if (!KV_URL || !KV_TOKEN) throw new Error("KV not configured");
-  await fetch(`${KV_URL}/set/${encodeURIComponent(key)}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${KV_TOKEN}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify([key, value]),
-  });
+  if (!KV_URL || !KV_TOKEN) throw new Error("KV_REST_API_URL or KV_REST_API_TOKEN not set");
+  // Upstash REST API: POST /set/key/value
+  const res = await fetch(
+    `${KV_URL}/set/${encodeURIComponent(key)}/${encodeURIComponent(value)}`,
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${KV_TOKEN}` },
+    }
+  );
+  if (!res.ok) throw new Error(`KV SET failed: ${res.status}`);
 }
 
 // GET /api/family?code=ABC123
@@ -35,9 +36,9 @@ export async function GET(req: NextRequest) {
     const data = await kvGet(`family:${code}`);
     if (!data) return NextResponse.json({ found: false }, { status: 404 });
     return NextResponse.json({ found: true, recipes: JSON.parse(data) });
-  } catch (e) {
-    console.error("KV GET error:", e);
-    return NextResponse.json({ error: "Storage error" }, { status: 500 });
+  } catch (e: any) {
+    console.error("KV GET error:", e.message);
+    return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
 
@@ -50,8 +51,8 @@ export async function POST(req: NextRequest) {
     }
     await kvSet(`family:${code.toUpperCase()}`, JSON.stringify(recipes));
     return NextResponse.json({ ok: true });
-  } catch (e) {
-    console.error("KV SET error:", e);
-    return NextResponse.json({ error: "Storage error" }, { status: 500 });
+  } catch (e: any) {
+    console.error("KV SET error:", e.message);
+    return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
