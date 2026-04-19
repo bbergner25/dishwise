@@ -405,7 +405,7 @@ const CSS = `
     .recipe-banner{background:#1C1007;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     .two-col{grid-template-columns:200px 1fr;gap:24px;}
   }
-``;
+`;
 
 /* ── CONSTANTS ── */
 const SUGGESTIONS = ["Miso Glazed Salmon","Birria Tacos","Shakshuka","Mushroom Risotto","Korean BBQ Bowl","Coconut Curry Noodles","French Onion Soup","Smash Burgers"];
