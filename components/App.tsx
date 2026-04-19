@@ -366,7 +366,7 @@ const CSS = `
     .recipe-banner{background:#1C1007;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     .two-col{grid-template-columns:200px 1fr;gap:24px;}
   }
-``;
+`;
 
 /* ── CONSTANTS ── */
 const SUGGESTIONS = ["Chicken Tikka Masala","Beef Tacos","Pasta Carbonara","Lemon Herb Salmon","Veggie Stir Fry","Classic Chili","Butter Chicken","Thai Green Curry"];
