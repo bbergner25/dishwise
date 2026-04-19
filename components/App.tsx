@@ -8,6 +8,26 @@ const C = {
   green:"#4a6040",greenLight:"#F0F5EE",greenBorder:"#b5c9a8",
 };
 
+// Thin-stroke SVG outline icons — 1.5px stroke, no fill
+const Ic = {
+  search:(s=20)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
+  inspire:(s=20)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+  heart:(s=20)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>,
+  heartFill:(s=20)=><svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>,
+  calendar:(s=20)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+  family:(s=20)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+  leaf:(s=16)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>,
+  camera:(s=20)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>,
+  printer:(s=16)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>,
+  cart:(s=14)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>,
+  target:(s=14)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+  home:(s=18)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  arrowLeft:(s=14)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
+  pin:(s=14)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+  link:(s=14)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
+  photo:(s=20)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
+};
+
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -31,7 +51,7 @@ const CSS = `
   .bottom-nav{
     display:flex;position:fixed;bottom:0;left:0;right:0;z-index:100;
     background:#fff;border-top:1px solid #E0D8CC;
-    padding:0 4px env(safe-area-inset-bottom,0px);
+    padding:0 16px env(safe-area-inset-bottom,0px);
     height:72px;align-items:stretch;
   }
   @media(min-width:768px){.bottom-nav{display:none;}}
@@ -55,18 +75,22 @@ const CSS = `
   .bottom-tab .nav-badge{position:absolute;top:6px;right:calc(50% - 18px);background:#C45E3E;color:#fff;font-size:8px;font-weight:700;width:13px;height:13px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
   .nav-badge{position:absolute;top:3px;right:5px;background:#C45E3E;color:#fff;font-size:9px;font-weight:700;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
 
-  /* ── HERO ── */
-  .hero{padding:48px 24px 24px;text-align:center;max-width:680px;margin:0 auto;}
-  .hero-eyebrow{font-size:11px;font-weight:500;letter-spacing:3px;text-transform:uppercase;color:#C45E3E;margin-bottom:14px;}
-  .hero-title{font-family:'Playfair Display',serif;font-size:clamp(32px,6vw,52px);line-height:1.1;margin-bottom:12px;}
-  .hero-sub{font-size:15px;color:#9B8C7E;font-weight:300;line-height:1.6;max-width:400px;margin:0 auto 28px;}
-  .search-wrap{max-width:560px;margin:0 auto;}
-  .search-bar{display:flex;background:#fff;border:1.5px solid #E0D8CC;border-radius:100px;overflow:hidden;box-shadow:0 4px 20px rgba(61,43,31,.07);transition:box-shadow .2s,border-color .2s;}
-  .search-bar:focus-within{box-shadow:0 4px 28px rgba(196,94,62,.18);border-color:#C45E3E;}
-  .search-input{flex:1;border:none;outline:none;padding:15px 22px;font-family:'DM Sans',sans-serif;font-size:15px;color:#3D2B1F;background:transparent;}
+  /* ── HERO — Option C Minimal Luxury ── */
+  .hero{padding:44px 24px 28px;text-align:center;max-width:600px;margin:0 auto;}
+  .hero-eyebrow{font-size:10px;font-weight:500;letter-spacing:4px;text-transform:uppercase;color:#C45E3E;margin-bottom:18px;}
+  .hero-title{font-family:'Playfair Display',serif;font-size:clamp(32px,6vw,50px);line-height:1.1;margin-bottom:0;color:#3D2B1F;}
+  .hero-title em{color:#C45E3E;}
+  .hero-rule-wrap{display:flex;align-items:center;gap:12px;max-width:340px;margin:16px auto 16px;}
+  .hero-rule{flex:1;height:1px;background:#E0D8CC;}
+  .hero-diamond{width:6px;height:6px;background:#C45E3E;transform:rotate(45deg);flex-shrink:0;}
+  .hero-sub{font-size:14px;color:#9B8C7E;font-weight:300;line-height:1.65;max-width:380px;margin:0 auto 24px;}
+  .search-wrap{max-width:520px;margin:0 auto;}
+  .search-bar{display:flex;background:#fff;border:1px solid #E0D8CC;border-radius:100px;overflow:hidden;box-shadow:0 2px 16px rgba(61,43,31,.06);transition:box-shadow .2s,border-color .2s;}
+  .search-bar:focus-within{box-shadow:0 4px 24px rgba(61,43,31,.12);border-color:#3D2B1F;}
+  .search-input{flex:1;border:none;outline:none;padding:14px 22px;font-family:'DM Sans',sans-serif;font-size:15px;color:#3D2B1F;background:transparent;}
   .search-input::placeholder{color:#9B8C7E;}
-  .search-btn{margin:5px;padding:10px 20px;background:#C45E3E;color:#fff;border:none;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s;white-space:nowrap;}
-  .search-btn:hover:not(:disabled){background:#B34E31;}
+  .search-btn{margin:5px;padding:10px 22px;background:#3D2B1F;color:#FAF7F2;border:none;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s;white-space:nowrap;}
+  .search-btn:hover:not(:disabled){background:#5a3e2f;}
   .search-btn:disabled{background:#9B8C7E;cursor:not-allowed;}
 
   /* Filters */
@@ -366,10 +390,10 @@ const CSS = `
     .recipe-banner{background:#1C1007;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     .two-col{grid-template-columns:200px 1fr;gap:24px;}
   }
-`;
+``;
 
 /* ── CONSTANTS ── */
-const SUGGESTIONS = ["Chicken Tikka Masala","Beef Tacos","Pasta Carbonara","Lemon Herb Salmon","Veggie Stir Fry","Classic Chili","Butter Chicken","Thai Green Curry"];
+const SUGGESTIONS = ["Miso Glazed Salmon","Birria Tacos","Shakshuka","Mushroom Risotto","Korean BBQ Bowl","Coconut Curry Noodles","French Onion Soup","Smash Burgers"];
 const DIETS    = ["Vegetarian","Vegan","Gluten-Free","Dairy-Free","Keto","Low-Carb"];
 const DAYS     = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 const DAY_KEYS = ["mon","tue","wed","thu","fri","sat","sun"];
@@ -703,6 +727,7 @@ export default function App(){
           <div className="hero">
             <div className="hero-eyebrow">Recipe Finder</div>
             <h1 className="hero-title">What would you<br/><em>like to cook?</em></h1>
+            <div className="hero-rule-wrap"><div className="hero-rule"/><div className="hero-diamond"/><div className="hero-rule"/></div>
             <p className="hero-sub">We synthesize the best recipes from across the web — no ads, no scrolling, just great food.</p>
             <div className="search-wrap">
               <div className="search-bar">
@@ -721,12 +746,12 @@ export default function App(){
               </div>
               <div className="seasonal-row">
                 <button className={`seasonal-chip${seasonal?" on":""}`} onClick={()=>setSeasonal(v=>!v)}>
-                  🌱 {seasonal?"In Season — On":"In Season"}
+                  <span style={{display:"flex",alignItems:"center"}}>{Ic.leaf(14)}</span>{" "}{seasonal?"In Season — On":"In Season"}
                 </button>
                 {seasonal&&(
                   <div className="location-wrap">
                     <input className="location-input" placeholder="City, State…" value={location} onChange={e=>setLocation(e.target.value)}/>
-                    <button className="location-detect" onClick={detectLocation} disabled={detecting}>{detecting?"…":"📍 Detect"}</button>
+                    <button className="location-detect" onClick={detectLocation} disabled={detecting} style={{display:"flex",alignItems:"center",gap:4}}>{detecting?"…":<>{Ic.pin(12)} Detect</>}</button>
                   </div>
                 )}
               </div>
@@ -740,8 +765,8 @@ export default function App(){
             <div className="scan-area">
               {!scanPreview?(
                 <>
-                  <div className="scan-icon">📸</div>
-                  <div className="scan-label">Digitize Grandma's Recipe Card</div>
+                  <div className="scan-icon" style={{color:"#3D2B1F"}}>{Ic.camera(28)}</div>
+                  <div className="scan-label">From Paper to Plate</div>
                   <div className="scan-sub">Snap or upload any handwritten or printed recipe card</div>
                   <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={onFileChange}/>
                   <button className="scan-upload-btn" onClick={()=>fileRef.current?.click()}>Choose Photo</button>
@@ -750,7 +775,7 @@ export default function App(){
                 <>
                   <img src={scanPreview} className="scan-preview" alt="Recipe preview"/>
                   <div className="scan-actions">
-                    <button className="scan-go-btn" onClick={doScan} disabled={scanStatus==="scanning"}>{scanStatus==="scanning"?"Extracting…":"✨ Digitize Recipe"}</button>
+                    <button className="scan-go-btn" onClick={doScan} disabled={scanStatus==="scanning"}>{scanStatus==="scanning"?"Extracting…":"Digitize Recipe"}</button>
                     <button className="scan-clear-btn" onClick={clearScan}>Clear</button>
                   </div>
                 </>
@@ -793,13 +818,13 @@ export default function App(){
         {/* Premium dark banner */}
         <div className="recipe-banner">
           <div className="recipe-banner-actions">
-            <button className="print-btn" onClick={()=>window.print()}>🖨 Print</button>
-            <button className={`save-btn${sv?" saved":""}`} onClick={()=>toggleSave(recipe)}>{sv?"♥ Saved":"♡ Save"}</button>
+            <button className="print-btn" onClick={()=>window.print()} style={{display:"flex",alignItems:"center",gap:6}}>{Ic.printer(14)} Print</button>
+            <button className={`save-btn${sv?" saved":""}`} onClick={()=>toggleSave(recipe)} style={{display:"flex",alignItems:"center",gap:5}}>{sv?Ic.heartFill(14):Ic.heart(14)} {sv?"Saved":"Save"}</button>
           </div>
-          <div className="recipe-banner-eyebrow">{recipe._scanned?"📸 Digitized Recipe Card":"· Synthesized Recipe ·"}</div>
+          <div className="recipe-banner-eyebrow">{recipe._scanned?"Scanned Card":"· Synthesized Recipe ·"}</div>
           <h2 className="recipe-banner-title">{recipe.title}</h2>
           <p className="recipe-banner-desc">{recipe.tagline}</p>
-          {recipe.seasonal_note&&<div className="seasonal-note">🌱 {recipe.seasonal_note}</div>}
+          {recipe.seasonal_note&&<div className="seasonal-note"><span style={{display:"flex",alignItems:"center"}}>{Ic.leaf(12)}</span> {recipe.seasonal_note}</div>}
           <div className="recipe-banner-meta">
             <div className="recipe-banner-meta-item">
               <div className="recipe-banner-meta-label">Prep</div>
@@ -862,8 +887,8 @@ export default function App(){
           <div className="grocery-hdr">
             <h3 className="grocery-title">Grocery List</h3>
             <div className="shop-btns">
-              <a href={wmUrl(firstItem)} target="_blank" rel="noopener noreferrer" className="shop-btn btn-wm">🛒 Walmart</a>
-              <a href={tgUrl(firstItem)} target="_blank" rel="noopener noreferrer" className="shop-btn btn-tg">🎯 Target</a>
+              <a href={wmUrl(firstItem)} target="_blank" rel="noopener noreferrer" className="shop-btn btn-wm" style={{display:"flex",alignItems:"center",gap:5}}>{Ic.cart(13)} Walmart</a>
+              <a href={tgUrl(firstItem)} target="_blank" rel="noopener noreferrer" className="shop-btn btn-tg" style={{display:"flex",alignItems:"center",gap:5}}>{Ic.target(13)} Target</a>
             </div>
           </div>
           <div className="grocery-grid">
@@ -893,7 +918,7 @@ export default function App(){
             {recipe.source_note&&<div className="source-note">{recipe.source_note}</div>}
           </div>
         )}
-        <button className="back-btn" onClick={()=>{setStatus("idle");setRecipe(null);setQuery("");}}>← Search another recipe</button>
+        <button className="back-btn" onClick={()=>{setStatus("idle");setRecipe(null);setQuery("");}} style={{display:"flex",alignItems:"center",gap:6}}>{Ic.arrowLeft(14)} Search another recipe</button>
         </div>{/* recipe-body */}
       </div>
     );
@@ -904,7 +929,7 @@ export default function App(){
     const canGo=inspireTime&&inspireVibe&&inspireServes;
     return(
       <div className="inspire-wrap">
-        <h2 className="inspire-title">✨ Inspire <em>me</em></h2>
+        <h2 className="inspire-title"><em>Inspire</em> me</h2>
         <p className="inspire-sub">Not sure what to make? Answer three quick questions and we'll serve up ideas tailored to your night.</p>
 
         {inspireStatus!=="done"&&(
@@ -964,9 +989,9 @@ export default function App(){
                   <div className="inspire-card-title">{s.title}</div>
                   <div className="inspire-card-desc">{s.tagline}</div>
                   <div className="inspire-card-meta">
-                    <span>⏱ {s.prep_time} prep</span>
-                    <span>🍳 {s.cook_time} cook</span>
-                    <span>🍽 {s.servings} servings</span>
+                    <span>{s.prep_time} prep</span>
+                    <span>{s.cook_time} cook</span>
+                    <span>{s.servings} servings</span>
                   </div>
                   <div style={{fontSize:12,color:C.sage,fontStyle:"italic",marginBottom:12}}>"{s.why}"</div>
                   <button className="inspire-card-btn" onClick={()=>pickInspiredRecipe(s)}>Get Full Recipe →</button>
@@ -1015,9 +1040,9 @@ export default function App(){
                       <div className="history-item-main" onClick={()=>{setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
                         <div className="history-item-title">{r.title}</div>
                         <div className="history-item-meta">
-                          <span>⏱ {r.prep_time}</span>
-                          <span>🍳 {r.cook_time}</span>
-                          <span>🍽 {r.servings} servings</span>
+                          <span>{r.prep_time} prep</span>
+                          <span>{r.cook_time} cook</span>
+                          <span>{r.servings} servings</span>
                         </div>
                       </div>
                       <div className="history-item-time">{r._ts?timeAgo(r._ts):""}</div>
@@ -1033,21 +1058,21 @@ export default function App(){
           )
         ):(
         allRecipes.length===0?(
-          <div className="empty-state"><h3>Nothing saved yet</h3><p>Search for a recipe and hit ♡ Save, or scan a recipe card.</p></div>
+          <div className="empty-state"><h3>Nothing saved yet</h3><p>Search for a recipe and Save it, or scan a recipe card.</p></div>
         ):(
           <div className="cards-grid">
             {allRecipes.map((r:any)=>{
               const isSharedOnly=!saved.some(s=>s.id===r.id);
               return(
                 <div key={r.id} className="recipe-card" onClick={()=>{setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
-                  <div className="card-tag">{r._scanned?"📸 Recipe Card":isSharedOnly?"👨‍👩‍👧 Shared":r.seasonal_note?"🌱 Seasonal":"Saved Recipe"}</div>
+                  <div className="card-tag">{r._scanned?"Scanned Card":isSharedOnly?"Shared":r.seasonal_note?"Seasonal":"Saved Recipe"}</div>
                   <div className="card-title">{r.title}</div>
                   <div className="card-desc">{r.tagline}</div>
-                  <div className="card-meta"><span>⏱ {r.prep_time}</span><span>🍳 {r.cook_time}</span><span>🍽 {r.servings} servings</span></div>
+                  <div className="card-meta"><span>{r.prep_time} prep</span><span>{r.cook_time} cook</span><span>{r.servings} servings</span></div>
                   <div className="card-actions" onClick={e=>e.stopPropagation()}>
                     <button className="card-btn" onClick={()=>{setAssignDay("fromSaved_"+r.id);setTab("week");}}>+ Week</button>
                     {!isSharedOnly&&<button className="card-btn danger" onClick={()=>setSaved(l=>l.filter((s:any)=>s.id!==r.id))}>Remove</button>}
-                    {isSharedOnly&&<button className="card-btn" onClick={()=>setSaved(l=>[r,...l])}>♡ Save Mine</button>}
+                    {isSharedOnly&&<button className="card-btn" onClick={()=>setSaved(l=>[r,...l])}>Save Mine</button>}
                   </div>
                 </div>
               );
@@ -1096,8 +1121,8 @@ export default function App(){
                 <p style={{fontSize:13,color:C.muted,marginTop:4}}>{consolidated.length} items across {mealsPlanned} meal{mealsPlanned!==1?"s":""}</p>
               </div>
               <div className="shop-btns">
-                <a href={wmUrl(consolidated[0]?.name||"")} target="_blank" rel="noopener noreferrer" className="shop-btn btn-wm">🛒 Walmart</a>
-                <a href={tgUrl(consolidated[0]?.name||"")} target="_blank" rel="noopener noreferrer" className="shop-btn btn-tg">🎯 Target</a>
+                <a href={wmUrl(consolidated[0]?.name||"")} target="_blank" rel="noopener noreferrer" className="shop-btn btn-wm" style={{display:"flex",alignItems:"center",gap:5}}>{Ic.cart(13)} Walmart</a>
+                <a href={tgUrl(consolidated[0]?.name||"")} target="_blank" rel="noopener noreferrer" className="shop-btn btn-tg" style={{display:"flex",alignItems:"center",gap:5}}>{Ic.target(13)} Target</a>
               </div>
             </div>
             <div className="grocery-grid">
@@ -1149,7 +1174,7 @@ export default function App(){
         ):(
           <div className="family-current">
             <div style={{fontSize:14,color:C.muted,marginBottom:14,lineHeight:1.6}}>You don't have a family code yet. Create one to share your recipes, or enter a code from someone else to join their collection.</div>
-            <button className="family-code-btn primary" onClick={createFamilyCode}>✨ Create a Family Code</button>
+            <button className="family-code-btn primary" onClick={createFamilyCode}>Create a Family Code</button>
             {familyStatus&&<div className={`family-status ${familyStatusType}`} style={{marginTop:12}}>{familyStatus}</div>}
           </div>
         )}
@@ -1173,12 +1198,12 @@ export default function App(){
             <div className="cards-grid">
               {sharedRecipes.map((r:any)=>(
                 <div key={r.id} className="recipe-card" onClick={()=>{setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
-                  <div className="card-tag">👨‍👩‍👧 Shared Recipe</div>
+                  <div className="card-tag">Shared Recipe</div>
                   <div className="card-title">{r.title}</div>
                   <div className="card-desc">{r.tagline}</div>
-                  <div className="card-meta"><span>⏱ {r.prep_time}</span><span>🍳 {r.cook_time}</span></div>
+                  <div className="card-meta"><span>{r.prep_time} prep</span><span>{r.cook_time} cook</span></div>
                   <div className="card-actions" onClick={e=>e.stopPropagation()}>
-                    <button className="card-btn" onClick={()=>setSaved(l=>[r,...l.filter((s:any)=>s.id!==r.id)])}>♡ Save to Mine</button>
+                    <button className="card-btn" onClick={()=>setSaved(l=>[r,...l.filter((s:any)=>s.id!==r.id)])}>Save to Mine</button>
                   </div>
                 </div>
               ))}
@@ -1218,7 +1243,7 @@ export default function App(){
                 {allRecipes.map((r:any)=>(
                   <div key={r.id} className="modal-item" onClick={()=>{setPlan(p=>({...p,[dayKey!]:r}));setAssignDay(null);}}>
                     <div className="modal-item-title">{r.title}</div>
-                    <div className="modal-item-meta">⏱ {r.prep_time} · 🍳 {r.cook_time}</div>
+                    <div className="modal-item-meta">{r.prep_time} prep · {r.cook_time} cook</div>
                   </div>
                 ))}
               </div>
@@ -1239,10 +1264,10 @@ export default function App(){
         <div className="nav-tabs">
           {[
             {key:"search",label:"Search"},
-            {key:"inspire",label:"✨ Inspire"},
+            {key:"inspire",label:"Inspire"},
             {key:"saved",label:"Saved",badge:saved.length||null},
             {key:"week",label:"Week",badge:mealsPlanned||null},
-            {key:"family",label:"👨‍👩‍👧 Family",badge:familyCode?1:null},
+            {key:"family",label:"Family",badge:familyCode?1:null},
           ].map(({key,label,badge}:any)=>(
             <button key={key} className={`nav-tab${tab===key?" active":""}`} onClick={()=>setTab(key)}>
               {label}{badge?<span className="nav-badge">{badge}</span>:null}
@@ -1254,16 +1279,16 @@ export default function App(){
       {/* Mobile bottom nav */}
       <div className="bottom-nav">
         <button className="bottom-nav-brand" onClick={()=>{setTab("search");setStatus("idle");setRecipe(null);setQuery("");}}>
-          <span className="bnb-icon">🍽</span>
+          <span className="bnb-icon" style={{color:"#3D2B1F"}}>{Ic.home(17)}</span>
           <span>dish<span style={{color:"#C45E3E",fontStyle:"italic"}}>wise</span></span>
         </button>
-        {[
-          {key:"search",icon:"🔍",label:"Search"},
-          {key:"inspire",icon:"✨",label:"Inspire"},
-          {key:"saved",icon:"♡",label:"Saved",badge:saved.length||null},
-          {key:"week",icon:"📅",label:"Week",badge:mealsPlanned||null},
-          {key:"family",icon:"👨‍👩‍👧",label:"Family",badge:familyCode?1:null},
-        ].map(({key,icon,label,badge}:any)=>(
+        {([
+          {key:"search",icon:Ic.search(20),label:"Search"},
+          {key:"inspire",icon:Ic.inspire(20),label:"Inspire"},
+          {key:"saved",icon:tab==="saved"?Ic.heartFill(20):Ic.heart(20),label:"Saved",badge:saved.length||null},
+          {key:"week",icon:Ic.calendar(20),label:"Week",badge:mealsPlanned||null},
+          {key:"family",icon:Ic.family(20),label:"Family",badge:familyCode?1:null},
+        ] as any[]).map(({key,icon,label,badge}:any)=>(
           <button key={key} className={`bottom-tab${tab===key?" active":""}`} onClick={()=>setTab(key)}>
             <span className="bt-icon">{icon}</span>
             <span className="bt-label">{label}</span>
