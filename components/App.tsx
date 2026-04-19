@@ -749,10 +749,7 @@ export default function App(){
       if(error||!text)throw new Error(error||"Could not fetch page");
       // Now send text to Claude to extract the recipe
       const parsed=await callAPI([{role:"user",content:[
-        {type:"text",text:buildUrlPrompt()+"
-
-Page content:
-"+text.slice(0,12000)},
+        {type:"text",text:buildUrlPrompt()+"\n\nPage content:\n"+text.slice(0,12000)},
       ]}]);
       const r={...parsed,id:Date.now(),_dish:parsed.title||"Imported Recipe",_imported:true,_sourceUrl:url};
       setSaved(l=>[r,...l]);
