@@ -1334,15 +1334,15 @@ export default function App(){
       <nav className="nav">
         <button className="nav-brand" style={{background:"none",border:"none",cursor:"pointer"}} onClick={()=>{setTab("search");setStatus("idle");setRecipe(null);setQuery("");}}>dish<span>wise</span></button>
         <div className="nav-tabs">
-          {[
-            {key:"search",label:"Search"},
-            {key:"inspire",label:"Inspire"},
-            {key:"saved",label:"Saved",badge:saved.length||null},
-            {key:"week",label:"Week",badge:mealsPlanned||null},
-            {key:"family",label:"Family",badge:familyCode?1:null},
-          ].map(({key,label,badge}:any)=>(
-            <button key={key} className={`nav-tab${tab===key?" active":""}`} onClick={()=>setTab(key)}>
-              {label}{badge?<span className="nav-badge">{badge}</span>:null}
+          {([
+            {key:"search",icon:Ic.search(14),label:"Search"},
+            {key:"inspire",icon:Ic.inspire(14),label:"Inspire"},
+            {key:"saved",icon:tab==="saved"?Ic.heartFill(14):Ic.heart(14),label:"Saved",badge:saved.length||null},
+            {key:"week",icon:Ic.calendar(14),label:"Week",badge:mealsPlanned||null},
+            {key:"family",icon:Ic.family(14),label:"Family",badge:familyCode?1:null},
+          ] as any[]).map(({key,icon,label,badge}:any)=>(
+            <button key={key} className={`nav-tab${tab===key?" active":""}`} onClick={()=>setTab(key)} style={{display:"flex",alignItems:"center",gap:5}}>
+              {icon}{label}{badge?<span className="nav-badge">{badge}</span>:null}
             </button>
           ))}
         </div>
