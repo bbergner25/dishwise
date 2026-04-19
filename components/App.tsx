@@ -109,6 +109,21 @@ const CSS = `
   .suggestion-chip{padding:6px 16px;border-radius:100px;border:1px solid #E0D8CC;background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;color:#9B8C7E;cursor:pointer;transition:all .15s;}
   .suggestion-chip:hover{background:#F0EAE0;border-color:#3D2B1F;color:#3D2B1F;}
 
+  /* URL import */
+  .url-area{max-width:560px;margin:12px auto 0;background:#fff;border:1px solid #E0D8CC;border-radius:16px;padding:20px;}
+  .url-label{font-family:'Playfair Display',serif;font-size:16px;margin-bottom:5px;color:#3D2B1F;}
+  .url-sub{font-size:12px;color:#9B8C7E;margin-bottom:14px;line-height:1.5;}
+  .url-row{display:flex;gap:8px;}
+  .url-input{flex:1;padding:10px 16px;border:1px solid #E0D8CC;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:13px;color:#3D2B1F;outline:none;transition:border-color .15s;}
+  .url-input:focus{border-color:#3D2B1F;}
+  .url-input::placeholder{color:#9B8C7E;}
+  .url-btn{padding:10px 18px;background:#3D2B1F;color:#FAF7F2;border:none;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;transition:background .15s;}
+  .url-btn:hover:not(:disabled){background:#5a3e2f;}
+  .url-btn:disabled{background:#9B8C7E;cursor:not-allowed;}
+  .url-note{font-size:11px;color:#9B8C7E;margin-top:10px;line-height:1.5;}
+  .url-success{padding:10px 14px;background:#F0F5EE;border:1px solid #7A8C6E;border-radius:10px;font-size:13px;color:#4a6040;margin-top:10px;}
+  .url-error{font-size:12px;color:#C45E3E;margin-top:8px;}
+
   /* Scan */
   .scan-divider{display:flex;align-items:center;gap:12px;margin:24px auto 0;max-width:560px;}
   .scan-divider-line{flex:1;height:1px;background:#E0D8CC;}
@@ -488,6 +503,12 @@ function buildScanPrompt(): string{
 {"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"4","ingredient_groups":[{"label":"","items":[{"amount":"2 tbsp","name":"olive oil"}]}],"steps":["Full step."],"grocery_items":["olive oil"],"sources":[],"source_note":"Digitized from a recipe card."}`;
 }
 
+function buildUrlPrompt(): string{
+  return `Extract the recipe from the text content of this webpage. Ignore navigation, ads, comments, and all other non-recipe content. Reply with ONLY valid JSON:
+{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"4","ingredient_groups":[{"label":"","items":[{"amount":"2 tbsp","name":"olive oil"}]}],"steps":["Full detailed step."],"grocery_items":["olive oil"],"sources":[],"source_note":"Extracted from [site name]."}
+Group ingredients by component if applicable. Write full clear steps.`;
+}
+
 async function callAPI(messages: any[]): Promise<any>{
   const res=await fetch("/api/recipe",{
     method:"POST",headers:{"Content-Type":"application/json"},
@@ -526,6 +547,9 @@ export default function App(){
   const [scanStatus,setScanStatus] = useState("idle");
   const [scanMsg,setScanMsg]     = useState("");
   const [ready,setReady]         = useState(false);
+  const [urlInput,setUrlInput]   = useState("");
+  const [urlStatus,setUrlStatus] = useState("idle"); // idle|loading|done|error
+  const [urlMsg,setUrlMsg]       = useState("");
 
   // Inspire Me
   const [inspireTime,setInspireTime]   = useState("");
@@ -710,6 +734,33 @@ export default function App(){
   };
   const clearScan=()=>{setScanPreview(null);setScanStatus("idle");setScanMsg("");if(fileRef.current)fileRef.current.value="";};
 
+  const doFetchUrl=async()=>{
+    const url=urlInput.trim();
+    if(!url||!url.startsWith("http")){setUrlMsg("Please enter a valid URL starting with http");setUrlStatus("error");return;}
+    setUrlStatus("loading");setUrlMsg("");
+    try{
+      // Fetch via our server-side proxy to avoid CORS
+      const res=await fetch("/api/fetch-url",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({url}),
+      });
+      const {text,error}=await res.json();
+      if(error||!text)throw new Error(error||"Could not fetch page");
+      // Now send text to Claude to extract the recipe
+      const parsed=await callAPI([{role:"user",content:[
+        {type:"text",text:buildUrlPrompt()+"
+
+Page content:
+"+text.slice(0,12000)},
+      ]}]);
+      const r={...parsed,id:Date.now(),_dish:parsed.title||"Imported Recipe",_imported:true,_sourceUrl:url};
+      setSaved(l=>[r,...l]);
+      setUrlStatus("done");setUrlMsg(`"${r.title}" saved to your collection!`);
+      setUrlInput("");
+    }catch(e:any){setUrlStatus("error");setUrlMsg(e.message||"Could not import recipe. The site may be paywalled or unsupported.");}
+  };
+
   const toggleDiet=(d: string)=>setDiets(f=>f.includes(d)?f.filter(x=>x!==d):[...f,d]);
   const isSaved=(r: any)=>r&&saved.some((s:any)=>s.id===r.id);
   const toggleSave=(r: any)=>{if(!r)return;isSaved(r)?setSaved(l=>l.filter((s:any)=>s.id!==r.id)):setSaved(l=>[r,...l]);};
@@ -761,6 +812,30 @@ export default function App(){
                 ))}
               </div>
             </div>
+
+            {/* URL Import */}
+            <div className="scan-divider" style={{marginTop:24}}><div className="scan-divider-line"/><div className="scan-divider-text">or import from a url</div><div className="scan-divider-line"/></div>
+            <div className="url-area">
+              <div className="url-label" style={{display:"flex",alignItems:"center",gap:8}}>{Ic.link(16)} Paste a Recipe URL</div>
+              <div className="url-sub">Paste any recipe link and we'll strip the ads and noise — returning only the clean recipe.</div>
+              <div className="url-row">
+                <input className="url-input" placeholder="https://www.allrecipes.com/recipe/..."
+                  value={urlInput} onChange={e=>setUrlInput(e.target.value)}
+                  onKeyDown={e=>e.key==="Enter"&&doFetchUrl()}
+                  disabled={urlStatus==="loading"}/>
+                <button className="url-btn" onClick={doFetchUrl} disabled={urlStatus==="loading"||!urlInput.trim()}>
+                  {urlStatus==="loading"?"Importing…":"Import"}
+                </button>
+              </div>
+              {urlStatus==="done"&&urlMsg&&(
+                <div className="url-success">✓ {urlMsg}{" "}
+                  <button onClick={()=>setTab("saved")} style={{background:"none",border:"none",cursor:"pointer",color:"#4a6040",textDecoration:"underline",fontSize:13}}>View in Saved →</button>
+                </div>
+              )}
+              {urlStatus==="error"&&<div className="url-error">{urlMsg}</div>}
+              <div className="url-note">Works with most open recipe sites. Paywalled sites (NYT Cooking, etc.) won't work.</div>
+            </div>
+
             <div className="scan-divider"><div className="scan-divider-line"/><div className="scan-divider-text">or scan a recipe card</div><div className="scan-divider-line"/></div>
             <div className="scan-area">
               {!scanPreview?(
@@ -1065,7 +1140,7 @@ export default function App(){
               const isSharedOnly=!saved.some(s=>s.id===r.id);
               return(
                 <div key={r.id} className="recipe-card" onClick={()=>{setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
-                  <div className="card-tag">{r._scanned?"Scanned Card":isSharedOnly?"Shared":r.seasonal_note?"Seasonal":"Saved Recipe"}</div>
+                  <div className="card-tag">{r._scanned?"Scanned Card":r._imported?"Imported":isSharedOnly?"Shared":r.seasonal_note?"Seasonal":"Saved Recipe"}</div>
                   <div className="card-title">{r.title}</div>
                   <div className="card-desc">{r.tagline}</div>
                   <div className="card-meta"><span>{r.prep_time} prep</span><span>{r.cook_time} cook</span><span>{r.servings} servings</span></div>
