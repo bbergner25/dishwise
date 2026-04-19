@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Only hard-block true paywalls
 const PAYWALLED = ["nytimes.com", "wsj.com", "washingtonpost.com", "ft.com", "economist.com"];
 
-// Extract structured recipe data from JSON-LD (used by AllRecipes, Food Network, Epicurious, etc.)
 function extractJsonLd(html: string): string | null {
-  const matches = html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi);
-  for (const match of matches) {
+  const re = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  let match;
+  while ((match = re.exec(html)) !== null) {
     try {
       const data = JSON.parse(match[1]);
-      const items = Array.isArray(data["@graph"]) ? data["@graph"] : [data];
+      const items: any[] = Array.isArray(data["@graph"]) ? data["@graph"] : [data];
       for (const item of items) {
-        if (item["@type"] === "Recipe" || (Array.isArray(item["@type"]) && item["@type"].includes("Recipe"))) {
+        const t = item["@type"];
+        if (t === "Recipe" || (Array.isArray(t) && t.includes("Recipe"))) {
           return formatJsonLdRecipe(item);
         }
       }
@@ -28,14 +28,12 @@ function formatJsonLdRecipe(r: any): string {
   if (r.cookTime) lines.push(`Cook time: ${r.cookTime}`);
   if (r.totalTime) lines.push(`Total time: ${r.totalTime}`);
   if (r.recipeYield) lines.push(`Servings: ${Array.isArray(r.recipeYield) ? r.recipeYield[0] : r.recipeYield}`);
-
-  const ingredients = r.recipeIngredient || [];
+  const ingredients: string[] = r.recipeIngredient || [];
   if (ingredients.length) {
     lines.push("\nIngredients:");
     ingredients.forEach((ing: string) => lines.push(`- ${ing}`));
   }
-
-  const instructions = r.recipeInstructions || [];
+  const instructions: any[] = r.recipeInstructions || [];
   if (instructions.length) {
     lines.push("\nInstructions:");
     instructions.forEach((step: any, i: number) => {
@@ -43,7 +41,6 @@ function formatJsonLdRecipe(r: any): string {
       if (text) lines.push(`${i + 1}. ${text}`);
     });
   }
-
   return lines.join("\n");
 }
 
@@ -95,42 +92,37 @@ export async function POST(req: NextRequest) {
     const res = await fetch(url, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
-        "Accept-Encoding": "gzip, deflate, br",
         "Cache-Control": "no-cache",
-        "Pragma": "no-cache",
-        "Sec-Fetch-Dest": "document",
-        "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-Site": "none",
       },
       signal: AbortSignal.timeout(12000),
     });
 
     if (!res.ok) {
       return NextResponse.json({
-        error: `Could not load this page (${res.status}). Try a different recipe site like Serious Eats, Simply Recipes, or Epicurious.`
+        error: `Could not load this page (${res.status}). Try Serious Eats, Simply Recipes, or Epicurious.`
       }, { status: 422 });
     }
 
     const html = await res.text();
 
-    // Try JSON-LD first — most reliable, works on AllRecipes, Food Network, Epicurious, etc.
+    // Try JSON-LD first — works on AllRecipes, Food Network, Epicurious, etc.
     const jsonLdText = extractJsonLd(html);
     if (jsonLdText && jsonLdText.length > 100) {
       return NextResponse.json({ text: jsonLdText });
     }
 
-    // Fall back to plain text extraction
+    // Fall back to plain text
     const text = cleanHtml(html);
     if (text.length < 100) {
-      return NextResponse.json({ error: "Could not extract recipe from this page. Try copying the URL directly from the recipe page." }, { status: 422 });
+      return NextResponse.json({ error: "Could not extract recipe from this page." }, { status: 422 });
     }
 
     return NextResponse.json({ text: text.slice(0, 15000) });
   } catch (e: any) {
     const msg = e?.name === "TimeoutError"
-      ? "The site took too long to respond. Try again or try a different URL."
+      ? "The site took too long to respond. Try again or a different URL."
       : "Could not reach this site. Try Serious Eats, Simply Recipes, or Food52.";
     return NextResponse.json({ error: msg }, { status: 502 });
   }
