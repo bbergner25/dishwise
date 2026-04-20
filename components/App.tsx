@@ -1032,7 +1032,6 @@ export default function App(){
             )}
           </div>
         )}
-        </div>
 
         <div className="recipe-body">
         <div className="two-col">
