@@ -188,32 +188,32 @@ const CSS = `
   /* Dark hero banner */
   .recipe-banner{
     background:linear-gradient(135deg,#1C1007 0%,#2E1A0C 50%,#1C1007 100%);
-    padding:40px 32px 36px;
+    padding:24px 32px 22px;
     text-align:center;
     position:relative;
   }
-  @media(max-width:640px){.recipe-banner{padding:32px 20px 28px;}}
+  @media(max-width:640px){.recipe-banner{padding:20px 20px 18px;}}
   .recipe-banner-eyebrow{
-    font-size:10px;letter-spacing:3px;text-transform:uppercase;
-    color:#C4956A;margin-bottom:14px;font-weight:500;opacity:.8;
+    font-size:9px;letter-spacing:3px;text-transform:uppercase;
+    color:#C4956A;margin-bottom:8px;font-weight:500;opacity:.7;
   }
   .recipe-banner-title{
     font-family:'Playfair Display',serif;
-    font-size:clamp(26px,5vw,46px);
+    font-size:clamp(22px,3.5vw,34px);
     line-height:1.15;
     color:#F5EDD8;
-    margin-bottom:14px;
+    margin-bottom:8px;
     font-weight:700;
   }
   .recipe-banner-title em{color:#C4956A;font-style:italic;}
   .recipe-banner-desc{
-    font-size:15px;color:rgba(245,237,216,.65);
-    line-height:1.7;max-width:480px;margin:0 auto 24px;font-weight:300;
+    font-size:13px;color:rgba(245,237,216,.55);
+    line-height:1.6;max-width:480px;margin:0 auto 16px;font-weight:300;
   }
   .recipe-banner-meta{
     display:flex;gap:0;justify-content:center;flex-wrap:wrap;
     border-top:1px solid rgba(196,149,106,.2);
-    padding-top:20px;margin-top:4px;
+    padding-top:14px;margin-top:4px;
   }
   .recipe-banner-meta-item{
     text-align:center;padding:0 24px;
@@ -305,18 +305,18 @@ const CSS = `
   .grocery-shop-link:hover{border-color:#0071CE;color:#0071CE;}
   .grocery-shop-link.tg:hover{border-color:#CC0000;color:#CC0000;}
 
-  /* Remix */
-  .remix-section{margin-top:0;padding:20px 32px 24px;background:rgba(255,255,255,.04);border-top:1px solid rgba(196,149,106,.15);}
-  @media(max-width:640px){.remix-section{padding:16px 20px 20px;}}
-  .remix-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(196,149,106,.6);margin-bottom:12px;font-weight:500;}
+  /* Remix — sits on cream background below dark banner */
+  .remix-section{margin-top:0;padding:18px 32px 22px;background:#F0EAE0;border-bottom:1px solid #E0D8CC;}
+  @media(max-width:640px){.remix-section{padding:14px 20px 18px;}}
+  .remix-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#9B8C7E;margin-bottom:10px;font-weight:500;}
   .remix-chips{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;}
-  .remix-chip{padding:6px 14px;border-radius:100px;border:1px solid rgba(196,149,106,.25);background:rgba(255,255,255,.05);font-family:'DM Sans',sans-serif;font-size:12px;color:rgba(245,237,216,.65);cursor:pointer;transition:all .15s;}
-  .remix-chip:hover{background:rgba(196,149,106,.15);border-color:rgba(196,149,106,.5);color:#F5EDD8;}
-  .remix-chip.active{background:rgba(196,149,106,.25);border-color:#C4956A;color:#F5EDD8;}
-  .remix-go{margin-top:12px;padding:8px 24px;background:#C45E3E;color:#fff;border:none;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s;}
+  .remix-chip{padding:6px 14px;border-radius:100px;border:1px solid #D8D0C4;background:#fff;font-family:'DM Sans',sans-serif;font-size:12px;color:#6B5A4E;cursor:pointer;transition:all .15s;}
+  .remix-chip:hover{background:#FAF7F2;border-color:#3D2B1F;color:#3D2B1F;}
+  .remix-chip.active{background:#3D2B1F;border-color:#3D2B1F;color:#FAF7F2;}
+  .remix-go{margin-top:10px;padding:8px 24px;background:#C45E3E;color:#fff;border:none;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s;}
   .remix-go:hover:not(:disabled){background:#B34E31;}
-  .remix-go:disabled{background:rgba(156,92,62,.4);cursor:not-allowed;}
-  .remix-loading{font-size:13px;color:rgba(196,149,106,.7);font-style:italic;margin-top:10px;}
+  .remix-go:disabled{background:#D8C8C0;cursor:not-allowed;color:#9B8C7E;}
+  .remix-loading{font-size:13px;color:#9B8C7E;font-style:italic;margin-top:10px;}
 
   /* Retailer picker */
   .retailer-wrap{position:relative;display:inline-block;}
@@ -1161,10 +1161,15 @@ export default function App(){
                         <span className="ing-amount">{scaleAmt(ing.amount,ratio)}</span>{" "}
                         <span className="ing-name">{ing.name}</span>
                       </span>
-                      <span className="ing-shop-links">
-                        <a href={wmUrl(ing.name)} target="_blank" rel="noopener noreferrer" className="ing-shop-link">WM</a>
-                        <a href={tgUrl(ing.name)} target="_blank" rel="noopener noreferrer" className="ing-shop-link tg">TG</a>
-                      </span>
+                      {retailer&&(
+                        <span className="ing-shop-links">
+                          <a href={RETAILERS.find(r=>r.id===retailer)?.url(ing.name)||"#"}
+                            target="_blank" rel="noopener noreferrer" className="ing-shop-link"
+                            style={{borderColor:RETAILERS.find(r=>r.id===retailer)?.color+"44",color:RETAILERS.find(r=>r.id===retailer)?.color}}>
+                            {(RETAILERS.find(r=>r.id===retailer)?.name||"").split(" ")[0]}
+                          </a>
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>
