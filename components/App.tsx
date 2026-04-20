@@ -38,8 +38,9 @@ const CSS = `
   .nav{display:none;}
   @media(min-width:768px){
     .nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:60px;border-bottom:1px solid #E0D8CC;background:#FAF7F2;position:sticky;top:0;z-index:100;}
-    .nav-brand{font-family:'Playfair Display',serif;font-size:20px;letter-spacing:-0.3px;background:none;border:none;cursor:pointer;color:#3D2B1F;}
-    .nav-brand span{color:#C45E3E;font-style:italic;}
+    .nav-brand{font-family:'Playfair Display',serif;font-size:15px;letter-spacing:0.5px;background:none;border:none;cursor:pointer;color:#3D2B1F;display:flex;align-items:center;gap:10px;}
+    .nav-brand-text{display:flex;flex-direction:column;line-height:1.1;}
+    .nav-brand-sub{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:#9B8C7E;font-family:'DM Sans',sans-serif;font-weight:500;font-style:normal;}
     .nav-tabs{display:flex;gap:4px;}
     .nav-tab{padding:7px 16px;border-radius:100px;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:#9B8C7E;cursor:pointer;transition:all .15s;position:relative;}
     .nav-tab.active{background:#3D2B1F;color:#fff;}
@@ -57,12 +58,11 @@ const CSS = `
   @media(min-width:768px){.bottom-nav{display:none;}}
   .bottom-nav-brand{
     display:flex;flex-direction:column;align-items:center;justify-content:center;
-    padding:8px 10px 4px;background:none;border:none;cursor:pointer;
-    font-family:'Playfair Display',serif;font-size:13px;color:#3D2B1F;flex:1;
-    gap:2px;
+    padding:6px 8px 4px;background:none;border:none;cursor:pointer;
+    font-family:'DM Sans',sans-serif;font-size:9px;font-weight:500;
+    letter-spacing:1.5px;text-transform:uppercase;color:#3D2B1F;flex:1.2;gap:3px;
   }
-  .bottom-nav-brand span{color:#C45E3E;font-style:italic;}
-  .bottom-nav-brand .bnb-icon{font-size:18px;}
+  .bottom-nav-brand .bnb-icon{display:flex;align-items:center;}
   .bottom-tab{
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     padding:8px 4px 4px;background:none;border:none;cursor:pointer;
@@ -270,6 +270,29 @@ const CSS = `
   .grocery-shop-link:hover{border-color:#0071CE;color:#0071CE;}
   .grocery-shop-link.tg:hover{border-color:#CC0000;color:#CC0000;}
 
+  /* Remix */
+  .remix-section{margin-top:0;padding:20px 32px 24px;background:rgba(255,255,255,.04);border-top:1px solid rgba(196,149,106,.15);}
+  @media(max-width:640px){.remix-section{padding:16px 20px 20px;}}
+  .remix-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(196,149,106,.6);margin-bottom:12px;font-weight:500;}
+  .remix-chips{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;}
+  .remix-chip{padding:6px 14px;border-radius:100px;border:1px solid rgba(196,149,106,.25);background:rgba(255,255,255,.05);font-family:'DM Sans',sans-serif;font-size:12px;color:rgba(245,237,216,.65);cursor:pointer;transition:all .15s;}
+  .remix-chip:hover{background:rgba(196,149,106,.15);border-color:rgba(196,149,106,.5);color:#F5EDD8;}
+  .remix-chip.active{background:rgba(196,149,106,.25);border-color:#C4956A;color:#F5EDD8;}
+  .remix-go{margin-top:12px;padding:8px 24px;background:#C45E3E;color:#fff;border:none;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s;}
+  .remix-go:hover:not(:disabled){background:#B34E31;}
+  .remix-go:disabled{background:rgba(156,92,62,.4);cursor:not-allowed;}
+  .remix-loading{font-size:13px;color:rgba(196,149,106,.7);font-style:italic;margin-top:10px;}
+
+  /* Retailer picker */
+  .retailer-wrap{position:relative;display:inline-block;}
+  .retailer-btn{padding:7px 14px;border-radius:100px;border:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;background:#3D2B1F;color:#FAF7F2;transition:background .15s;}
+  .retailer-btn:hover{background:#5a3e2f;}
+  .retailer-dropdown{position:absolute;top:calc(100% + 6px);right:0;background:#fff;border:1px solid #E0D8CC;border-radius:12px;padding:6px;min-width:180px;box-shadow:0 8px 24px rgba(61,43,31,.12);z-index:50;}
+  .retailer-option{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;color:#3D2B1F;transition:background .12s;border:none;background:transparent;width:100%;text-align:left;}
+  .retailer-option:hover{background:#F0EAE0;}
+  .retailer-option.active{background:#FAF7F2;font-weight:500;}
+  .retailer-option-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
   /* Sources */
   .source-section{margin-top:28px;padding-top:24px;border-top:1px solid #E0D8CC;}
   .source-section-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#9B8C7E;margin-bottom:10px;font-weight:500;}
@@ -420,6 +443,26 @@ const INSPIRE_OPTIONS = {
   serves:  ["Just me","2 people","Family of 4","Big group"],
 };
 
+const RETAILERS = [
+  {id:"walmart",   name:"Walmart",      color:"#0071CE", url:(q:string)=>`https://www.walmart.com/search?q=${encodeURIComponent(q)}`},
+  {id:"target",    name:"Target",       color:"#CC0000", url:(q:string)=>`https://www.target.com/s?searchTerm=${encodeURIComponent(q)}`},
+  {id:"kroger",    name:"Kroger",       color:"#004990", url:(q:string)=>`https://www.kroger.com/search?query=${encodeURIComponent(q)}`},
+  {id:"instacart", name:"Instacart",    color:"#43A726", url:(q:string)=>`https://www.instacart.com/store/s?k=${encodeURIComponent(q)}`},
+  {id:"amazon",    name:"Amazon Fresh", color:"#FF9900", url:(q:string)=>`https://www.amazon.com/s?k=${encodeURIComponent(q)}&i=amazonfresh`},
+  {id:"wholefoods",name:"Whole Foods",  color:"#00674B", url:(q:string)=>`https://www.wholefoodsmarket.com/search?text=${encodeURIComponent(q)}`},
+];
+
+const REMIX_OPTIONS = [
+  "Fewer ingredients",
+  "Simpler steps",
+  "Quicker cook time",
+  "Make it spicier",
+  "Lighter & healthier",
+  "More indulgent",
+  "Vegetarian version",
+  "Surprise me",
+];
+
 const SITE_URLS: Record<string,string> = {
   "allrecipes":"https://www.allrecipes.com/search?q=",
   "food network":"https://www.foodnetwork.com/search/",
@@ -503,11 +546,33 @@ function buildScanPrompt(): string{
 {"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"4","ingredient_groups":[{"label":"","items":[{"amount":"2 tbsp","name":"olive oil"}]}],"steps":["Full step."],"grocery_items":["olive oil"],"sources":[],"source_note":"Digitized from a recipe card."}`;
 }
 
+function buildRemixPrompt(dish: string, diets: string[], seasonal: boolean, location: string, tweaks: string[]): string{
+  const base = buildPrompt(dish, diets, seasonal, location);
+  const tweak = tweaks.includes("Surprise me")
+    ? " Make it meaningfully different from a typical version — surprise the cook."
+    : ` Adjust the recipe with these preferences: ${tweaks.join(", ")}. Keep the same dish but incorporate these changes throughout the ingredients and method.`;
+  return base + tweak;
+}
+
 function buildUrlPrompt(): string{
   return `Extract the recipe from the text content of this webpage. Ignore navigation, ads, comments, and all other non-recipe content. Reply with ONLY valid JSON:
 {"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"4","ingredient_groups":[{"label":"","items":[{"amount":"2 tbsp","name":"olive oil"}]}],"steps":["Full detailed step."],"grocery_items":["olive oil"],"sources":[],"source_note":"Extracted from [site name]."}
 Group ingredients by component if applicable. Write full clear steps.`;
 }
+
+const LogoMark = ({size=28,color="currentColor"}:{size?:number,color?:string}) => (
+  <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="32" r="22" stroke={color} strokeWidth="4"/>
+    <circle cx="68" cy="50" r="22" stroke={color} strokeWidth="4"/>
+    <circle cx="50" cy="68" r="22" stroke={color} strokeWidth="4"/>
+    <circle cx="32" cy="50" r="22" stroke={color} strokeWidth="4"/>
+    <path d="M50 38 C54 42 58 46 62 50 C58 54 54 58 50 62 C46 58 42 54 38 50 C42 46 46 42 50 38Z" fill={color}/>
+    <rect x="46" y="3" width="8" height="4" rx="1" fill={color}/>
+    <rect x="46" y="93" width="8" height="4" rx="1" fill={color}/>
+    <rect x="3" y="46" width="4" height="8" rx="1" fill={color}/>
+    <rect x="93" y="46" width="4" height="8" rx="1" fill={color}/>
+  </svg>
+);
 
 async function callAPI(messages: any[]): Promise<any>{
   const res=await fetch("/api/recipe",{
@@ -550,6 +615,10 @@ export default function App(){
   const [urlInput,setUrlInput]   = useState("");
   const [urlStatus,setUrlStatus] = useState("idle"); // idle|loading|done|error
   const [urlMsg,setUrlMsg]       = useState("");
+  const [remixChips,setRemixChips] = useState<string[]>([]);
+  const [remixStatus,setRemixStatus] = useState("idle");
+  const [retailer,setRetailer] = useState<string>("");
+  const [retailerOpen,setRetailerOpen] = useState(false);
 
   // Inspire Me
   const [inspireTime,setInspireTime]   = useState("");
@@ -576,6 +645,7 @@ export default function App(){
       try{const l=localStorage.getItem("dw-location");if(l)setLocation(l);}catch{}
       try{const fc=localStorage.getItem("dw-family-code");if(fc){setFamilyCode(fc);loadShared(fc);}}catch{}
       try{const h=localStorage.getItem("dw-history");if(h)setHistory(JSON.parse(h));}catch{}
+      try{const rt=localStorage.getItem("dw-retailer");if(rt)setRetailer(rt);}catch{}
       setReady(true);
     }
     load();
@@ -584,6 +654,7 @@ export default function App(){
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-history",JSON.stringify(history.slice(0,30)));}catch{};},[history,ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-plan",JSON.stringify(plan));}catch{};},[plan,ready]);
   useEffect(()=>{if(ready&&location)try{localStorage.setItem("dw-location",location);}catch{};},[location,ready]);
+  useEffect(()=>{if(ready&&retailer)try{localStorage.setItem("dw-retailer",retailer);}catch{};},[retailer,ready]);
 
   /* family code helpers */
   const loadShared=async(code: string)=>{
@@ -758,6 +829,28 @@ export default function App(){
     }catch(e:any){setUrlStatus("error");setUrlMsg(e.message||"Could not import recipe. The site may be paywalled or unsupported.");}
   };
 
+  const doRemix=async()=>{
+    if(!recipe||remixStatus==="loading")return;
+    setRemixStatus("loading");
+    try{
+      const q=recipe._dish||recipe.title||"";
+      const parsed=await callAPI([{role:"user",content:buildRemixPrompt(q,diets,seasonal,location,remixChips)}]);
+      const r={...parsed,id:Date.now(),_dish:q,_ts:Date.now()};
+      setRecipe(r);setServings(null);
+      setHistory((h:any[])=>[r,...h.filter((x:any)=>x.id!==r.id)].slice(0,30));
+      setRemixChips([]);
+    }catch(e:any){console.error(e);}
+    finally{setRemixStatus("idle");}
+  };
+
+  const toggleRemixChip=(chip: string)=>{
+    if(chip==="Surprise me"){setRemixChips(["Surprise me"]);return;}
+    setRemixChips(prev=>{
+      const without=prev.filter(c=>c!=="Surprise me");
+      return without.includes(chip)?without.filter(c=>c!==chip):[...without,chip];
+    });
+  };
+
   const toggleDiet=(d: string)=>setDiets(f=>f.includes(d)?f.filter(x=>x!==d):[...f,d]);
   const isSaved=(r: any)=>r&&saved.some((s:any)=>s.id===r.id);
   const toggleSave=(r: any)=>{if(!r)return;isSaved(r)?setSaved(l=>l.filter((s:any)=>s.id!==r.id)):setSaved(l=>[r,...l]);};
@@ -773,7 +866,7 @@ export default function App(){
       <>
         {status!=="done"&&(
           <div className="hero">
-            <div className="hero-eyebrow">Recipe Finder</div>
+            <div className="hero-eyebrow">The Blended Table</div>
             <h1 className="hero-title">What would you<br/><em>like to cook?</em></h1>
             <div className="hero-rule-wrap"><div className="hero-rule"/><div className="hero-diamond"/><div className="hero-rule"/></div>
             <p className="hero-sub">We synthesize the best recipes from across the web — no ads, no scrolling, just great food.</p>
@@ -893,7 +986,7 @@ export default function App(){
             <button className="print-btn" onClick={()=>window.print()} style={{display:"flex",alignItems:"center",gap:6}}>{Ic.printer(14)} Print</button>
             <button className={`save-btn${sv?" saved":""}`} onClick={()=>toggleSave(recipe)} style={{display:"flex",alignItems:"center",gap:5}}>{sv?Ic.heartFill(14):Ic.heart(14)} {sv?"Saved":"Save"}</button>
           </div>
-          <div className="recipe-banner-eyebrow">{recipe._scanned?"Scanned Card":"· Synthesized Recipe ·"}</div>
+          <div className="recipe-banner-eyebrow">{recipe._scanned?"Scanned Card":"· The Blended Table ·"}</div>
           <h2 className="recipe-banner-title">{recipe.title}</h2>
           <p className="recipe-banner-desc">{recipe.tagline}</p>
           {recipe.seasonal_note&&<div className="seasonal-note"><span style={{display:"flex",alignItems:"center"}}>{Ic.leaf(12)}</span> {recipe.seasonal_note}</div>}
@@ -915,6 +1008,30 @@ export default function App(){
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Remix section — inside dark banner */}
+        {!recipe._scanned&&!recipe._imported&&(
+          <div className="remix-section">
+            <div className="remix-label">Not quite right? Remix it</div>
+            <div className="remix-chips">
+              {REMIX_OPTIONS.map(chip=>(
+                <button key={chip} className={`remix-chip${remixChips.includes(chip)?" active":""}`}
+                  onClick={()=>toggleRemixChip(chip)}>
+                  {chip}
+                </button>
+              ))}
+            </div>
+            {remixStatus==="loading"?(
+              <div className="remix-loading">Remixing your recipe…</div>
+            ):(
+              <button className="remix-go" onClick={doRemix}
+                disabled={remixChips.length===0}>
+                {remixChips.length===0?"Select a preference above":"Remix →"}
+              </button>
+            )}
+          </div>
+        )}
         </div>
 
         <div className="recipe-body">
@@ -958,9 +1075,23 @@ export default function App(){
         <div className="grocery-section">
           <div className="grocery-hdr">
             <h3 className="grocery-title">Grocery List</h3>
-            <div className="shop-btns">
-              <a href={wmUrl(firstItem)} target="_blank" rel="noopener noreferrer" className="shop-btn btn-wm" style={{display:"flex",alignItems:"center",gap:5}}>{Ic.cart(13)} Walmart</a>
-              <a href={tgUrl(firstItem)} target="_blank" rel="noopener noreferrer" className="shop-btn btn-tg" style={{display:"flex",alignItems:"center",gap:5}}>{Ic.target(13)} Target</a>
+            <div className="retailer-wrap">
+              <button className="retailer-btn" onClick={()=>setRetailerOpen(o=>!o)}>
+                {Ic.cart(13)}
+                {retailer?(RETAILERS.find(r=>r.id===retailer)?.name||"Shop"):"Shop at…"}
+                <span style={{fontSize:9,opacity:.7}}>▾</span>
+              </button>
+              {retailerOpen&&(
+                <div className="retailer-dropdown">
+                  {RETAILERS.map(r=>(
+                    <button key={r.id} className={`retailer-option${retailer===r.id?" active":""}`}
+                      onClick={()=>{setRetailer(r.id);setRetailerOpen(false);}}>
+                      <span className="retailer-option-dot" style={{background:r.color}}/>
+                      {r.name}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <div className="grocery-grid">
@@ -969,10 +1100,14 @@ export default function App(){
                 <input type="checkbox" className="grocery-check"/>
                 <div className="grocery-item-wrap">
                   <div className="grocery-name">{item}</div>
-                  <div className="grocery-shop-links">
-                    <a href={wmUrl(item)} target="_blank" rel="noopener noreferrer" className="grocery-shop-link">Walmart</a>
-                    <a href={tgUrl(item)} target="_blank" rel="noopener noreferrer" className="grocery-shop-link tg">Target</a>
-                  </div>
+                  {retailer&&(
+                    <div className="grocery-shop-links">
+                      <a href={RETAILERS.find(r=>r.id===retailer)?.url(item)||"#"}
+                        target="_blank" rel="noopener noreferrer" className="grocery-shop-link">
+                        {RETAILERS.find(r=>r.id===retailer)?.name}
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -1193,8 +1328,18 @@ export default function App(){
                 <p style={{fontSize:13,color:C.muted,marginTop:4}}>{consolidated.length} items across {mealsPlanned} meal{mealsPlanned!==1?"s":""}</p>
               </div>
               <div className="shop-btns">
-                <a href={wmUrl(consolidated[0]?.name||"")} target="_blank" rel="noopener noreferrer" className="shop-btn btn-wm" style={{display:"flex",alignItems:"center",gap:5}}>{Ic.cart(13)} Walmart</a>
-                <a href={tgUrl(consolidated[0]?.name||"")} target="_blank" rel="noopener noreferrer" className="shop-btn btn-tg" style={{display:"flex",alignItems:"center",gap:5}}>{Ic.target(13)} Target</a>
+                {retailer?(
+                  <a href={RETAILERS.find(r=>r.id===retailer)?.url(consolidated[0]?.name||"")||"#"}
+                    target="_blank" rel="noopener noreferrer" className="shop-btn"
+                    style={{background:RETAILERS.find(r=>r.id===retailer)?.color,display:"flex",alignItems:"center",gap:5}}>
+                    {Ic.cart(13)} {RETAILERS.find(r=>r.id===retailer)?.name}
+                  </a>
+                ):(
+                  <>
+                    <a href={wmUrl(consolidated[0]?.name||"")} target="_blank" rel="noopener noreferrer" className="shop-btn btn-wm" style={{display:"flex",alignItems:"center",gap:5}}>{Ic.cart(13)} Walmart</a>
+                    <a href={tgUrl(consolidated[0]?.name||"")} target="_blank" rel="noopener noreferrer" className="shop-btn btn-tg" style={{display:"flex",alignItems:"center",gap:5}}>{Ic.target(13)} Target</a>
+                  </>
+                )}
               </div>
             </div>
             <div className="grocery-grid">
@@ -1204,10 +1349,14 @@ export default function App(){
                   <div className="grocery-item-wrap">
                     <div className="grocery-name">{item.name}</div>
                     {item.recipes.length>1&&<div style={{fontSize:10,color:C.muted,marginTop:1}}>{item.recipes.length} meals</div>}
-                    <div className="grocery-shop-links">
-                      <a href={wmUrl(item.name)} target="_blank" rel="noopener noreferrer" className="grocery-shop-link">Walmart</a>
-                      <a href={tgUrl(item.name)} target="_blank" rel="noopener noreferrer" className="grocery-shop-link tg">Target</a>
-                    </div>
+                    {retailer&&(
+                      <div className="grocery-shop-links">
+                        <a href={RETAILERS.find(r=>r.id===retailer)?.url(item.name)||"#"}
+                          target="_blank" rel="noopener noreferrer" className="grocery-shop-link">
+                          {RETAILERS.find(r=>r.id===retailer)?.name}
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -1332,7 +1481,13 @@ export default function App(){
       <style>{CSS}</style>
       {/* Desktop top nav */}
       <nav className="nav">
-        <button className="nav-brand" style={{background:"none",border:"none",cursor:"pointer"}} onClick={()=>{setTab("search");setStatus("idle");setRecipe(null);setQuery("");}}>dish<span>wise</span></button>
+        <button className="nav-brand" onClick={()=>{setTab("search");setStatus("idle");setRecipe(null);setQuery("");}}>
+          <LogoMark size={32} color="#3D2B1F"/>
+          <div className="nav-brand-text">
+            <span>The Blended Table</span>
+            <span className="nav-brand-sub">Curated Recipes Refined</span>
+          </div>
+        </button>
         <div className="nav-tabs">
           {([
             {key:"search",icon:Ic.search(14),label:"Search"},
@@ -1351,8 +1506,8 @@ export default function App(){
       {/* Mobile bottom nav */}
       <div className="bottom-nav">
         <button className="bottom-nav-brand" onClick={()=>{setTab("search");setStatus("idle");setRecipe(null);setQuery("");}}>
-          <span className="bnb-icon" style={{color:"#3D2B1F"}}>{Ic.home(17)}</span>
-          <span>dish<span style={{color:"#C45E3E",fontStyle:"italic"}}>wise</span></span>
+          <span className="bnb-icon">{LogoMark({size:20,color:"#3D2B1F"})}</span>
+          <span>TBT</span>
         </button>
         {([
           {key:"search",icon:Ic.search(20),label:"Search"},
