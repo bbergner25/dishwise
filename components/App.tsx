@@ -75,15 +75,31 @@ const CSS = `
   .bottom-tab .nav-badge{position:absolute;top:6px;right:calc(50% - 18px);background:#C45E3E;color:#fff;font-size:8px;font-weight:700;width:13px;height:13px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
   .nav-badge{position:absolute;top:3px;right:5px;background:#C45E3E;color:#fff;font-size:9px;font-weight:700;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
 
-  /* ── HERO — Option C Minimal Luxury ── */
-  .hero{padding:44px 24px 28px;text-align:center;max-width:600px;margin:0 auto;}
+  /* ── HERO — Light with particles & smoke ── */
+  .hero{position:relative;overflow:hidden;padding:52px 24px 40px;text-align:center;background:#FAF7F2;}
+  @media(max-width:640px){.hero{padding:44px 20px 32px;}}
+  .hero-particles{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+  .hero-particle{position:absolute;border-radius:50%;animation:particleRise linear infinite;}
+  @keyframes particleRise{
+    0%{transform:translateY(0) translateX(0);opacity:0;}
+    10%{opacity:1;}
+    90%{opacity:.6;}
+    100%{transform:translateY(-340px) translateX(var(--pdrift,0px));opacity:0;}
+  }
+  .hero-smoke{position:absolute;border-radius:50%;animation:smokeRise ease-out infinite;}
+  @keyframes smokeRise{
+    0%{transform:translateY(0) scale(.6);opacity:.18;}
+    40%{opacity:.1;}
+    100%{transform:translateY(-220px) scale(2.8);opacity:0;}
+  }
+  .hero-content{position:relative;z-index:2;max-width:560px;margin:0 auto;}
   .hero-eyebrow{font-size:10px;font-weight:500;letter-spacing:4px;text-transform:uppercase;color:#C45E3E;margin-bottom:18px;}
-  .hero-title{font-family:'Playfair Display',serif;font-size:clamp(32px,6vw,50px);line-height:1.1;margin-bottom:0;color:#3D2B1F;}
+  .hero-title{font-family:'Playfair Display',serif;font-size:clamp(32px,6vw,50px);line-height:1.1;margin-bottom:0;color:#3D2B1F;font-weight:700;}
   .hero-title em{color:#C45E3E;}
-  .hero-rule-wrap{display:flex;align-items:center;gap:12px;max-width:340px;margin:16px auto 16px;}
+  .hero-rule-wrap{display:flex;align-items:center;gap:12px;max-width:300px;margin:14px auto 14px;}
   .hero-rule{flex:1;height:1px;background:#E0D8CC;}
   .hero-diamond{width:6px;height:6px;background:#C45E3E;transform:rotate(45deg);flex-shrink:0;}
-  .hero-sub{font-size:14px;color:#9B8C7E;font-weight:300;line-height:1.65;max-width:380px;margin:0 auto 24px;}
+  .hero-sub{font-size:14px;color:#9B8C7E;font-weight:300;line-height:1.65;max-width:380px;margin:0 auto 22px;}
   .search-wrap{max-width:520px;margin:0 auto;}
   .search-bar{display:flex;background:#fff;border:1px solid #E0D8CC;border-radius:100px;overflow:hidden;box-shadow:0 2px 16px rgba(61,43,31,.06);transition:box-shadow .2s,border-color .2s;}
   .search-bar:focus-within{box-shadow:0 4px 24px rgba(61,43,31,.12);border-color:#3D2B1F;}
@@ -94,20 +110,39 @@ const CSS = `
   .search-btn:disabled{background:#9B8C7E;cursor:not-allowed;}
 
   /* Filters */
-  .filter-label{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#9B8C7E;margin:16px 0 8px;text-align:center;}
-  .diet-filters{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;}
-  .diet-chip{padding:5px 14px;border-radius:100px;border:1px solid #E0D8CC;background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:#9B8C7E;cursor:pointer;transition:all .15s;}
+  .filter-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#9B8C7E;margin:16px 0 8px;text-align:center;}
+  .diet-filters{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;}
+  .diet-chip{padding:5px 13px;border-radius:100px;border:1px solid #E0D8CC;background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:#9B8C7E;cursor:pointer;transition:all .15s;}
   .diet-chip.on{background:#7A8C6E;border-color:#7A8C6E;color:#fff;}
-  .seasonal-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;flex-wrap:wrap;}
-  .seasonal-chip{padding:5px 14px;border-radius:100px;border:1.5px solid #7A8C6E;background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:#7A8C6E;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px;}
+  .seasonal-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px;flex-wrap:wrap;}
+  .seasonal-chip{padding:5px 13px;border-radius:100px;border:1.5px solid #7A8C6E;background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:#7A8C6E;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px;}
   .seasonal-chip.on{background:#7A8C6E;color:#fff;}
   .location-wrap{display:flex;align-items:center;gap:6px;}
   .location-input{padding:5px 12px;border:1px solid #E0D8CC;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:12px;color:#3D2B1F;outline:none;width:160px;}
   .location-input:focus{border-color:#7A8C6E;}
   .location-detect{padding:5px 10px;border:1px solid #E0D8CC;border-radius:100px;background:transparent;font-size:11px;cursor:pointer;color:#9B8C7E;white-space:nowrap;}
-  .suggestions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px;}
-  .suggestion-chip{padding:6px 16px;border-radius:100px;border:1px solid #E0D8CC;background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;color:#9B8C7E;cursor:pointer;transition:all .15s;}
-  .suggestion-chip:hover{background:#F0EAE0;border-color:#3D2B1F;color:#3D2B1F;}
+
+  /* ── MOSAIC CARDS ── */
+  .mosaic-section{padding:20px 20px 8px;max-width:900px;margin:0 auto;}
+  @media(min-width:768px){.mosaic-section{padding:24px 28px 8px;}}
+  .mosaic-label{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:#9B8C7E;margin-bottom:12px;text-align:center;}
+  .mosaic-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  @media(max-width:640px){.mosaic-grid{grid-template-columns:repeat(2,1fr);gap:8px;}}
+  .mosaic-card{border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s;border:1px solid transparent;}
+  .mosaic-card.card-light{border-color:#E0D8CC;}
+  .mosaic-card:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(61,43,31,.14);}
+  .mosaic-card-inner{padding:16px 14px 14px;}
+  .mosaic-card-eyebrow-dark{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(196,149,106,.65);margin-bottom:6px;}
+  .mosaic-card-eyebrow-light{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#9B8C7E;margin-bottom:6px;}
+  .mosaic-card-title-dark{font-family:'Playfair Display',serif;font-size:14px;line-height:1.25;color:#F5EDD8;margin-bottom:4px;font-weight:700;}
+  .mosaic-card-title-light{font-family:'Playfair Display',serif;font-size:14px;line-height:1.25;color:#3D2B1F;margin-bottom:4px;font-weight:700;}
+  .mosaic-card-desc-dark{font-size:10px;color:rgba(245,237,216,.5);line-height:1.4;margin-bottom:6px;}
+  .mosaic-card-desc-light{font-size:10px;color:#9B8C7E;line-height:1.4;margin-bottom:6px;}
+  .mosaic-card-time-dark{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:rgba(196,149,106,.55);}
+  .mosaic-card-time-light{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#B8A898;}
+
+  .suggestions{display:none;}
+  .suggestion-chip{display:none;}
 
   /* URL import */
   .url-area{max-width:560px;margin:12px auto 0;background:#fff;border:1px solid #E0D8CC;border-radius:16px;padding:20px;}
@@ -432,6 +467,16 @@ const CSS = `
 
 /* ── CONSTANTS ── */
 const SUGGESTIONS = ["Miso Glazed Salmon","Birria Tacos","Shakshuka","Mushroom Risotto","Korean BBQ Bowl","Coconut Curry Noodles","French Onion Soup","Smash Burgers"];
+const SUGGESTION_CARDS: {title:string;desc:string;time:string;category:string;bg:string;dark:boolean}[] = [
+  {title:"Miso Glazed Salmon",    desc:"Rich umami glaze, crispy skin",    time:"25 min", category:"Staff Pick",      bg:"#F5EDE2", dark:true},
+  {title:"Shakshuka",             desc:"Eggs in spiced tomato sauce",      time:"20 min", category:"Quick & Easy",    bg:"#F0EAE0", dark:true},
+  {title:"Mushroom Risotto",      desc:"Creamy, earthy, indulgent",        time:"40 min", category:"Seasonal",        bg:"#E8F0E4", dark:true},
+  {title:"Birria Tacos",          desc:"Slow-braised beef, consommé dip",  time:"3 hrs",  category:"Weekend Project", bg:"#F5EDE2", dark:true},
+  {title:"French Onion Soup",     desc:"Classic bistro, melted gruyère",   time:"50 min", category:"Comfort Food",    bg:"#F0EAE0", dark:true},
+  {title:"Korean BBQ Bowl",       desc:"Gochujang beef, pickled veg",      time:"30 min", category:"Bold & Spicy",    bg:"#E8EEF5", dark:true},
+  {title:"Coconut Curry Noodles", desc:"Fragrant, creamy, satisfying",     time:"35 min", category:"Fan Favourite",   bg:"#EEF5E8", dark:true},
+  {title:"Smash Burgers",         desc:"Crispy edges, secret sauce",       time:"20 min", category:"Under 30 Mins",   bg:"#FFF8F2", dark:true},
+];
 const DIETS    = ["Vegetarian","Vegan","Gluten-Free","Dairy-Free","Keto","Low-Carb"];
 const DAYS     = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 const DAY_KEYS = ["mon","tue","wed","thu","fri","sat","sun"];
@@ -865,68 +910,112 @@ export default function App(){
     return(
       <>
         {status!=="done"&&(
+          <div>
+          {/* ── Particle + smoke hero ── */}
           <div className="hero">
-            <div className="hero-eyebrow">The Blended Table</div>
-            <h1 className="hero-title">What would you<br/><em>like to cook?</em></h1>
-            <div className="hero-rule-wrap"><div className="hero-rule"/><div className="hero-diamond"/><div className="hero-rule"/></div>
-            <p className="hero-sub">We synthesize the best recipes from across the web — no ads, no scrolling, just great food.</p>
-            <div className="search-wrap">
-              <div className="search-bar">
-                <input ref={inputRef} className="search-input" placeholder="e.g. Chicken Tikka Masala…"
-                  value={query} onChange={e=>setQuery(e.target.value)}
-                  onKeyDown={e=>e.key==="Enter"&&doSearch()} disabled={status==="loading"}/>
-                <button className="search-btn" onClick={()=>doSearch()} disabled={status==="loading"||!query.trim()}>
-                  {status==="loading"?"Searching…":"Find Recipe →"}
-                </button>
-              </div>
-              <div className="filter-label">Dietary Filters</div>
-              <div className="diet-filters">
-                {DIETS.map(d=>(
-                  <button key={d} className={`diet-chip${diets.includes(d)?" on":""}`} onClick={()=>toggleDiet(d)}>{d}</button>
-                ))}
-              </div>
-              <div className="seasonal-row">
-                <button className={`seasonal-chip${seasonal?" on":""}`} onClick={()=>setSeasonal(v=>!v)}>
-                  <span style={{display:"flex",alignItems:"center"}}>{Ic.leaf(14)}</span>{" "}{seasonal?"In Season — On":"In Season"}
-                </button>
-                {seasonal&&(
-                  <div className="location-wrap">
-                    <input className="location-input" placeholder="City, State…" value={location} onChange={e=>setLocation(e.target.value)}/>
-                    <button className="location-detect" onClick={detectLocation} disabled={detecting} style={{display:"flex",alignItems:"center",gap:4}}>{detecting?"…":<>{Ic.pin(12)} Detect</>}</button>
-                  </div>
-                )}
-              </div>
-              <div className="suggestions">
-                {SUGGESTIONS.map(s=>(
-                  <button key={s} className="suggestion-chip" onClick={()=>{setQuery(s);doSearch(s);}}>{s}</button>
-                ))}
-              </div>
+            {/* Particles */}
+            <div className="hero-particles">
+              {[
+                {s:4, l:"18%", d:"6.5s", dl:"0s",   drift:"12px",  color:"rgba(196,94,62,.35)"},
+                {s:3, l:"31%", d:"8s",   dl:"1.2s",  drift:"-8px",  color:"rgba(196,149,106,.4)"},
+                {s:5, l:"44%", d:"7s",   dl:"0.4s",  drift:"6px",   color:"rgba(122,140,110,.35)"},
+                {s:3, l:"57%", d:"9s",   dl:"2.1s",  drift:"-14px", color:"rgba(196,94,62,.3)"},
+                {s:4, l:"68%", d:"6s",   dl:"0.8s",  drift:"10px",  color:"rgba(196,149,106,.35)"},
+                {s:5, l:"82%", d:"7.5s", dl:"3s",    drift:"-6px",  color:"rgba(122,140,110,.3)"},
+                {s:3, l:"24%", d:"10s",  dl:"1.6s",  drift:"8px",   color:"rgba(196,149,106,.3)"},
+                {s:4, l:"72%", d:"8.5s", dl:"2.8s",  drift:"-10px", color:"rgba(196,94,62,.25)"},
+                {s:3, l:"50%", d:"7s",   dl:"4s",    drift:"14px",  color:"rgba(122,140,110,.25)"},
+                {s:5, l:"38%", d:"9.5s", dl:"1s",    drift:"-8px",  color:"rgba(196,149,106,.35)"},
+                {s:3, l:"62%", d:"6.5s", dl:"3.5s",  drift:"6px",   color:"rgba(196,94,62,.3)"},
+                {s:4, l:"88%", d:"8s",   dl:"0.6s",  drift:"-12px", color:"rgba(122,140,110,.3)"},
+              ].map((p,i)=>(
+                <div key={i} className="hero-particle" style={{
+                  width:p.s,height:p.s,
+                  left:p.l,bottom:"5%",
+                  background:p.color,
+                  animationDuration:p.d,
+                  animationDelay:p.dl,
+                  ["--pdrift" as any]:p.drift,
+                }}/>
+              ))}
+              {/* Smoke wisps */}
+              {[
+                {w:60, h:60, l:"20%", d:"9s",  dl:"0s",   op:.14},
+                {w:80, h:80, l:"45%", d:"12s", dl:"2s",   op:.1},
+                {w:50, h:50, l:"70%", d:"10s", dl:"1s",   op:.12},
+                {w:70, h:70, l:"35%", d:"11s", dl:"3.5s", op:.09},
+                {w:55, h:55, l:"80%", d:"9.5s",dl:"1.8s", op:.11},
+                {w:90, h:90, l:"60%", d:"13s", dl:"4s",   op:.08},
+              ].map((s,i)=>(
+                <div key={"s"+i} className="hero-smoke" style={{
+                  width:s.w,height:s.h,
+                  left:s.l,bottom:"8%",
+                  background:`rgba(155,140,126,${s.op})`,
+                  animationDuration:s.d,
+                  animationDelay:s.dl,
+                }}/>
+              ))}
             </div>
-
-            {/* URL Import */}
-            <div className="scan-divider" style={{marginTop:24}}><div className="scan-divider-line"/><div className="scan-divider-text">or import from a url</div><div className="scan-divider-line"/></div>
-            <div className="url-area">
-              <div className="url-label" style={{display:"flex",alignItems:"center",gap:8}}>{Ic.link(16)} Paste a Recipe URL</div>
-              <div className="url-sub">Paste any recipe link and we'll strip the ads and noise — returning only the clean recipe.</div>
-              <div className="url-row">
-                <input className="url-input" placeholder="https://www.allrecipes.com/recipe/..."
-                  value={urlInput} onChange={e=>setUrlInput(e.target.value)}
-                  onKeyDown={e=>e.key==="Enter"&&doFetchUrl()}
-                  disabled={urlStatus==="loading"}/>
-                <button className="url-btn" onClick={doFetchUrl} disabled={urlStatus==="loading"||!urlInput.trim()}>
-                  {urlStatus==="loading"?"Importing…":"Import"}
-                </button>
-              </div>
-              {urlStatus==="done"&&urlMsg&&(
-                <div className="url-success">✓ {urlMsg}{" "}
-                  <button onClick={()=>setTab("saved")} style={{background:"none",border:"none",cursor:"pointer",color:"#4a6040",textDecoration:"underline",fontSize:13}}>View in Saved →</button>
+            {/* Content */}
+            <div className="hero-content">
+              <div className="hero-eyebrow">The Blended Table</div>
+              <h1 className="hero-title">What would you<br/><em>like to cook?</em></h1>
+              <div className="hero-rule-wrap"><div className="hero-rule"/><div className="hero-diamond"/><div className="hero-rule"/></div>
+              <p className="hero-sub">We synthesize the best recipes from across the web — no ads, no scrolling, just great food.</p>
+              <div className="search-wrap">
+                <div className="search-bar">
+                  <input ref={inputRef} className="search-input" placeholder="e.g. Miso Glazed Salmon…"
+                    value={query} onChange={e=>setQuery(e.target.value)}
+                    onKeyDown={e=>e.key==="Enter"&&doSearch()} disabled={status==="loading"}/>
+                  <button className="search-btn" onClick={()=>doSearch()} disabled={status==="loading"||!query.trim()}>
+                    {status==="loading"?"Searching…":"Find Recipe →"}
+                  </button>
                 </div>
-              )}
-              {urlStatus==="error"&&<div className="url-error">{urlMsg}</div>}
-              <div className="url-note">Works with most open recipe sites. Paywalled sites (NYT Cooking, etc.) won't work.</div>
+                <div className="filter-label">Dietary Filters</div>
+                <div className="diet-filters">
+                  {DIETS.map(d=>(
+                    <button key={d} className={`diet-chip${diets.includes(d)?" on":""}`} onClick={()=>toggleDiet(d)}>{d}</button>
+                  ))}
+                </div>
+                <div className="seasonal-row">
+                  <button className={`seasonal-chip${seasonal?" on":""}`} onClick={()=>setSeasonal(v=>!v)}>
+                    <span style={{display:"flex",alignItems:"center"}}>{Ic.leaf(14)}</span>{" "}{seasonal?"In Season — On":"In Season"}
+                  </button>
+                  {seasonal&&(
+                    <div className="location-wrap">
+                      <input className="location-input" placeholder="City, State…" value={location} onChange={e=>setLocation(e.target.value)}/>
+                      <button className="location-detect" onClick={detectLocation} disabled={detecting} style={{display:"flex",alignItems:"center",gap:4}}>{detecting?"…":<>{Ic.pin(12)} Detect</>}</button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
+          </div>
 
-            <div className="scan-divider"><div className="scan-divider-line"/><div className="scan-divider-text">or scan a recipe card</div><div className="scan-divider-line"/></div>
+          {/* ── Mosaic suggestion cards ── */}
+          <div className="mosaic-section">
+            <div className="mosaic-label">Or try one of these</div>
+            <div className="mosaic-grid">
+              {SUGGESTION_CARDS.map((card)=>(
+                <div key={card.title}
+                  className={`mosaic-card${card.dark?" card-dark":" card-light"}`}
+                  style={{background:card.bg}}
+                  onClick={()=>{setQuery(card.title);doSearch(card.title);}}>
+                  <div className="mosaic-card-inner">
+                    <div className="mosaic-card-title-light">{card.title}</div>
+                    <div className="mosaic-card-eyebrow-light">{card.category}</div>
+                    <div className="mosaic-card-desc-light">{card.desc}</div>
+                    <div className="mosaic-card-time-light">{card.time}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Scan + URL — scan first, then URL, extra bottom padding for mobile nav */}
+          <div style={{maxWidth:860,margin:"0 auto",padding:"0 20px 100px"}}>
+
+          <div className="scan-divider" style={{marginTop:24}}><div className="scan-divider-line"/><div className="scan-divider-text">or scan a recipe card</div><div className="scan-divider-line"/></div>
             <div className="scan-area">
               {!scanPreview?(
                 <>
@@ -952,6 +1041,30 @@ export default function App(){
               )}
               {scanStatus==="error"&&<div style={{marginTop:10,fontSize:12,color:"#C45E3E"}}>{scanMsg}</div>}
             </div>
+
+          <div className="scan-divider" style={{marginTop:24}}><div className="scan-divider-line"/><div className="scan-divider-text">or import from a url</div><div className="scan-divider-line"/></div>
+            <div className="url-area">
+              <div className="url-label" style={{display:"flex",alignItems:"center",gap:8}}>{Ic.link(16)} Paste a Recipe URL</div>
+              <div className="url-sub">Paste any recipe link and we'll strip the ads and noise — returning only the clean recipe.</div>
+              <div className="url-row">
+                <input className="url-input" placeholder="https://www.allrecipes.com/recipe/..."
+                  value={urlInput} onChange={e=>setUrlInput(e.target.value)}
+                  onKeyDown={e=>e.key==="Enter"&&doFetchUrl()}
+                  disabled={urlStatus==="loading"}/>
+                <button className="url-btn" onClick={doFetchUrl} disabled={urlStatus==="loading"||!urlInput.trim()}>
+                  {urlStatus==="loading"?"Importing…":"Import"}
+                </button>
+              </div>
+              {urlStatus==="done"&&urlMsg&&(
+                <div className="url-success">✓ {urlMsg}{" "}
+                  <button onClick={()=>setTab("saved")} style={{background:"none",border:"none",cursor:"pointer",color:"#4a6040",textDecoration:"underline",fontSize:13}}>View in Saved →</button>
+                </div>
+              )}
+              {urlStatus==="error"&&<div className="url-error">{urlMsg}</div>}
+              <div className="url-note">Works with most open recipe sites. Paywalled sites (NYT Cooking, etc.) won't work.</div>
+            </div>
+
+          </div>
           </div>
         )}
         {status==="loading"&&(
