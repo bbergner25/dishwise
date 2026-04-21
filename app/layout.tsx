@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
-  title: "Reduction",
+  title: "Reduction - The Recipe Synthesizer",
   description: "The best recipes on the internet. Reduced for you.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Reduction",
+    title: "Reduction - The Recipe Synthesizer",
   },
   icons: { apple: "/icon-192.png" },
 };
