@@ -1603,7 +1603,7 @@ export default function App(){
         <button className="nav-brand" onClick={()=>{setTab("search");setStatus("idle");setRecipe(null);setQuery("");}}>
           <LogoMark size={32} color="#3D2B1F"/>
           <div className="nav-brand-text">
-            <span className="nav-brand-pre">Start making a</span>
+            <span className="nav-brand-pre">Start with a</span>
             <span className="nav-brand-name">REDUCTION</span>
           </div>
         </button>
