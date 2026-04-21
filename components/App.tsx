@@ -40,6 +40,8 @@ const CSS = `
     .nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:60px;border-bottom:1px solid #E0D8CC;background:#FAF7F2;position:sticky;top:0;z-index:100;}
     .nav-brand{font-family:'Playfair Display',serif;font-size:15px;letter-spacing:0.5px;background:none;border:none;cursor:pointer;color:#3D2B1F;display:flex;align-items:center;gap:10px;}
     .nav-brand-text{display:flex;flex-direction:column;line-height:1.1;}
+    .nav-brand-pre{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#9B8C7E;font-family:'DM Sans',sans-serif;font-weight:400;margin-bottom:1px;}
+    .nav-brand-name{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:#3D2B1F;letter-spacing:-0.3px;line-height:1;}
     .nav-brand-sub{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:#9B8C7E;font-family:'DM Sans',sans-serif;font-weight:500;font-style:normal;}
     .nav-tabs{display:flex;gap:4px;}
     .nav-tab{padding:7px 16px;border-radius:100px;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:#9B8C7E;cursor:pointer;transition:all .15s;position:relative;}
@@ -958,13 +960,13 @@ export default function App(){
             </div>
             {/* Content */}
             <div className="hero-content">
-              <div className="hero-eyebrow">The Blended Table</div>
+              <div className="hero-eyebrow">Reduction</div>
               <h1 className="hero-title">What would you<br/><em>like to cook?</em></h1>
               <div className="hero-rule-wrap"><div className="hero-rule"/><div className="hero-diamond"/><div className="hero-rule"/></div>
-              <p className="hero-sub">We synthesize the best recipes from across the web — no ads, no scrolling, just great food.</p>
+              <p className="hero-sub">The best recipes on the internet. Reduced for you.</p>
               <div className="search-wrap">
                 <div className="search-bar">
-                  <input ref={inputRef} className="search-input" placeholder="e.g. Miso Glazed Salmon…"
+                  <input ref={inputRef} className="search-input" placeholder="e.g. Miso Glazed Salmon, Birria Tacos…"
                     value={query} onChange={e=>setQuery(e.target.value)}
                     onKeyDown={e=>e.key==="Enter"&&doSearch()} disabled={status==="loading"}/>
                   <button className="search-btn" onClick={()=>doSearch()} disabled={status==="loading"||!query.trim()}>
@@ -1099,7 +1101,7 @@ export default function App(){
             <button className="print-btn" onClick={()=>window.print()} style={{display:"flex",alignItems:"center",gap:6}}>{Ic.printer(14)} Print</button>
             <button className={`save-btn${sv?" saved":""}`} onClick={()=>toggleSave(recipe)} style={{display:"flex",alignItems:"center",gap:5}}>{sv?Ic.heartFill(14):Ic.heart(14)} {sv?"Saved":"Save"}</button>
           </div>
-          <div className="recipe-banner-eyebrow">{recipe._scanned?"Scanned Card":"· The Blended Table ·"}</div>
+          <div className="recipe-banner-eyebrow">{recipe._scanned?"Scanned Card":"· Reduction ·"}</div>
           <h2 className="recipe-banner-title">{recipe.title}</h2>
           <p className="recipe-banner-desc">{recipe.tagline}</p>
           {recipe.seasonal_note&&<div className="seasonal-note"><span style={{display:"flex",alignItems:"center"}}>{Ic.leaf(12)}</span> {recipe.seasonal_note}</div>}
@@ -1501,7 +1503,7 @@ export default function App(){
           <div className="family-current">
             <div className="family-code-label">Your Family Code</div>
             <div className="family-code-display">{familyCode}</div>
-            <div style={{fontSize:13,color:C.muted,marginBottom:10}}>Share this code with anyone you want to connect with. They enter it on their Dishwise to join your collection.</div>
+            <div style={{fontSize:13,color:C.muted,marginBottom:10}}>Share this code with anyone you want to connect with. They enter it on their Reduction to join your collection.</div>
             <div className="family-code-actions">
               <button className="family-code-btn primary" onClick={()=>{navigator.clipboard?.writeText(familyCode);setFamilyStatus("Code copied to clipboard!");setFamilyStatusType("ok");}}>Copy Code</button>
               <button className="family-code-btn" onClick={()=>{syncToFamily(saved,familyCode);setFamilyStatus("Synced! Your recipes are up to date.");setFamilyStatusType("ok");}}>Sync Now</button>
@@ -1601,8 +1603,8 @@ export default function App(){
         <button className="nav-brand" onClick={()=>{setTab("search");setStatus("idle");setRecipe(null);setQuery("");}}>
           <LogoMark size={32} color="#3D2B1F"/>
           <div className="nav-brand-text">
-            <span>The Blended Table</span>
-            <span className="nav-brand-sub">Curated Recipes Refined</span>
+            <span className="nav-brand-pre">Start making a</span>
+            <span className="nav-brand-name">REDUCTION</span>
           </div>
         </button>
         <div className="nav-tabs">
@@ -1624,7 +1626,7 @@ export default function App(){
       <div className="bottom-nav">
         <button className="bottom-nav-brand" onClick={()=>{setTab("search");setStatus("idle");setRecipe(null);setQuery("");}}>
           <span className="bnb-icon">{LogoMark({size:20,color:"#3D2B1F"})}</span>
-          <span>TBT</span>
+          <span>Reduction</span>
         </button>
         {([
           {key:"search",icon:Ic.search(20),label:"Search"},
