@@ -252,7 +252,7 @@ const CSS = `
   @media(max-width:640px){.recipe-body{padding:28px 20px 0;}}
 
   /* Ingredients */
-  .two-col{display:grid;grid-template-columns:260px 1fr;gap:48px;align-items:start;}
+  .two-col{display:grid;grid-template-columns:260px 1fr;gap:48px;align-items:;}
   @media(max-width:640px){.two-col{grid-template-columns:1fr;gap:32px;}}
   .section-label{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:#C45E3E;margin-bottom:16px;font-weight:500;}
   .ing-group{margin-bottom:20px;}
@@ -277,7 +277,7 @@ const CSS = `
 
   /* Steps — premium numbered */
   .steps-list{list-style:none;}
-  .step-item{display:flex;gap:20px;margin-bottom:28px;align-items:flex-start;}
+  .step-item{display:flex;gap:20px;margin-bottom:28px;align-items:flex-;}
   .step-num{
     font-family:'Playfair Display',serif;
     font-size:13px;font-weight:700;
@@ -854,7 +854,7 @@ export default function App(){
 
   const doFetchUrl=async()=>{
     const url=urlInput.trim();
-    if(!url||!url.startsWith("http")){setUrlMsg("Please enter a valid URL starting with http");setUrlStatus("error");return;}
+    if(!url||!url.sWith("http")){setUrlMsg("Please enter a valid URL ing with http");setUrlStatus("error");return;}
     setUrlStatus("loading");setUrlMsg("");
     try{
       // Fetch via our server-side proxy to avoid CORS
