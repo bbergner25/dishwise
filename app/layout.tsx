@@ -1,19 +1,19 @@
 import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
-  title: "Reduction - The Recipe Synthesizer",
-  description: "The best recipes on the internet. Reduced for you.",
+  title: "Every Chef - The Recipe Synthesizer",
+  description: "The best recipes on the internet, synthesized into one. No ads, no scroll, no life story.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Reduction - The Recipe Synthesizer",
+    title: "Every Chef",
   },
   icons: { apple: "/icon-192.png" },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#FAF7F2",
+  themeColor: "#FDFAF5",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
