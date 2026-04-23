@@ -1,11 +1,11 @@
 {
-  "name": "Reduction",
-  "short_name": "Reduction",
-  "description": "The best recipes on the internet. Reduced for you.",
+  "name": "Every Chef",
+  "short_name": "Every Chef",
+  "description": "The Recipe Synthesizer — the best recipes on the internet, without the ads or the scroll.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FAF7F2",
-  "theme_color": "#FAF7F2",
+  "background_color": "#FDFAF5",
+  "theme_color": "#F4A021",
   "orientation": "portrait",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
