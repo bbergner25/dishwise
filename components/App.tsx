@@ -94,9 +94,7 @@ const CSS = `
     100%{transform:translateY(-220px) scale(2.8);opacity:0;}
   }
   .hero-content{position:relative;z-index:2;max-width:560px;margin:0 auto;}
-  .hero-eyebrow{display:inline-flex;align-items:center;gap:8px;background:#FFF0D4;border:1px solid #F4A021;border-radius:100px;padding:5px 14px;font-size:11px;font-weight:600;color:#151210;letter-spacing:.5px;margin-bottom:20px;text-transform:none;}
-  .hero-eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:#F4A021;animation:eyebrowPulse 2s ease-in-out infinite;}
-  @keyframes eyebrowPulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.4);opacity:.6;}}
+  .hero-eyebrow{display:inline-flex;align-items:center;gap:8px;background:#FFF0D4;border:1px solid #F4A021;border-radius:100px;padding:5px 16px;font-size:11px;font-weight:600;color:#151210;letter-spacing:.5px;margin-bottom:20px;text-transform:none;}
   .hero-title{font-family:'Fraunces',serif;font-size:clamp(34px,6vw,56px);line-height:1.05;margin-bottom:0;color:#151210;font-weight:700;letter-spacing:-0.5px;}
   .hero-title em{color:#F4A021;font-style:italic;position:relative;}
   .hero-rule-wrap{display:none;}
@@ -360,6 +358,24 @@ const CSS = `
   .page-sub{font-size:14px;color:#7A6E6A;margin-bottom:28px;}
   .empty-state{text-align:center;padding:60px 24px;color:#7A6E6A;font-size:15px;line-height:1.6;}
   .empty-state h3{font-family:'Fraunces',serif;color:#151210;font-size:22px;margin-bottom:10px;}
+  /* Saved search + category */
+  .saved-search-wrap{position:relative;margin-bottom:20px;}
+  .saved-search-input{width:100%;padding:11px 16px 11px 42px;border:2px solid #EDE8E0;border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;color:#151210;outline:none;background:#fff;transition:border-color .15s;box-sizing:border-box;}
+  .saved-search-input:focus{border-color:#F4A021;}
+  .saved-search-input::placeholder{color:#7A6E6A;}
+  .saved-search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#7A6E6A;pointer-events:none;}
+  .saved-category-section{margin-bottom:24px;}
+  .saved-category-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#E8431A;margin-bottom:12px;display:flex;align-items:center;gap:10px;}
+  .saved-category-label::after{content:"";flex:1;height:1px;background:#EDE8E0;}
+  /* Star rating */
+  .star-row{display:flex;gap:2px;margin-top:5px;}
+  .star{font-size:15px;cursor:pointer;color:#EDE8E0;transition:color .1s;line-height:1;background:none;border:none;padding:0;}
+  .star.filled{color:#F4A021;}
+  /* Confirm remove */
+  .confirm-remove{display:flex;align-items:center;gap:8px;margin-top:8px;background:#FFF8F2;border:1.5px solid #E8431A;border-radius:10px;padding:8px 12px;}
+  .confirm-remove-text{font-size:12px;color:#151210;font-weight:500;flex:1;}
+  .confirm-remove-yes{padding:4px 12px;background:#E8431A;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;}
+  .confirm-remove-no{padding:4px 12px;background:transparent;border:1.5px solid #D4CCC0;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;color:#151210;font-family:'Outfit',sans-serif;}
   .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;}
   .recipe-card{background:#fff;border:1px solid #EDE8E0;border-radius:14px;padding:18px;cursor:pointer;transition:all .15s;}
   .recipe-card:hover{box-shadow:0 6px 24px rgba(61,43,31,.1);transform:translateY(-2px);border-color:#F4A021;}
@@ -538,6 +554,25 @@ const SITE_URLS: Record<string,string> = {
   "food52":"https://food52.com/recipes/search?q=",
   "delish":"https://www.delish.com/search/?q=",
 };
+const RECIPE_CATEGORIES = ["Breakfast","Salads","Soups","Pasta","Seafood","Poultry","Meat","Vegetarian","Sides","Desserts","Snacks","Drinks","Other"];
+
+function guessCategory(recipe: any): string {
+  const text = ((recipe.title||"")+" "+(recipe.tagline||"")).toLowerCase();
+  if(/breakfast|pancake|waffle|egg|omelette|frittata|bacon|brunch/.test(text)) return "Breakfast";
+  if(/salad|slaw|coleslaw/.test(text)) return "Salads";
+  if(/soup|stew|chowder|bisque|broth|chili/.test(text)) return "Soups";
+  if(/pasta|risotto|noodle|spaghetti|linguine|penne|fettuccine|mac/.test(text)) return "Pasta";
+  if(/salmon|shrimp|fish|taco.*fish|seafood|prawn|tuna|cod|halibut|scallop/.test(text)) return "Seafood";
+  if(/chicken|turkey|duck|poultry/.test(text)) return "Poultry";
+  if(/beef|pork|lamb|steak|burger|meatball|brisket|ribs|pulled pork/.test(text)) return "Meat";
+  if(/veggie|vegetarian|vegan|tofu|tempeh|lentil|chickpea|falafel/.test(text)) return "Vegetarian";
+  if(/cake|cookie|brownie|pie|tart|dessert|ice cream|pudding|mousse|cheesecake/.test(text)) return "Desserts";
+  if(/side|roast.*veg|potato|fries|rice|bread|roll/.test(text)) return "Sides";
+  if(/snack|dip|hummus|guacamole|chip|cracker/.test(text)) return "Snacks";
+  if(/cocktail|drink|smoothie|juice|lemonade/.test(text)) return "Drinks";
+  return "Other";
+}
+
 function getSiteUrl(name: string, dish: string){
   const k=name.toLowerCase().trim();
   return (SITE_URLS[k]||`https://www.google.com/search?q=${encodeURIComponent(name+" recipe ")}`)+encodeURIComponent(dish);
@@ -666,6 +701,9 @@ export default function App(){
   const [saved,setSaved]         = useState<any[]>([]);
   const [history,setHistory]     = useState<any[]>([]);
   const [savedTab,setSavedTab]   = useState("saved");
+  const [savedSearch,setSavedSearch] = useState("");
+  const [confirmRemove,setConfirmRemove] = useState<number|null>(null);
+  const [ratings,setRatings]     = useState<Record<number,number>>({});
   const [plan,setPlan]           = useState<Record<string,any>>({});
   const [assignDay,setAssignDay] = useState<string|null>(null);
   const [scanPreview,setScanPreview] = useState<string|null>(null);
@@ -707,6 +745,7 @@ export default function App(){
       try{const fc=localStorage.getItem("dw-family-code");if(fc){setFamilyCode(fc);loadShared(fc);}}catch{}
       try{const h=localStorage.getItem("dw-history");if(h)setHistory(JSON.parse(h));}catch{}
       try{const rt=localStorage.getItem("dw-retailer");if(rt)setRetailer(rt);}catch{}
+      try{const rg=localStorage.getItem("dw-ratings");if(rg)setRatings(JSON.parse(rg));}catch{}
       setReady(true);
     }
     load();
@@ -716,6 +755,7 @@ export default function App(){
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-plan",JSON.stringify(plan));}catch{};},[plan,ready]);
   useEffect(()=>{if(ready&&location)try{localStorage.setItem("dw-location",location);}catch{};},[location,ready]);
   useEffect(()=>{if(ready&&retailer)try{localStorage.setItem("dw-retailer",retailer);}catch{};},[retailer,ready]);
+  useEffect(()=>{if(ready)try{localStorage.setItem("dw-ratings",JSON.stringify(ratings));}catch{};},[ratings,ready]);
 
   /* family code helpers */
   const loadShared=async(code: string)=>{
@@ -974,10 +1014,10 @@ export default function App(){
             </div>
             {/* Content */}
             <div className="hero-content">
-              <div className="hero-eyebrow">Every Chef</div>
+              <div className="hero-eyebrow">Welcome to Every Chef</div>
               <h1 className="hero-title">What would you<br/><em>like to cook?</em></h1>
               <div className="hero-rule-wrap"><div className="hero-rule"/><div className="hero-diamond"/><div className="hero-rule"/></div>
-              <p className="hero-sub">The <strong>best recipes on the internet</strong> — synthesized into one, without the ads, the scroll, or the life story.</p>
+              <p className="hero-sub">The <strong>best recipes on the internet</strong>, combined, refined, just for you.</p>
               <div className="search-wrap">
                 <div className="search-bar">
                   <input ref={inputRef} className="search-input" placeholder="e.g. Miso Glazed Salmon, Birria Tacos…"
@@ -1363,17 +1403,34 @@ export default function App(){
 
   function SavedView(){
     const allRecipes=[...saved,...sharedRecipes.filter(r=>!saved.some(s=>s.id===r.id))];
+
+    // Filter by search
+    const filtered=savedSearch.trim()===""?allRecipes:allRecipes.filter((r:any)=>
+      (r.title||"").toLowerCase().includes(savedSearch.toLowerCase())||
+      (r.tagline||"").toLowerCase().includes(savedSearch.toLowerCase())
+    );
+
+    // Group by category
+    const grouped: Record<string,any[]>={};
+    filtered.forEach((r:any)=>{
+      const cat=guessCategory(r);
+      if(!grouped[cat])grouped[cat]=[];
+      grouped[cat].push(r);
+    });
+    const sortedCats=RECIPE_CATEGORIES.filter(c=>grouped[c]&&grouped[c].length>0);
+
     return(
       <div className="page">
         <div className="page-title">{savedTab==="saved"?"Saved Recipes":"Recipe History"}</div>
-        <div className="page-sub">{savedTab==="saved"?`Your collection${familyCode?` + shared with code ${familyCode}`:""} — tap any card to view.`:"Every recipe you've generated — tap to view, save to keep permanently."}</div>
+        <div className="page-sub">{savedTab==="saved"?`Your collection${familyCode?` + shared with code ${familyCode}`:""}.`:"Every recipe you've generated — tap to view, save to keep."}</div>
         <div className="history-tabs">
           <button className={`history-tab${savedTab==="saved"?" active":""}`} onClick={()=>setSavedTab("saved")}>Saved {saved.length>0?`(${saved.length})`:""}</button>
           <button className={`history-tab${savedTab==="history"?" active":""}`} onClick={()=>setSavedTab("history")}>History {history.length>0?`(${history.length})`:""}</button>
         </div>
+
         {savedTab==="history"?(
           history.length===0?(
-            <div className="history-empty"><h3>No history yet</h3><p>Every recipe you generate will appear here automatically — no need to save first.</p></div>
+            <div className="history-empty"><h3>No history yet</h3><p>Every recipe you generate appears here automatically.</p></div>
           ):(
             <>
               <div className="history-list">
@@ -1402,26 +1459,64 @@ export default function App(){
           )
         ):(
         allRecipes.length===0?(
-          <div className="empty-state"><h3>Nothing saved yet</h3><p>Search for a recipe and Save it, or scan a recipe card.</p></div>
+          <div className="empty-state"><h3>Nothing saved yet</h3><p>Search for a recipe and tap Save, or scan a recipe card.</p></div>
         ):(
-          <div className="cards-grid">
-            {allRecipes.map((r:any)=>{
-              const isSharedOnly=!saved.some(s=>s.id===r.id);
-              return(
-                <div key={r.id} className="recipe-card" onClick={()=>{setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
-                  <div className="card-tag">{r._scanned?"Scanned Card":r._imported?"Imported":isSharedOnly?"Shared":r.seasonal_note?"Seasonal":"Saved Recipe"}</div>
-                  <div className="card-title">{r.title}</div>
-                  <div className="card-desc">{r.tagline}</div>
-                  <div className="card-meta"><span>{r.prep_time} prep</span><span>{r.cook_time} cook</span><span>{r.servings} servings</span></div>
-                  <div className="card-actions" onClick={e=>e.stopPropagation()}>
-                    <button className="card-btn" onClick={()=>{setAssignDay("fromSaved_"+r.id);setTab("week");}}>+ Week</button>
-                    {!isSharedOnly&&<button className="card-btn danger" onClick={()=>setSaved(l=>l.filter((s:any)=>s.id!==r.id))}>Remove</button>}
-                    {isSharedOnly&&<button className="card-btn" onClick={()=>setSaved(l=>[r,...l])}>Save Mine</button>}
+          <>
+            {/* Search bar */}
+            <div className="saved-search-wrap">
+              <span className="saved-search-icon">{Ic.search(16)}</span>
+              <input className="saved-search-input" placeholder="Search saved recipes…"
+                value={savedSearch} onChange={e=>setSavedSearch(e.target.value)}/>
+            </div>
+
+            {filtered.length===0?(
+              <div className="empty-state"><h3>No matches</h3><p>Try a different search term.</p></div>
+            ):(
+              sortedCats.map(cat=>(
+                <div key={cat} className="saved-category-section">
+                  <div className="saved-category-label">{cat}</div>
+                  <div className="cards-grid">
+                    {grouped[cat].map((r:any)=>{
+                      const isSharedOnly=!saved.some(s=>s.id===r.id);
+                      const rating=ratings[r.id]||0;
+                      const isConfirming=confirmRemove===r.id;
+                      return(
+                        <div key={r.id} className="recipe-card" onClick={()=>{setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
+                          <div className="card-tag">{r._scanned?"Scanned":r._imported?"Imported":isSharedOnly?"Shared":r.seasonal_note?"Seasonal":"Saved"}</div>
+                          <div className="card-title">{r.title}</div>
+                          <div className="card-desc">{r.tagline}</div>
+                          <div className="card-meta"><span>{r.prep_time} prep</span><span>{r.cook_time} cook</span><span>{r.servings} srv</span></div>
+                          {/* Star rating */}
+                          <div className="star-row" onClick={e=>e.stopPropagation()}>
+                            {[1,2,3,4,5].map(n=>(
+                              <button key={n} className={`star${rating>=n?" filled":""}`}
+                                onClick={()=>setRatings(prev=>({...prev,[r.id]:prev[r.id]===n?0:n}))}>
+                                ★
+                              </button>
+                            ))}
+                          </div>
+                          <div className="card-actions" onClick={e=>e.stopPropagation()}>
+                            <button className="card-btn" onClick={()=>{setAssignDay("fromSaved_"+r.id);setTab("week");}}>+ Week</button>
+                            {!isSharedOnly&&!isConfirming&&(
+                              <button className="card-btn danger" onClick={()=>setConfirmRemove(r.id)}>Remove</button>
+                            )}
+                            {!isSharedOnly&&isConfirming&&(
+                              <div className="confirm-remove" onClick={e=>e.stopPropagation()}>
+                                <span className="confirm-remove-text">Remove this recipe?</span>
+                                <button className="confirm-remove-no" onClick={()=>setConfirmRemove(null)}>Cancel</button>
+                                <button className="confirm-remove-yes" onClick={()=>{setSaved(l=>l.filter((s:any)=>s.id!==r.id));setConfirmRemove(null);}}>Remove</button>
+                              </div>
+                            )}
+                            {isSharedOnly&&<button className="card-btn" onClick={()=>setSaved(l=>[r,...l])}>Save Mine</button>}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              ))
+            )}
+          </>
         ))}
       </div>
     );
