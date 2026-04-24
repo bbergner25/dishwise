@@ -321,8 +321,8 @@ const CSS = `
   .grocery-shop-link.tg:hover{border-color:#CC0000;color:#CC0000;}
 
   /* Remix — saffron card */
-  .remix-section{margin:20px auto 0;max-width:920px;padding:18px 22px 20px;background:#FFF0D4;border:1.5px solid #F4A021;border-radius:16px;}
-  @media(max-width:640px){.remix-section{margin:12px 12px 0;padding:16px 18px 18px;border-radius:14px;}}
+  .remix-section{padding:18px 22px 20px;background:#FFF0D4;border:1.5px solid #F4A021;border-radius:16px;}
+  @media(max-width:640px){.remix-section{padding:16px 18px 18px;border-radius:14px;}}
   .remix-label{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#3D3330;margin-bottom:12px;font-weight:700;display:flex;align-items:center;gap:8px;}
   .remix-chips{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-bottom:14px;}
   .remix-chip{padding:6px 14px;border-radius:100px;border:1.5px solid #D4CCC0;background:#fff;font-family:'Outfit',sans-serif;font-size:12px;color:#3D3330;font-weight:500;cursor:pointer;transition:all .15s;}
@@ -1183,29 +1183,6 @@ export default function App(){
           </div>
         </div>
 
-        {/* Remix section — inside dark banner */}
-        {!recipe._scanned&&!recipe._imported&&(
-          <div className="remix-section">
-            <div className="remix-label">Not quite right? Remix it</div>
-            <div className="remix-chips">
-              {REMIX_OPTIONS.map(chip=>(
-                <button key={chip} className={`remix-chip${remixChips.includes(chip)?" active":""}`}
-                  onClick={()=>toggleRemixChip(chip)}>
-                  {chip}
-                </button>
-              ))}
-            </div>
-            {remixStatus==="loading"?(
-              <div className="remix-loading">Remixing your recipe…</div>
-            ):(
-              <button className="remix-go" onClick={doRemix}
-                disabled={remixChips.length===0}>
-                {remixChips.length===0?"Select a preference above":"Remix →"}
-              </button>
-            )}
-          </div>
-        )}
-
         <div className="recipe-body">
         <div className="two-col">
           <div>
@@ -1248,6 +1225,57 @@ export default function App(){
             </ol>
           </div>
         </div>
+
+        {/* Star rating */}
+        {!recipe._scanned&&!recipe._imported&&(
+          <div style={{padding:"28px 0 0",borderTop:"1px solid #EDE8E0",marginTop:32}}>
+            <div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap",justifyContent:"space-between"}}>
+              <div>
+                <div style={{fontSize:10,fontWeight:700,letterSpacing:"2px",textTransform:"uppercase",color:"#E8431A",marginBottom:8}}>Rate this recipe</div>
+                <div className="star-row">
+                  {[1,2,3,4,5].map(n=>{
+                    const currentRating=recipe?.id?ratings[recipe.id]||0:0;
+                    return(
+                      <button key={n} className={`star${currentRating>=n?" filled":""}`}
+                        style={{fontSize:24}}
+                        onClick={()=>recipe?.id&&setRatings(prev=>({...prev,[recipe.id]:prev[recipe.id]===n?0:n}))}>
+                        ★
+                      </button>
+                    );
+                  })}
+                  {recipe?.id&&ratings[recipe.id]>0&&(
+                    <span style={{fontSize:12,color:"#7A6E6A",marginLeft:8,alignSelf:"center"}}>
+                      {["","One star","Two stars","Three stars","Four stars","Five stars"][ratings[recipe.id]]}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Remix section — after method, before grocery */}
+        {!recipe._scanned&&!recipe._imported&&(
+          <div className="remix-section" style={{margin:"28px 0 0",maxWidth:"100%"}}>
+            <div className="remix-label">Not quite right? Remix it</div>
+            <div className="remix-chips">
+              {REMIX_OPTIONS.map(chip=>(
+                <button key={chip} className={`remix-chip${remixChips.includes(chip)?" active":""}`}
+                  onClick={()=>toggleRemixChip(chip)}>
+                  {chip}
+                </button>
+              ))}
+            </div>
+            {remixStatus==="loading"?(
+              <div className="remix-loading">Remixing your recipe…</div>
+            ):(
+              <button className="remix-go" onClick={doRemix}
+                disabled={remixChips.length===0}>
+                {remixChips.length===0?"Select a preference above":"Remix →"}
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="grocery-section">
           <div className="grocery-hdr">
