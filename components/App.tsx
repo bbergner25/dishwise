@@ -102,14 +102,14 @@ const CSS = `
   .hero-rule-wrap{display:none;}
   .hero-sub{font-size:15px;color:#7A6E6A;font-weight:300;line-height:1.6;max-width:480px;margin:16px auto 24px;}
   .hero-sub strong{color:#151210;font-weight:600;}
-  .search-wrap{max-width:520px;margin:0 auto;}
-  .search-bar{display:flex;background:#fff;border:1px solid #EDE8E0;border-radius:100px;overflow:hidden;box-shadow:0 2px 16px rgba(61,43,31,.06);transition:box-shadow .2s,border-color .2s;}
-  .search-bar:focus-within{box-shadow:0 4px 24px rgba(61,43,31,.12);border-color:#151210;}
-  .search-input{flex:1;border:none;outline:none;padding:14px 22px;font-family:'Outfit',sans-serif;font-size:15px;color:#151210;background:transparent;}
+  .search-wrap{max-width:560px;margin:0 auto;}
+  .search-bar{display:flex;background:#fff;border:2px solid #151210;border-radius:16px;overflow:hidden;box-shadow:4px 4px 0 #151210;transition:box-shadow .15s,transform .15s;}
+  .search-bar:focus-within{box-shadow:6px 6px 0 #F4A021;transform:translate(-1px,-1px);}
+  .search-input{flex:1;border:none;outline:none;padding:16px 20px;font-family:'Outfit',sans-serif;font-size:15px;color:#151210;background:transparent;font-weight:400;}
   .search-input::placeholder{color:#7A6E6A;}
-  .search-btn{margin:5px;padding:10px 22px;background:#151210;color:#FDFAF5;border:none;border-radius:100px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s;white-space:nowrap;}
-  .search-btn:hover:not(:disabled){background:#2D5A42;}
-  .search-btn:disabled{background:#7A6E6A;cursor:not-allowed;}
+  .search-btn{margin:6px;padding:10px 22px;background:#F4A021;color:#151210;border:none;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;white-space:nowrap;display:flex;align-items:center;gap:6px;}
+  .search-btn:hover:not(:disabled){background:#D88815;}
+  .search-btn:disabled{background:#F4A021;color:#151210;opacity:.5;cursor:not-allowed;}
 
   /* Filters */
   .filter-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#7A6E6A;margin:16px 0 8px;text-align:center;}
@@ -125,48 +125,51 @@ const CSS = `
   .location-detect{padding:5px 10px;border:1px solid #EDE8E0;border-radius:100px;background:transparent;font-size:11px;cursor:pointer;color:#7A6E6A;white-space:nowrap;}
 
   /* ── MOSAIC CARDS ── */
-  .mosaic-section{padding:20px 20px 8px;max-width:900px;margin:0 auto;}
-  @media(min-width:768px){.mosaic-section{padding:24px 28px 8px;}}
-  .mosaic-label{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:#7A6E6A;margin-bottom:12px;text-align:center;}
-  .mosaic-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
-  @media(max-width:640px){.mosaic-grid{grid-template-columns:repeat(2,1fr);gap:8px;}}
-  .mosaic-card{border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s;border:1px solid transparent;}
-  .mosaic-card.card-light{border-color:#EDE8E0;}
-  .mosaic-card:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(61,43,31,.14);}
-  .mosaic-card-inner{padding:16px 14px 14px;}
-  .mosaic-card-eyebrow-dark{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(196,149,106,.65);margin-bottom:6px;}
-  .mosaic-card-eyebrow-light{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#7A6E6A;margin-bottom:6px;}
-  .mosaic-card-title-dark{font-family:'Fraunces',serif;font-size:14px;line-height:1.25;color:#FFF0D4;margin-bottom:4px;font-weight:700;}
-  .mosaic-card-title-light{font-family:'Fraunces',serif;font-size:14px;line-height:1.25;color:#151210;margin-bottom:4px;font-weight:700;}
-  .mosaic-card-desc-dark{font-size:10px;color:rgba(245,237,216,.5);line-height:1.4;margin-bottom:6px;}
-  .mosaic-card-desc-light{font-size:10px;color:#7A6E6A;line-height:1.4;margin-bottom:6px;}
-  .mosaic-card-time-dark{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:rgba(196,149,106,.55);}
-  .mosaic-card-time-light{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#B8A898;}
+  /* ── EVERY CHEF MOSAIC CARDS ── */
+  .mosaic-section{padding:32px 20px 8px;max-width:960px;margin:0 auto;}
+  @media(min-width:768px){.mosaic-section{padding:32px 28px 8px;}}
+  .mosaic-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .mosaic-title{font-family:'Fraunces',serif;font-size:20px;color:#151210;font-weight:700;}
+  .mosaic-title em{color:#F4A021;font-style:italic;}
+  .mosaic-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+  @media(max-width:640px){.mosaic-grid{grid-template-columns:repeat(2,1fr);gap:10px;}}
+  .mosaic-card{border-radius:16px;overflow:hidden;cursor:pointer;border:2px solid #EDE8E0;background:#fff;transition:transform .15s,box-shadow .15s,border-color .15s;}
+  .mosaic-card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(21,18,16,.12);border-color:#F4A021;}
+  .mosaic-card-header{padding:16px 14px 14px;display:flex;flex-direction:column;justify-content:flex-end;}
+  .mosaic-card-header-title{font-family:'Fraunces',serif;font-size:15px;font-weight:700;line-height:1.2;margin-bottom:3px;}
+  .mosaic-card-header-desc{font-size:10px;font-weight:400;opacity:.75;line-height:1.3;}
+  .mosaic-card-body{padding:8px 14px 12px;border-top:1px solid rgba(0,0,0,.06);}
+  .mosaic-card-category{font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:0;}
+  .mosaic-card-meta{font-size:10px;color:#7A6E6A;margin-top:2px;}
 
   .suggestions{display:none;}
   .suggestion-chip{display:none;}
 
   /* URL import */
-  .url-area{max-width:560px;margin:12px auto 0;background:#fff;border:1px solid #EDE8E0;border-radius:16px;padding:20px;}
-  .url-label{font-family:'Fraunces',serif;font-size:16px;margin-bottom:5px;color:#151210;}
-  .url-sub{font-size:12px;color:#7A6E6A;margin-bottom:14px;line-height:1.5;}
+  .url-area{max-width:600px;margin:12px auto 0;background:#fff;border:2px solid #EDE8E0;border-radius:16px;padding:22px;transition:border-color .15s;}
+  .url-area:hover{border-color:#F4A021;}
+  .url-label{font-family:'Fraunces',serif;font-size:17px;margin-bottom:5px;color:#151210;font-weight:700;display:flex;align-items:center;gap:8px;}
+  .url-sub{font-size:13px;color:#7A6E6A;margin-bottom:14px;line-height:1.5;}
   .url-row{display:flex;gap:8px;}
-  .url-input{flex:1;padding:10px 16px;border:1px solid #EDE8E0;border-radius:100px;font-family:'Outfit',sans-serif;font-size:13px;color:#151210;outline:none;transition:border-color .15s;}
-  .url-input:focus{border-color:#151210;}
+  .url-input{flex:1;padding:10px 16px;border:1.5px solid #D4CCC0;border-radius:10px;font-family:'Outfit',sans-serif;font-size:13px;color:#151210;outline:none;transition:border-color .15s;}
+  .url-input:focus{border-color:#F4A021;}
   .url-input::placeholder{color:#7A6E6A;}
-  .url-btn{padding:10px 18px;background:#151210;color:#FDFAF5;border:none;border-radius:100px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;transition:background .15s;}
-  .url-btn:hover:not(:disabled){background:#2D5A42;}
-  .url-btn:disabled{background:#7A6E6A;cursor:not-allowed;}
+  .url-btn{padding:10px 20px;background:#151210;color:#fff;border:none;border-radius:10px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s;}
+  .url-btn:hover:not(:disabled){background:#1E3A2F;}
+  .url-btn:disabled{background:#D4CCC0;cursor:not-allowed;}
   .url-note{font-size:11px;color:#7A6E6A;margin-top:10px;line-height:1.5;}
-  .url-success{padding:10px 14px;background:#F0F5EE;border:1px solid #1E3A2F;border-radius:10px;font-size:13px;color:#4a6040;margin-top:10px;}
-  .url-error{font-size:12px;color:#F4A021;margin-top:8px;}
+  .url-success{padding:10px 14px;background:#E8F2EC;border:1.5px solid #1E3A2F;border-radius:10px;font-size:13px;color:#1E3A2F;margin-top:10px;}
+  .url-error{font-size:12px;color:#E8431A;margin-top:8px;}
 
   /* Scan */
   .scan-divider{display:flex;align-items:center;gap:12px;margin:24px auto 0;max-width:560px;}
   .scan-divider-line{flex:1;height:1px;background:#EDE8E0;}
   .scan-divider-text{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#7A6E6A;white-space:nowrap;}
-  .scan-area{max-width:560px;margin:12px auto 0;background:#fff;border:1.5px dashed #EDE8E0;border-radius:16px;padding:20px;text-align:center;}
-  .scan-icon{font-size:28px;margin-bottom:8px;}
+  .scan-area{max-width:600px;margin:12px auto 0;background:#fff;border:2px solid #EDE8E0;border-radius:16px;padding:6px;text-align:center;transition:border-color .15s;}
+  .scan-area:hover{border-color:#F4A021;}
+  .scan-inner{background:#FDECC8;border-radius:12px;padding:24px;display:flex;flex-direction:column;align-items:center;}
+  .scan-icon-block{width:52px;height:52px;background:#F4A021;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+  .scan-icon{margin-bottom:0;}
   .scan-label{font-family:'Fraunces',serif;font-size:16px;margin-bottom:6px;}
   .scan-sub{font-size:12px;color:#7A6E6A;margin-bottom:14px;}
   .scan-upload-btn{padding:8px 20px;background:#151210;color:#fff;border:none;border-radius:100px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;cursor:pointer;}
@@ -188,69 +191,74 @@ const CSS = `
   .recipe-page{max-width:860px;margin:0 auto;padding:0 0 80px;}
 
   /* Recipe banner — forest green */
+  /* Recipe banner — grid layout matching Every Chef design */
   .recipe-banner{
     background:#1E3A2F;
-    padding:28px 36px 22px;
-    text-align:center;
-    position:relative;
+    padding:28px 32px 0;
     border-radius:20px;
     overflow:hidden;
     margin:20px auto 0;
     max-width:920px;
+    position:relative;
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:16px;
+    align-items:start;
   }
   .recipe-banner::before{content:"";position:absolute;top:-60px;right:-60px;width:240px;height:240px;border-radius:50%;background:rgba(244,160,33,.08);pointer-events:none;}
   .recipe-banner::after{content:"";position:absolute;bottom:-40px;left:120px;width:160px;height:160px;border-radius:50%;background:rgba(244,160,33,.05);pointer-events:none;}
   .recipe-banner > *{position:relative;z-index:1;}
-  @media(max-width:640px){.recipe-banner{padding:22px 22px 18px;margin:12px 12px 0;border-radius:16px;}}
+  @media(max-width:640px){
+    .recipe-banner{grid-template-columns:1fr;padding:20px 20px 0;margin:12px 12px 0;border-radius:16px;gap:12px;}
+  }
   .recipe-banner-eyebrow{
     font-size:9px;letter-spacing:3px;text-transform:uppercase;
     color:#F4A021;margin-bottom:8px;font-weight:500;opacity:.7;
   }
   .recipe-banner-title{
     font-family:'Fraunces',serif;
-    font-size:clamp(22px,3.5vw,34px);
-    line-height:1.15;
-    color:#FFF0D4;
+    font-size:clamp(22px,3.5vw,36px);
+    line-height:1.1;
+    color:#fff;
     margin-bottom:8px;
     font-weight:700;
   }
   .recipe-banner-title em{color:#F4A021;font-style:italic;}
   .recipe-banner-desc{
-    font-size:13px;color:rgba(245,237,216,.55);
-    line-height:1.6;max-width:480px;margin:0 auto 16px;font-weight:300;
+    font-size:13px;color:rgba(255,255,255,.55);
+    line-height:1.6;margin-bottom:0;font-weight:300;max-width:480px;
   }
   .recipe-banner-meta{
-    display:flex;gap:0;justify-content:center;flex-wrap:wrap;
-    border-top:1px solid rgba(196,149,106,.2);
-    padding-top:14px;margin-top:4px;
+    display:flex;gap:0;
+    border-top:1px solid rgba(255,255,255,.1);
+    padding:16px 0;margin-top:20px;
+    grid-column:1 / -1;
   }
   .recipe-banner-meta-item{
-    text-align:center;padding:0 24px;
-    border-right:1px solid rgba(196,149,106,.2);
+    flex:1;text-align:center;padding:0 16px;
+    border-right:1px solid rgba(255,255,255,.08);
   }
   .recipe-banner-meta-item:last-child{border-right:none;}
   .recipe-banner-meta-label{
     font-size:9px;letter-spacing:2px;text-transform:uppercase;
-    color:rgba(196,149,106,.7);margin-bottom:5px;font-weight:500;
+    color:rgba(255,255,255,.35);margin-bottom:4px;font-weight:500;
   }
   .recipe-banner-meta-value{
-    font-family:'Fraunces',serif;font-size:16px;color:#FFF0D4;
+    font-family:'Fraunces',serif;font-size:18px;color:#fff;font-weight:700;
   }
-  .recipe-banner-actions{
-    position:absolute;top:20px;right:20px;display:flex;gap:8px;
-  }
-  .save-btn{background:rgba(255,255,255,.1);border:1px solid rgba(196,149,106,.4);border-radius:100px;padding:6px 14px;font-family:'Outfit',sans-serif;font-size:12px;cursor:pointer;color:#F4A021;display:flex;align-items:center;gap:5px;transition:all .15s;backdrop-filter:blur(4px);}
-  .save-btn:hover{background:rgba(196,149,106,.2);border-color:#F4A021;}
-  .save-btn.saved{background:#F4A021;border-color:#F4A021;color:#fff;}
-  .print-btn{background:rgba(255,255,255,.1);border:1px solid rgba(196,149,106,.4);border-radius:100px;padding:6px 14px;font-family:'Outfit',sans-serif;font-size:12px;cursor:pointer;color:#F4A021;display:flex;align-items:center;gap:5px;transition:all .15s;backdrop-filter:blur(4px);}
-  .print-btn:hover{background:rgba(196,149,106,.2);}
+  .recipe-banner-actions{display:flex;gap:8px;padding-top:4px;flex-shrink:0;}
+  .save-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:8px 16px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.8);display:flex;align-items:center;gap:5px;transition:all .15s;}
+  .save-btn:hover{background:rgba(255,255,255,.2);}
+  .save-btn.saved{background:#F4A021;border-color:#F4A021;color:#151210;}
+  .print-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:8px 16px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.8);display:flex;align-items:center;gap:5px;transition:all .15s;}
+  .print-btn:hover{background:rgba(255,255,255,.2);}
   .seasonal-note{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;background:rgba(122,140,110,.2);border:1px solid rgba(122,140,110,.4);border-radius:100px;font-size:12px;color:#a8c49a;margin-bottom:16px;}
 
   /* Serving scaler — on banner */
-  .scaler{display:inline-flex;align-items:center;border:1px solid rgba(196,149,106,.3);border-radius:100px;overflow:hidden;margin:0 auto;}
-  .scaler-btn{width:32px;height:32px;border:none;background:rgba(255,255,255,.08);font-size:15px;cursor:pointer;color:#F4A021;display:flex;align-items:center;justify-content:center;transition:background .12s;}
+  .scaler{display:inline-flex;align-items:center;border:1px solid rgba(255,255,255,.2);border-radius:100px;overflow:hidden;margin:0 auto;}
+  .scaler-btn{width:32px;height:32px;border:none;background:rgba(255,255,255,.1);font-size:15px;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;transition:background .12s;font-family:'Outfit',sans-serif;}
   .scaler-btn:hover{background:rgba(196,149,106,.2);}
-  .scaler-val{padding:0 12px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;color:#FFF0D4;white-space:nowrap;}
+  .scaler-val{padding:0 12px;font-family:'Fraunces',serif;font-size:18px;font-weight:700;color:#fff;white-space:nowrap;}
   .scaler-wrap{display:flex;flex-direction:column;align-items:center;gap:5px;}
   .scaler-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(196,149,106,.7);font-weight:500;}
 
@@ -261,14 +269,14 @@ const CSS = `
   /* Ingredients */
   .two-col{display:grid;grid-template-columns:260px 1fr;gap:48px;align-items:start;}
   @media(max-width:640px){.two-col{grid-template-columns:1fr;gap:32px;}}
-  .section-label{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:#F4A021;margin-bottom:16px;font-weight:500;}
+  .section-label{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:#E8431A;margin-bottom:16px;font-weight:700;}
   .ing-group{margin-bottom:20px;}
   .ing-group:last-child{margin-bottom:0;}
   .ing-group-label{
     font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;
     letter-spacing:1.5px;text-transform:uppercase;
     color:#151210;padding:7px 0 6px;
-    border-bottom:2px solid #151210;margin-bottom:2px;
+    border-bottom:2px solid #F4A021;margin-bottom:2px;display:inline-block;
   }
   .ing-list{list-style:none;}
   .ing-item{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #EDE8E0;font-size:14px;line-height:1.4;}
@@ -476,35 +484,16 @@ const CSS = `
 
 /* ── CONSTANTS ── */
 const SUGGESTIONS = ["Miso Glazed Salmon","Birria Tacos","Shakshuka","Mushroom Risotto","Korean BBQ Bowl","Coconut Curry Noodles","French Onion Soup","Smash Burgers"];
-type Stroke = "squiggle"|"zigzag"|"wave"|"dashed"|"loop"|"steps"|"tight"|"bold";
-const SUGGESTION_CARDS: {title:string;desc:string;time:string;category:string;bg:string;catColor:string;stroke:Stroke;strokeColor:string}[] = [
-  {title:"Miso Glazed Salmon",    desc:"Rich umami glaze, crispy skin",    time:"25 min · 4 servings", category:"Staff Pick",      bg:"#FFF4E0", catColor:"#F4A021", stroke:"squiggle", strokeColor:"#F4A021"},
-  {title:"Shakshuka",             desc:"Eggs in spiced tomato sauce",      time:"20 min · 2 servings", category:"Quick & Easy",    bg:"#FFF0EB", catColor:"#E8431A", stroke:"zigzag",   strokeColor:"#E8431A"},
-  {title:"Mushroom Risotto",      desc:"Creamy, earthy, indulgent",        time:"40 min · 4 servings", category:"Seasonal",        bg:"#EDF4EF", catColor:"#1E3A2F", stroke:"wave",     strokeColor:"#1E3A2F"},
-  {title:"Birria Tacos",          desc:"Slow-braised beef, consommé dip",  time:"3 hrs · 6 servings",  category:"Weekend Project", bg:"#FFF4E0", catColor:"#F4A021", stroke:"dashed",   strokeColor:"#F4A021"},
-  {title:"French Onion Soup",     desc:"Classic bistro, melted gruyère",   time:"50 min · 4 servings", category:"Comfort Food",    bg:"#FFF0EB", catColor:"#E8431A", stroke:"loop",     strokeColor:"#E8431A"},
-  {title:"Korean BBQ Bowl",       desc:"Gochujang beef, pickled veg",      time:"30 min · 2 servings", category:"Bold & Spicy",    bg:"#EDF4EF", catColor:"#1E3A2F", stroke:"steps",    strokeColor:"#1E3A2F"},
-  {title:"Coconut Curry Noodles", desc:"Fragrant, creamy, satisfying",     time:"35 min · 4 servings", category:"Fan Favourite",   bg:"#FFF4E0", catColor:"#F4A021", stroke:"tight",    strokeColor:"#F4A021"},
-  {title:"Smash Burgers",         desc:"Crispy edges, secret sauce",       time:"20 min · 4 servings", category:"Under 30 Mins",   bg:"#FFF0EB", catColor:"#E8431A", stroke:"bold",     strokeColor:"#E8431A"},
+const SUGGESTION_CARDS: {title:string;desc:string;time:string;category:string;headerBg:string;catColor:string;textLight:boolean}[] = [
+  {title:"Miso Glazed Salmon",    desc:"Umami glaze, crispy skin",   time:"25 min · 4 srv", category:"Staff Pick",      headerBg:"#F4A021", catColor:"#F4A021", textLight:false},
+  {title:"Shakshuka",             desc:"Eggs in spiced tomato",      time:"20 min · 2 srv", category:"Quick & Easy",    headerBg:"#E8431A", catColor:"#E8431A", textLight:true},
+  {title:"Mushroom Risotto",      desc:"Creamy, earthy, indulgent",  time:"40 min · 4 srv", category:"Seasonal",        headerBg:"#1E3A2F", catColor:"#1E3A2F", textLight:true},
+  {title:"Birria Tacos",          desc:"Slow-braised, consommé dip", time:"3 hrs · 6 srv",  category:"Weekend Project", headerBg:"#F4A021", catColor:"#F4A021", textLight:false},
+  {title:"French Onion Soup",     desc:"Classic bistro, gruyère",    time:"50 min · 4 srv", category:"Comfort Food",    headerBg:"#E8431A", catColor:"#E8431A", textLight:true},
+  {title:"Korean BBQ Bowl",       desc:"Gochujang beef, pickled veg",time:"30 min · 2 srv", category:"Bold & Spicy",    headerBg:"#1E3A2F", catColor:"#1E3A2F", textLight:true},
+  {title:"Coconut Curry Noodles", desc:"Fragrant, creamy, warming",  time:"35 min · 4 srv", category:"Fan Favourite",   headerBg:"#F4A021", catColor:"#F4A021", textLight:false},
+  {title:"Smash Burgers",         desc:"Crispy edges, secret sauce", time:"20 min · 4 srv", category:"Under 30 Mins",   headerBg:"#E8431A", catColor:"#E8431A", textLight:true},
 ];
-
-const StrokeSVG = ({kind,color}:{kind:Stroke;color:string}) => {
-  const paths: Record<Stroke,string> = {
-    squiggle: "M5 20 Q20 5, 35 20 T65 20 T95 20 T125 20 T135 20",
-    zigzag:   "M5 18 L20 8 L35 28 L50 8 L65 28 L80 8 L95 28 L115 18",
-    wave:     "M5 18 C20 4, 30 32, 45 18 S70 4, 85 18 S110 32, 125 18 S135 12, 140 18",
-    dashed:   "M5 30 L30 14 M42 26 L62 10 M74 26 L94 10 M106 26 L126 14",
-    loop:     "M5 22 C15 22, 15 8, 30 8 S45 22, 55 22 C65 22, 65 8, 80 8 S95 22, 105 22 C115 22, 115 8, 130 8",
-    steps:    "M5 28 L20 28 L20 14 L40 14 L40 24 L60 24 L60 10 L80 10 L80 22 L100 22 L100 14 L125 14",
-    tight:    "M5 20 Q12 8, 20 20 T35 20 T50 20 T65 20 T80 20 T95 20 T110 20 T125 20",
-    bold:     "M5 18 L25 6 L45 30 L65 6 L85 30 L105 6 L125 18",
-  };
-  return (
-    <svg width="140" height="40" viewBox="0 0 140 40" fill="none" style={{overflow:"visible"}}>
-      <path d={paths[kind]} stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-    </svg>
-  );
-};
 const DIETS    = ["Vegetarian","Vegan","Gluten-Free","Dairy-Free","Keto","Low-Carb"];
 const DAYS     = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 const DAY_KEYS = ["mon","tue","wed","thu","fri","sat","sun"];
@@ -1029,12 +1018,12 @@ export default function App(){
                 <div key={card.title}
                   className="mosaic-card"
                   onClick={()=>{setQuery(card.title);doSearch(card.title);}}>
-                  <div className="mosaic-card-stroke" style={{background:card.bg}}>
-                    <StrokeSVG kind={card.stroke} color={card.strokeColor}/>
+                  <div className="mosaic-card-header" style={{background:card.headerBg}}>
+                    <div className="mosaic-card-header-title" style={{color:card.textLight?"#fff":"#151210"}}>{card.title}</div>
+                    <div className="mosaic-card-header-desc" style={{color:card.textLight?"rgba(255,255,255,.8)":"rgba(21,18,16,.7)"}}>{card.desc}</div>
                   </div>
                   <div className="mosaic-card-body">
                     <div className="mosaic-card-category" style={{color:card.catColor}}>{card.category}</div>
-                    <div className="mosaic-card-name">{card.title}</div>
                     <div className="mosaic-card-meta">{card.time}</div>
                   </div>
                 </div>
@@ -1049,11 +1038,13 @@ export default function App(){
             <div className="scan-area">
               {!scanPreview?(
                 <>
-                  <div className="scan-icon" style={{color:"#151210"}}>{Ic.camera(28)}</div>
-                  <div className="scan-label">From Paper to Plate</div>
-                  <div className="scan-sub">Snap or upload any handwritten or printed recipe card</div>
-                  <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={onFileChange}/>
-                  <button className="scan-upload-btn" onClick={()=>fileRef.current?.click()}>Choose Photo</button>
+                  <div className="scan-inner">
+                    <div className="scan-icon-block" style={{color:"#151210"}}>{Ic.camera(24)}</div>
+                    <div className="scan-label">From Paper to Plate</div>
+                    <div className="scan-sub">Snap or upload any handwritten or printed recipe card</div>
+                    <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={onFileChange}/>
+                    <button className="scan-upload-btn" onClick={()=>fileRef.current?.click()}>Choose Photo</button>
+                  </div>
                 </>
               ):(
                 <>
@@ -1074,8 +1065,8 @@ export default function App(){
 
           <div className="scan-divider" style={{marginTop:24}}><div className="scan-divider-line"/><div className="scan-divider-text">or import from a url</div><div className="scan-divider-line"/></div>
             <div className="url-area">
-              <div className="url-label" style={{display:"flex",alignItems:"center",gap:8}}>{Ic.link(16)} Paste a Recipe URL</div>
-              <div className="url-sub">Paste any recipe link and we'll strip the ads and noise — returning only the clean recipe.</div>
+              <div className="url-label">{Ic.link(16)} Paste a Recipe URL</div>
+              <div className="url-sub">Paste any recipe link — we'll strip the ads and noise, returning just the clean recipe. Works on AllRecipes, Serious Eats, Simply Recipes and most open sites.</div>
               <div className="url-row">
                 <input className="url-input" placeholder="https://www.allrecipes.com/recipe/..."
                   value={urlInput} onChange={e=>setUrlInput(e.target.value)}
@@ -1087,11 +1078,10 @@ export default function App(){
               </div>
               {urlStatus==="done"&&urlMsg&&(
                 <div className="url-success">✓ {urlMsg}{" "}
-                  <button onClick={()=>setTab("saved")} style={{background:"none",border:"none",cursor:"pointer",color:"#4a6040",textDecoration:"underline",fontSize:13}}>View in Saved →</button>
+                  <button onClick={()=>setTab("saved")} style={{background:"none",border:"none",cursor:"pointer",color:"#1E3A2F",textDecoration:"underline",fontSize:13,fontFamily:"'Outfit',sans-serif"}}>View in Saved →</button>
                 </div>
               )}
               {urlStatus==="error"&&<div className="url-error">{urlMsg}</div>}
-              <div className="url-note">Works with most open recipe sites. Paywalled sites (NYT Cooking, etc.) won't work.</div>
             </div>
 
           </div>
