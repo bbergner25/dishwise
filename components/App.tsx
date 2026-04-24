@@ -94,7 +94,10 @@ const CSS = `
     100%{transform:translateY(-220px) scale(2.8);opacity:0;}
   }
   .hero-content{position:relative;z-index:2;max-width:560px;margin:0 auto;}
-  .hero-eyebrow{display:inline-flex;align-items:center;gap:8px;background:#FFF0D4;border:1px solid #F4A021;border-radius:100px;padding:5px 16px;font-size:11px;font-weight:600;color:#151210;letter-spacing:.5px;margin-bottom:20px;text-transform:none;}
+  .hero-eyebrow{display:inline-flex;flex-direction:column;align-items:center;gap:4px;background:#FFF0D4;border:1px solid #F4A021;border-radius:16px;padding:12px 24px;margin-bottom:20px;}
+  .hero-eyebrow-pre{font-family:'Outfit',sans-serif;font-size:11px;font-weight:500;color:#7A6E6A;letter-spacing:1.5px;text-transform:uppercase;}
+  .hero-eyebrow-name{font-family:'Fraunces',serif;font-size:26px;font-weight:900;color:#151210;letter-spacing:-0.5px;line-height:1;}
+  .hero-eyebrow-sub{font-family:'Outfit',sans-serif;font-size:10px;font-weight:500;color:#7A6E6A;letter-spacing:1px;text-transform:uppercase;}
   .hero-title{font-family:'Fraunces',serif;font-size:clamp(34px,6vw,56px);line-height:1.05;margin-bottom:0;color:#151210;font-weight:700;letter-spacing:-0.5px;}
   .hero-title em{color:#F4A021;font-style:italic;position:relative;}
   .hero-rule-wrap{display:none;}
@@ -143,21 +146,22 @@ const CSS = `
   .suggestions{display:none;}
   .suggestion-chip{display:none;}
 
-  /* URL import */
-  .url-area{max-width:600px;margin:12px auto 0;background:#fff;border:2px solid #EDE8E0;border-radius:16px;padding:22px;transition:border-color .15s;}
+  /* URL import — matches scan card style */
+  .url-area{max-width:600px;margin:12px auto 0;background:#fff;border:2px solid #EDE8E0;border-radius:16px;padding:6px;transition:border-color .15s;}
   .url-area:hover{border-color:#F4A021;}
+  .url-inner{background:#FDECC8;border-radius:12px;padding:22px;}
   .url-label{font-family:'Fraunces',serif;font-size:17px;margin-bottom:5px;color:#151210;font-weight:700;display:flex;align-items:center;gap:8px;}
   .url-sub{font-size:13px;color:#7A6E6A;margin-bottom:14px;line-height:1.5;}
   .url-row{display:flex;gap:8px;}
-  .url-input{flex:1;padding:10px 16px;border:1.5px solid #D4CCC0;border-radius:10px;font-family:'Outfit',sans-serif;font-size:13px;color:#151210;outline:none;transition:border-color .15s;}
-  .url-input:focus{border-color:#F4A021;}
+  .url-input{flex:1;padding:11px 16px;border:2px solid #151210;border-radius:10px;font-family:'Outfit',sans-serif;font-size:13px;color:#151210;outline:none;background:#fff;transition:border-color .15s,box-shadow .15s;box-shadow:2px 2px 0 #151210;}
+  .url-input:focus{border-color:#F4A021;box-shadow:2px 2px 0 #F4A021;}
   .url-input::placeholder{color:#7A6E6A;}
-  .url-btn{padding:10px 20px;background:#151210;color:#fff;border:none;border-radius:10px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s;}
-  .url-btn:hover:not(:disabled){background:#1E3A2F;}
-  .url-btn:disabled{background:#D4CCC0;cursor:not-allowed;}
+  .url-btn{padding:11px 20px;background:#F4A021;color:#151210;border:none;border-radius:10px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s;}
+  .url-btn:hover:not(:disabled){background:#D88815;}
+  .url-btn:disabled{background:#F4A021;opacity:.5;cursor:not-allowed;}
   .url-note{font-size:11px;color:#7A6E6A;margin-top:10px;line-height:1.5;}
-  .url-success{padding:10px 14px;background:#E8F2EC;border:1.5px solid #1E3A2F;border-radius:10px;font-size:13px;color:#1E3A2F;margin-top:10px;}
-  .url-error{font-size:12px;color:#E8431A;margin-top:8px;}
+  .url-success{padding:10px 14px;background:#E8F2EC;border:1.5px solid #1E3A2F;border-radius:10px;font-size:13px;color:#1E3A2F;margin-top:10px;font-family:'Outfit',sans-serif;}
+  .url-error{font-size:12px;color:#E8431A;margin-top:8px;font-family:'Outfit',sans-serif;}
 
   /* Scan */
   .scan-divider{display:flex;align-items:center;gap:12px;margin:24px auto 0;max-width:560px;}
@@ -367,6 +371,9 @@ const CSS = `
   .saved-category-section{margin-bottom:24px;}
   .saved-category-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#E8431A;margin-bottom:12px;display:flex;align-items:center;gap:10px;}
   .saved-category-label::after{content:"";flex:1;height:1px;background:#EDE8E0;}
+  /* Category override */
+  .cat-edit-btn{font-size:10px;color:#7A6E6A;background:none;border:none;cursor:pointer;text-decoration:underline;margin-left:8px;font-family:'Outfit',sans-serif;}
+  .cat-select{font-size:11px;font-family:'Outfit',sans-serif;border:1.5px solid #F4A021;border-radius:6px;padding:2px 6px;color:#151210;background:#fff;cursor:pointer;outline:none;}
   /* Star rating */
   .star-row{display:flex;gap:2px;margin-top:5px;}
   .star{font-size:15px;cursor:pointer;color:#EDE8E0;transition:color .1s;line-height:1;background:none;border:none;padding:0;}
@@ -500,16 +507,43 @@ const CSS = `
 
 /* ── CONSTANTS ── */
 const SUGGESTIONS = ["Miso Glazed Salmon","Birria Tacos","Shakshuka","Mushroom Risotto","Korean BBQ Bowl","Coconut Curry Noodles","French Onion Soup","Smash Burgers"];
-const SUGGESTION_CARDS: {title:string;desc:string;time:string;category:string;headerBg:string;catColor:string;textLight:boolean}[] = [
-  {title:"Miso Glazed Salmon",    desc:"Umami glaze, crispy skin",   time:"25 min · 4 srv", category:"Staff Pick",      headerBg:"#F4A021", catColor:"#F4A021", textLight:false},
-  {title:"Shakshuka",             desc:"Eggs in spiced tomato",      time:"20 min · 2 srv", category:"Quick & Easy",    headerBg:"#E8431A", catColor:"#E8431A", textLight:true},
-  {title:"Mushroom Risotto",      desc:"Creamy, earthy, indulgent",  time:"40 min · 4 srv", category:"Seasonal",        headerBg:"#1E3A2F", catColor:"#1E3A2F", textLight:true},
-  {title:"Birria Tacos",          desc:"Slow-braised, consommé dip", time:"3 hrs · 6 srv",  category:"Weekend Project", headerBg:"#F4A021", catColor:"#F4A021", textLight:false},
-  {title:"French Onion Soup",     desc:"Classic bistro, gruyère",    time:"50 min · 4 srv", category:"Comfort Food",    headerBg:"#E8431A", catColor:"#E8431A", textLight:true},
-  {title:"Korean BBQ Bowl",       desc:"Gochujang beef, pickled veg",time:"30 min · 2 srv", category:"Bold & Spicy",    headerBg:"#1E3A2F", catColor:"#1E3A2F", textLight:true},
-  {title:"Coconut Curry Noodles", desc:"Fragrant, creamy, warming",  time:"35 min · 4 srv", category:"Fan Favourite",   headerBg:"#F4A021", catColor:"#F4A021", textLight:false},
-  {title:"Smash Burgers",         desc:"Crispy edges, secret sauce", time:"20 min · 4 srv", category:"Under 30 Mins",   headerBg:"#E8431A", catColor:"#E8431A", textLight:true},
+type CardDef={title:string;desc:string;time:string;category:string;headerBg:string;catColor:string;textLight:boolean};
+const CARD_POOL: CardDef[] = [
+  {title:"Miso Glazed Salmon",      desc:"Umami glaze, crispy skin",      time:"25 min · 4 srv", category:"Staff Pick",      headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Shakshuka",               desc:"Eggs in spiced tomato",         time:"20 min · 2 srv", category:"Quick & Easy",    headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Mushroom Risotto",        desc:"Creamy, earthy, indulgent",     time:"40 min · 4 srv", category:"Seasonal",        headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
+  {title:"Birria Tacos",            desc:"Slow-braised, consommé dip",    time:"3 hrs · 6 srv",  category:"Weekend Project", headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"French Onion Soup",       desc:"Classic bistro, gruyère",       time:"50 min · 4 srv", category:"Comfort Food",    headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Korean BBQ Bowl",         desc:"Gochujang beef, pickled veg",   time:"30 min · 2 srv", category:"Bold & Spicy",    headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
+  {title:"Coconut Curry Noodles",   desc:"Fragrant, creamy, warming",     time:"35 min · 4 srv", category:"Fan Favourite",   headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Smash Burgers",           desc:"Crispy edges, secret sauce",    time:"20 min · 4 srv", category:"Under 30 Mins",   headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Beef Tacos",              desc:"Seasoned beef, all the toppings",time:"30 min · 4 srv", category:"Quick & Easy",   headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Chicken Tikka Masala",    desc:"Tender chicken, rich tomato sauce",time:"45 min · 4 srv",category:"Comfort Food",  headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Pad Thai",                desc:"Classic street noodles",        time:"25 min · 2 srv", category:"Under 30 Mins",   headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
+  {title:"Eggs Benedict",           desc:"Hollandaise, perfectly poached", time:"30 min · 2 srv", category:"Weekend Brunch", headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Beef Bourguignon",        desc:"Slow-braised in red wine",      time:"3 hrs · 6 srv",  category:"Weekend Project", headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
+  {title:"Lemon Herb Salmon",       desc:"Bright, flaky, effortless",     time:"20 min · 2 srv", category:"Under 30 Mins",   headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Butter Chicken",          desc:"Silky, aromatic, crowd-pleasing",time:"40 min · 4 srv", category:"Comfort Food",   headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Caesar Salad",            desc:"Crispy romaine, house dressing", time:"15 min · 2 srv", category:"Quick & Easy",   headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
+  {title:"Margherita Pizza",        desc:"Fresh basil, buffalo mozzarella",time:"35 min · 4 srv", category:"Fan Favourite",  headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Ramen",                   desc:"Rich broth, soft-boiled egg",   time:"1 hr · 2 srv",   category:"Weekend Project", headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Fried Rice",              desc:"Wok-tossed, better than takeout",time:"20 min · 4 srv", category:"Under 30 Mins",  headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
+  {title:"Thai Green Curry",        desc:"Coconut, lemongrass, fragrant",  time:"35 min · 4 srv", category:"Bold & Spicy",   headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Spaghetti Carbonara",     desc:"Silky egg sauce, crispy pancetta",time:"25 min · 2 srv", category:"Quick & Easy",  headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Beef Short Ribs",         desc:"Fall-off-the-bone braised ribs",  time:"3.5 hrs · 4 srv",category:"Weekend Project",headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
+  {title:"Greek Salad",             desc:"Crisp, bright, feta-forward",    time:"15 min · 2 srv", category:"Quick & Easy",   headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Crab Cakes",              desc:"Golden crust, lump crab",        time:"30 min · 4 srv", category:"Staff Pick",     headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
 ];
+
+function seededShuffle<T>(arr: T[], seed: number): T[]{
+  const a=[...arr];
+  let s=seed;
+  for(let i=a.length-1;i>0;i--){s=(s*1664525+1013904223)&0xffffffff;const j=Math.abs(s)%(i+1);[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+// Use day of year as seed so it changes daily but stays consistent within the same day
+const dayOfYear=Math.floor((Date.now()-new Date(new Date().getFullYear(),0,0).getTime())/86400000);
+const SUGGESTION_CARDS=seededShuffle(CARD_POOL,dayOfYear).slice(0,8);
 const DIETS    = ["Vegetarian","Vegan","Gluten-Free","Dairy-Free","Keto","Low-Carb"];
 const DAYS     = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 const DAY_KEYS = ["mon","tue","wed","thu","fri","sat","sun"];
@@ -704,6 +738,8 @@ export default function App(){
   const [savedSearch,setSavedSearch] = useState("");
   const [confirmRemove,setConfirmRemove] = useState<number|null>(null);
   const [ratings,setRatings]     = useState<Record<number,number>>({});
+  const [categoryOverrides,setCategoryOverrides] = useState<Record<number,string>>({});
+  const [editingCategory,setEditingCategory] = useState<number|null>(null);
   const [plan,setPlan]           = useState<Record<string,any>>({});
   const [assignDay,setAssignDay] = useState<string|null>(null);
   const [scanPreview,setScanPreview] = useState<string|null>(null);
@@ -746,6 +782,7 @@ export default function App(){
       try{const h=localStorage.getItem("dw-history");if(h)setHistory(JSON.parse(h));}catch{}
       try{const rt=localStorage.getItem("dw-retailer");if(rt)setRetailer(rt);}catch{}
       try{const rg=localStorage.getItem("dw-ratings");if(rg)setRatings(JSON.parse(rg));}catch{}
+      try{const co=localStorage.getItem("dw-cat-overrides");if(co)setCategoryOverrides(JSON.parse(co));}catch{}
       setReady(true);
     }
     load();
@@ -756,6 +793,7 @@ export default function App(){
   useEffect(()=>{if(ready&&location)try{localStorage.setItem("dw-location",location);}catch{};},[location,ready]);
   useEffect(()=>{if(ready&&retailer)try{localStorage.setItem("dw-retailer",retailer);}catch{};},[retailer,ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-ratings",JSON.stringify(ratings));}catch{};},[ratings,ready]);
+  useEffect(()=>{if(ready)try{localStorage.setItem("dw-cat-overrides",JSON.stringify(categoryOverrides));}catch{};},[categoryOverrides,ready]);
 
   /* family code helpers */
   const loadShared=async(code: string)=>{
@@ -886,10 +924,31 @@ export default function App(){
   /* scan */
   const onFileChange=(e: React.ChangeEvent<HTMLInputElement>)=>{
     const file=e.target.files?.[0];if(!file)return;
-    setScanMime(file.type||"image/jpeg");setScanStatus("idle");setScanMsg("");
-    const reader=new FileReader();
-    reader.onload=(ev)=>setScanPreview(ev.target?.result as string);
-    reader.readAsDataURL(file);
+    setScanStatus("idle");setScanMsg("");
+    if(file.size>10*1024*1024){
+      setScanStatus("error");setScanMsg("Image too large — please use a photo under 10MB.");
+      if(fileRef.current)fileRef.current.value="";return;
+    }
+    const objectUrl=URL.createObjectURL(file);
+    const img=new window.Image();
+    img.onload=()=>{
+      URL.revokeObjectURL(objectUrl);
+      const MAX=1600;
+      let w=img.width,h=img.height;
+      if(w>MAX||h>MAX){if(w>h){h=Math.round(h*(MAX/w));w=MAX;}else{w=Math.round(w*(MAX/h));h=MAX;}}
+      const canvas=document.createElement("canvas");
+      canvas.width=w;canvas.height=h;
+      const ctx=canvas.getContext("2d");
+      if(!ctx){setScanStatus("error");setScanMsg("Could not process image. Try a different file.");return;}
+      ctx.drawImage(img,0,0,w,h);
+      setScanMime("image/jpeg");
+      setScanPreview(canvas.toDataURL("image/jpeg",0.85));
+    };
+    img.onerror=()=>{
+      URL.revokeObjectURL(objectUrl);
+      setScanStatus("error");setScanMsg("Could not read this image. Try a screenshot or different photo.");
+    };
+    img.src=objectUrl;
   };
   const doScan=async()=>{
     if(!scanPreview)return;setScanStatus("scanning");setScanMsg("");
@@ -1014,7 +1073,11 @@ export default function App(){
             </div>
             {/* Content */}
             <div className="hero-content">
-              <div className="hero-eyebrow">Welcome to Every Chef</div>
+              <div className="hero-eyebrow">
+                <span className="hero-eyebrow-pre">Welcome to</span>
+                <span className="hero-eyebrow-name">EVERY CHEF</span>
+                <span className="hero-eyebrow-sub">The original recipe synthesizer</span>
+              </div>
               <h1 className="hero-title">What would you<br/><em>like to cook?</em></h1>
               <div className="hero-rule-wrap"><div className="hero-rule"/><div className="hero-diamond"/><div className="hero-rule"/></div>
               <p className="hero-sub">The <strong>best recipes on the internet</strong>, combined, refined, just for you.</p>
@@ -1105,6 +1168,7 @@ export default function App(){
 
           <div className="scan-divider" style={{marginTop:24}}><div className="scan-divider-line"/><div className="scan-divider-text">or import from a url</div><div className="scan-divider-line"/></div>
             <div className="url-area">
+              <div className="url-inner">
               <div className="url-label">{Ic.link(16)} Paste a Recipe URL</div>
               <div className="url-sub">Paste any recipe link — we'll strip the ads and noise, returning just the clean recipe. Works on AllRecipes, Serious Eats, Simply Recipes and most open sites.</div>
               <div className="url-row">
@@ -1122,6 +1186,7 @@ export default function App(){
                 </div>
               )}
               {urlStatus==="error"&&<div className="url-error">{urlMsg}</div>}
+              </div>{/* url-inner */}
             </div>
 
           </div>
@@ -1438,10 +1503,10 @@ export default function App(){
       (r.tagline||"").toLowerCase().includes(savedSearch.toLowerCase())
     );
 
-    // Group by category
+    // Group by category (respect overrides)
     const grouped: Record<string,any[]>={};
     filtered.forEach((r:any)=>{
-      const cat=guessCategory(r);
+      const cat=categoryOverrides[r.id]||guessCategory(r);
       if(!grouped[cat])grouped[cat]=[];
       grouped[cat].push(r);
     });
@@ -1510,7 +1575,19 @@ export default function App(){
                       const isConfirming=confirmRemove===r.id;
                       return(
                         <div key={r.id} className="recipe-card" onClick={()=>{setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
-                          <div className="card-tag">{r._scanned?"Scanned":r._imported?"Imported":isSharedOnly?"Shared":r.seasonal_note?"Seasonal":"Saved"}</div>
+                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                            <div className="card-tag">{r._scanned?"Scanned":r._imported?"Imported":isSharedOnly?"Shared":r.seasonal_note?"Seasonal":"Saved"}</div>
+                            {!isSharedOnly&&(
+                              editingCategory===r.id?(
+                                <select className="cat-select" value={categoryOverrides[r.id]||guessCategory(r)}
+                                  onChange={e=>{setCategoryOverrides(p=>({...p,[r.id]:e.target.value}));setEditingCategory(null);}}>
+                                  {RECIPE_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
+                                </select>
+                              ):(
+                                <button className="cat-edit-btn" onClick={e=>{e.stopPropagation();setEditingCategory(r.id);}}>Change category</button>
+                              )
+                            )}
+                          </div>
                           <div className="card-title">{r.title}</div>
                           <div className="card-desc">{r.tagline}</div>
                           <div className="card-meta"><span>{r.prep_time} prep</span><span>{r.cook_time} cook</span><span>{r.servings} srv</span></div>
