@@ -1867,12 +1867,10 @@ export default function App(){
       <style>{CSS}</style>
       {/* Desktop top nav */}
       <nav className="nav">
+        <div className="nav-left"/>
         <button className="nav-brand" onClick={()=>{setTab("search");setStatus("idle");setRecipe(null);setQuery("");}}>
-          <LogoMark size={32}/>
-          <div className="nav-brand-text">
-            <span className="nav-brand-name">Every Chef</span>
-            <span className="nav-brand-sub">The Recipe Synthesizer</span>
-          </div>
+          <span className="nav-brand-upright">every</span>
+          <span className="nav-brand-italic">chef</span>
         </button>
         <div className="nav-tabs">
           {([
