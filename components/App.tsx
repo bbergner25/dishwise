@@ -36,19 +36,41 @@ const CSS = `
   body{font-family:'Outfit',sans-serif;background:#FDFAF5;color:#151210;min-height:100vh;padding-bottom:80px;}
   @media(min-width:768px){body{padding-bottom:0;}}
 
-  /* ── TOP NAV (desktop) ── */
+  /* ── TOP NAV (desktop) — midnight ribbon ── */
   .nav{display:none;}
   @media(min-width:768px){
-    .nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:60px;border-bottom:1px solid #EDE8E0;background:#FDFAF5;position:sticky;top:0;z-index:100;}
-    .nav-brand{background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:0;}
-    .nav-brand-text{display:flex;flex-direction:column;line-height:1.1;align-items:flex-start;}
-    .nav-brand-name{font-family:'Fraunces',serif;font-size:17px;font-weight:700;color:#151210;letter-spacing:-0.3px;line-height:1.1;}
-    .nav-brand-sub{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#7A6E6A;font-family:'Outfit',sans-serif;font-weight:400;margin-top:2px;}
-    .nav-tabs{display:flex;gap:4px;}
-    .nav-tab{padding:7px 16px;border-radius:100px;border:none;background:transparent;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;color:#7A6E6A;cursor:pointer;transition:all .15s;position:relative;}
-    .nav-tab.active{background:#151210;color:#fff;}
-    .nav-tab:not(.active):hover{background:#FFF0D4;color:#151210;}
-    .nav-badge{position:absolute;top:3px;right:5px;background:#F4A021;color:#fff;font-size:9px;font-weight:700;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+    .nav{
+      display:grid;grid-template-columns:1fr auto 1fr;
+      align-items:center;padding:0 32px;height:68px;
+      background:#1A1F2E;position:sticky;top:0;z-index:100;
+      border-bottom:2px solid rgba(244,160,33,.15);
+    }
+    .nav-brand{
+      background:none;border:none;cursor:pointer;
+      display:flex;align-items:baseline;gap:0.18em;
+      justify-content:center;padding:0;
+    }
+    .nav-brand-upright{
+      font-family:'Fraunces',serif;font-size:28px;font-weight:700;
+      font-variation-settings:'opsz' 9,'WONK' 1;
+      color:#FDFAF5;font-style:normal;letter-spacing:-0.5px;line-height:1;
+    }
+    .nav-brand-italic{
+      font-family:'Fraunces',serif;font-size:28px;font-weight:700;
+      font-variation-settings:'opsz' 9,'WONK' 1;
+      color:#F4A021;font-style:italic;letter-spacing:-0.5px;line-height:1;
+    }
+    .nav-brand-text{display:none;}
+    .nav-left{display:flex;align-items:center;}
+    .nav-tabs{display:flex;gap:4px;justify-content:flex-end;}
+    .nav-tab{
+      padding:7px 16px;border-radius:100px;border:none;background:transparent;
+      font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;
+      color:rgba(253,250,245,.6);cursor:pointer;transition:all .15s;position:relative;
+    }
+    .nav-tab.active{background:#F4A021;color:#151210;font-weight:600;}
+    .nav-tab:not(.active):hover{background:rgba(244,160,33,.15);color:#FDFAF5;}
+    .nav-badge{position:absolute;top:3px;right:5px;background:#E8431A;color:#fff;font-size:9px;font-weight:700;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
   }
 
   /* ── BOTTOM NAV (mobile) ── */
@@ -64,11 +86,22 @@ const CSS = `
   @media(min-width:768px){.bottom-nav{display:none;}}
   .bottom-nav-brand{
     display:flex;flex-direction:column;align-items:center;justify-content:center;
-    padding:6px 8px 4px;background:none;border:none;cursor:pointer;
-    font-family:'Outfit',sans-serif;font-size:9px;font-weight:500;
-    letter-spacing:1.5px;text-transform:uppercase;color:#151210;flex:1.2;gap:3px;
+    padding:4px 8px 4px;background:none;border:none;cursor:pointer;
+    flex:1.2;gap:2px;
   }
-  .bottom-nav-brand .bnb-icon{display:flex;align-items:center;}
+  .bnb-app-icon{
+    width:32px;height:32px;background:#1A1F2E;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;font-weight:700;font-style:italic;
+    font-variation-settings:'opsz' 9,'WONK' 1;
+    font-size:20px;color:#F4A021;line-height:1;
+    letter-spacing:-1px;
+  }
+  .bnb-label{
+    font-family:'Outfit',sans-serif;font-size:9px;font-weight:500;
+    letter-spacing:1px;text-transform:uppercase;color:#151210;line-height:1;
+  }
+  .bottom-nav-brand .bnb-icon{display:none;}
   .bottom-tab{
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     padding:8px 4px 4px;background:none;border:none;cursor:pointer;
@@ -99,13 +132,15 @@ const CSS = `
     100%{transform:translateY(-220px) scale(2.8);opacity:0;}
   }
   .hero-content{position:relative;z-index:2;max-width:560px;margin:0 auto;}
-  .hero-eyebrow{display:inline-flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:24px;}
+  .hero-eyebrow{display:inline-flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:32px;}
+  @media(min-width:768px){.hero-eyebrow{display:none;}}
   .hero-eyebrow-pre{display:none;}
   .hero-eyebrow-name{font-family:'Fraunces',serif;font-size:40px;font-weight:700;font-variation-settings:'opsz' 9,'WONK' 1;letter-spacing:-1px;line-height:1;display:flex;align-items:baseline;gap:0.18em;}
   .hero-eyebrow-name .wm-upright{color:#1A1F2E;font-style:normal;}
   .hero-eyebrow-name .wm-italic{color:#F4A021;font-style:italic;}
   .hero-eyebrow-sub{font-family:'Outfit',sans-serif;font-size:10px;font-weight:500;color:#7A6E6A;letter-spacing:2px;text-transform:uppercase;}
   .hero-title{font-family:'Fraunces',serif;font-size:clamp(34px,6vw,56px);line-height:1.05;margin-bottom:0;color:#151210;font-weight:700;font-variation-settings:'opsz' 9,'WONK' 1;letter-spacing:-0.5px;}
+  @media(max-width:767px){.hero-title{margin-top:4px;}}
   .hero-title em{color:#F4A021;font-style:italic;position:relative;}
   .hero-rule-wrap{display:none;}
   .hero-sub{font-size:15px;color:#7A6E6A;font-weight:300;line-height:1.6;max-width:480px;margin:16px auto 24px;}
@@ -1857,11 +1892,10 @@ export default function App(){
       {/* Mobile bottom nav */}
       <div className="bottom-nav">
         <button className="bottom-nav-brand" onClick={()=>{setTab("search");setStatus("idle");setRecipe(null);setQuery("");}}>
-          <span className="bnb-icon">{LogoMark({size:20})}</span>
-          <span>Every Chef</span>
+          <span className="bnb-app-icon">e</span>
+          <span className="bnb-label">Home</span>
         </button>
         {([
-          {key:"search",icon:Ic.search(20),label:"Search"},
           {key:"inspire",icon:Ic.inspire(20),label:"Inspire"},
           {key:"saved",icon:tab==="saved"?Ic.heartFill(20):Ic.heart(20),label:"Saved",badge:saved.length||null},
           {key:"week",icon:Ic.calendar(20),label:"Week",badge:mealsPlanned||null},
