@@ -11,6 +11,7 @@ const C = {
 // Thin-stroke SVG outline icons — 1.5px stroke, no fill
 const Ic = {
   search:(s=20)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
+  refresh:(s=20)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>,
   inspire:(s=20)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
   heart:(s=20)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>,
   heartFill:(s=20)=><svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>,
@@ -53,8 +54,11 @@ const CSS = `
   .bottom-nav{
     display:flex;position:fixed;bottom:0;left:0;right:0;z-index:100;
     background:#fff;border-top:2px solid #151210;
-    padding:0 16px env(safe-area-inset-bottom,0px);
-    height:68px;align-items:stretch;
+    padding:0 16px;
+    padding-bottom:max(env(safe-area-inset-bottom,0px),8px);
+    height:calc(60px + max(env(safe-area-inset-bottom,0px),8px));
+    align-items:flex-start;
+    padding-top:8px;
   }
   @media(min-width:768px){.bottom-nav{display:none;}}
   .bottom-nav-brand{
@@ -94,9 +98,11 @@ const CSS = `
     100%{transform:translateY(-220px) scale(2.8);opacity:0;}
   }
   .hero-content{position:relative;z-index:2;max-width:560px;margin:0 auto;}
-  .hero-eyebrow{display:inline-flex;flex-direction:column;align-items:center;gap:4px;background:#FFF0D4;border:1px solid #F4A021;border-radius:16px;padding:12px 24px;margin-bottom:20px;}
-  .hero-eyebrow-pre{font-family:'Outfit',sans-serif;font-size:11px;font-weight:500;color:#7A6E6A;letter-spacing:1.5px;text-transform:uppercase;}
-  .hero-eyebrow-name{font-family:'Fraunces',serif;font-size:26px;font-weight:900;color:#151210;letter-spacing:-0.5px;line-height:1;}
+  .hero-eyebrow{display:inline-flex;flex-direction:column;align-items:center;gap:4px;background:#FFF0D4;border:1px solid #F4A021;border-radius:16px;padding:12px 28px;margin-bottom:20px;}
+  .hero-eyebrow-pre{font-family:'Outfit',sans-serif;font-size:11px;font-weight:500;color:#7A6E6A;letter-spacing:2px;text-transform:uppercase;}
+  .hero-eyebrow-name{font-family:'Fraunces',serif;font-size:32px;font-weight:700;letter-spacing:-0.5px;line-height:1;display:flex;align-items:baseline;gap:0.2em;}
+  .hero-eyebrow-name .wm-upright{color:#151210;font-style:normal;}
+  .hero-eyebrow-name .wm-italic{color:#F4A021;font-style:italic;}
   .hero-eyebrow-sub{font-family:'Outfit',sans-serif;font-size:10px;font-weight:500;color:#7A6E6A;letter-spacing:1px;text-transform:uppercase;}
   .hero-title{font-family:'Fraunces',serif;font-size:clamp(34px,6vw,56px);line-height:1.05;margin-bottom:0;color:#151210;font-weight:700;letter-spacing:-0.5px;}
   .hero-title em{color:#F4A021;font-style:italic;position:relative;}
@@ -434,7 +440,7 @@ const CSS = `
   .inspire-card-meta{display:flex;gap:12px;font-size:11px;color:#7A6E6A;flex-wrap:wrap;margin-bottom:10px;}
   .inspire-card-btn{width:100%;padding:8px;background:#151210;color:#fff;border:none;border-radius:8px;font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;}
   .inspire-card-btn:hover{background:#2D5A42;}
-  .inspire-reset{background:none;border:none;cursor:pointer;font-family:'Outfit',sans-serif;font-size:13px;color:#F4A021;text-decoration:underline;text-underline-offset:3px;display:block;margin:24px auto 0;}
+  .inspire-reset{background:none;border:none;cursor:pointer;font-family:'Outfit',sans-serif;font-size:13px;color:#F4A021;text-decoration:underline;text-underline-offset:3px;display:block;margin:24px auto 120px;}
 
   /* Family */
   .family-wrap{max-width:560px;margin:0 auto;padding:40px 24px 40px;}
@@ -736,6 +742,7 @@ export default function App(){
   const [history,setHistory]     = useState<any[]>([]);
   const [savedTab,setSavedTab]   = useState("saved");
   const [savedSearch,setSavedSearch] = useState("");
+  const [cardSeed,setCardSeed]       = useState(dayOfYear);
   const [confirmRemove,setConfirmRemove] = useState<number|null>(null);
   const [ratings,setRatings]     = useState<Record<number,number>>({});
   const [categoryOverrides,setCategoryOverrides] = useState<Record<number,string>>({});
@@ -1075,7 +1082,10 @@ export default function App(){
             <div className="hero-content">
               <div className="hero-eyebrow">
                 <span className="hero-eyebrow-pre">Welcome to</span>
-                <span className="hero-eyebrow-name">EVERY CHEF</span>
+                <div className="hero-eyebrow-name">
+                  <span className="wm-upright">every</span>
+                  <span className="wm-italic">chef</span>
+                </div>
                 <span className="hero-eyebrow-sub">The original recipe synthesizer</span>
               </div>
               <h1 className="hero-title">What would you<br/><em>like to cook?</em></h1>
@@ -1115,9 +1125,12 @@ export default function App(){
           <div className="mosaic-section">
             <div className="mosaic-header">
               <div className="mosaic-title">Or try <em>one of these</em></div>
+              <button onClick={()=>setCardSeed(s=>s+1)} style={{background:"none",border:"1.5px solid #EDE8E0",borderRadius:"100px",padding:"5px 14px",fontFamily:"'Outfit',sans-serif",fontSize:12,fontWeight:600,color:"#7A6E6A",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
+                {Ic.refresh(13)} New set
+              </button>
             </div>
             <div className="mosaic-grid">
-              {SUGGESTION_CARDS.map((card)=>(
+              {seededShuffle(CARD_POOL,cardSeed).slice(0,8).map((card)=>(
                 <div key={card.title}
                   className="mosaic-card"
                   onClick={()=>{setQuery(card.title);doSearch(card.title);}}>
