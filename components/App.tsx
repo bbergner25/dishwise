@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { useUser, useClerk } from "@clerk/nextjs";
 
 const C = {
   cream:"#FDFAF5",parchment:"#FFF0D4",brown:"#151210",
@@ -136,6 +137,22 @@ const CSS = `
   .bottom-tab .bt-label{font-size:10px;line-height:1;}
   .bottom-tab .nav-badge{position:absolute;top:6px;right:calc(50% - 18px);background:#F4A021;color:#fff;font-size:8px;font-weight:700;width:13px;height:13px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
   .nav-badge{position:absolute;top:3px;right:5px;background:#F4A021;color:#fff;font-size:9px;font-weight:700;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+
+  /* ── AUTH ── */
+  .auth-btn{padding:6px 16px;border-radius:100px;border:1.5px solid rgba(244,160,33,.4);background:transparent;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;color:rgba(253,250,245,.8);cursor:pointer;transition:all .15s;white-space:nowrap;}
+  .auth-btn:hover{background:rgba(244,160,33,.15);border-color:#F4A021;color:#FDFAF5;}
+  .auth-btn.signed-in{border-color:rgba(253,250,245,.2);color:rgba(253,250,245,.6);}
+  .auth-user{display:flex;align-items:center;gap:8px;}
+  .auth-avatar{width:28px;height:28px;border-radius:50%;border:2px solid #F4A021;object-fit:cover;}
+  .auth-avatar-placeholder{width:28px;height:28px;border-radius:50%;background:#F4A021;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:13px;font-weight:700;color:#1A1F2E;}
+  /* Save prompt modal */
+  .save-prompt-overlay{position:fixed;inset:0;background:rgba(26,31,46,.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .save-prompt{background:#FDFAF5;border-radius:24px;padding:32px 28px;max-width:380px;width:100%;text-align:center;}
+  .save-prompt-icon{font-size:40px;margin-bottom:16px;}
+  .save-prompt-title{font-family:'Fraunces',serif;font-size:24px;font-weight:700;color:#1A1F2E;margin-bottom:8px;letter-spacing:-0.5px;}
+  .save-prompt-sub{font-size:14px;color:#7A6E6A;line-height:1.5;margin-bottom:24px;}
+  .save-prompt-btn{width:100%;padding:13px;background:#F4A021;color:#151210;border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px;}
+  .save-prompt-skip{background:none;border:none;font-family:'Outfit',sans-serif;font-size:13px;color:#7A6E6A;cursor:pointer;text-decoration:underline;text-underline-offset:3px;}
 
   /* ── HERO — Every Chef ── */
   .hero{position:relative;overflow:hidden;padding:56px 24px 44px;text-align:center;background:#fff;border-bottom:1px solid #EDE8E0;}
@@ -786,6 +803,8 @@ async function callAPI(messages: any[]): Promise<any>{
 
 /* ── MAIN APP ── */
 export default function App(){
+  const {user,isLoaded}          = useUser();
+  const {signOut,openSignIn}     = useClerk();
   const [tab,setTab]             = useState("search");
   const [query,setQuery]         = useState("");
   const [diets,setDiets]         = useState<string[]>([]);
@@ -801,6 +820,8 @@ export default function App(){
   const [savedTab,setSavedTab]   = useState("saved");
   const [savedSearch,setSavedSearch] = useState("");
   const [cardSeed,setCardSeed]       = useState(dayOfYear);
+  const [showSavePrompt,setShowSavePrompt] = useState(false);
+  const [pendingSave,setPendingSave]   = useState<any>(null);
   const [confirmRemove,setConfirmRemove] = useState<number|null>(null);
   const [ratings,setRatings]     = useState<Record<number,number>>({});
   const [categoryOverrides,setCategoryOverrides] = useState<Record<number,string>>({});
@@ -1933,6 +1954,14 @@ export default function App(){
             {badge?<span className="nav-badge">{badge}</span>:null}
           </button>
         ))}
+        {user?(
+          <div className="auth-user">
+            {user.imageUrl?<img className="auth-avatar" src={user.imageUrl} alt=""/>:<div className="auth-avatar-placeholder">{(user.firstName||user.emailAddresses[0]?.emailAddress||"U")[0].toUpperCase()}</div>}
+            <button className="auth-btn signed-in" onClick={()=>signOut()}>Sign out</button>
+          </div>
+        ):(
+          <button className="auth-btn" onClick={()=>openSignIn()}>Sign in</button>
+        )}
       </div>
       {tab==="search"&&SearchView()}
       {tab==="inspire"&&InspireView()}
@@ -1940,6 +1969,24 @@ export default function App(){
       {tab==="week"&&WeekView()}
       {tab==="family"&&FamilyView()}
       {Modal()}
+      {showSavePrompt&&(
+        <div className="save-prompt-overlay" onClick={()=>{setShowSavePrompt(false);setPendingSave(null);}}>
+          <div className="save-prompt" onClick={e=>e.stopPropagation()}>
+            <div className="save-prompt-icon">🔖</div>
+            <div className="save-prompt-title">Save your recipes</div>
+            <div className="save-prompt-sub">Sign in to save recipes across all your devices. Free, takes 10 seconds.</div>
+            <button className="save-prompt-btn" onClick={()=>{
+              setShowSavePrompt(false);
+              openSignIn();
+            }}>Sign in to save</button>
+            <button className="save-prompt-skip" onClick={()=>{
+              setShowSavePrompt(false);
+              if(pendingSave){setSaved((l:any[])=>[{...pendingSave,_savedAt:Date.now(),id:pendingSave.id||Date.now()},...l]);}
+              setPendingSave(null);
+            }}>Save without account (this device only)</button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
