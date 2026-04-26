@@ -1910,7 +1910,19 @@ export default function App(){
       <style>{CSS}</style>
       {/* Desktop top nav */}
       <nav className="nav">
-        <div className="nav-left"/>
+        <div className="nav-left">
+          {user ? (
+            <div className="auth-user">
+              {user.imageUrl
+                ? <img className="auth-avatar" src={user.imageUrl} alt=""/>
+                : <div className="auth-avatar-placeholder">{(user.firstName||user.emailAddresses[0]?.emailAddress||"U")[0].toUpperCase()}</div>
+              }
+              <button className="auth-btn signed-in" onClick={()=>signOut()}>Sign out</button>
+            </div>
+          ) : (
+            <button className="auth-btn" onClick={()=>openSignIn()}>Sign in</button>
+          )}
+        </div>
         <button className="nav-brand" onClick={()=>{setTab("search");setStatus("idle");setRecipe(null);setQuery("");}}>
           <span className="nav-brand-upright">every</span>
           <span className="nav-brand-italic">chef</span>
@@ -1954,14 +1966,10 @@ export default function App(){
             {badge?<span className="nav-badge">{badge}</span>:null}
           </button>
         ))}
-        {user?(
-          <div className="auth-user">
-            {user.imageUrl?<img className="auth-avatar" src={user.imageUrl} alt=""/>:<div className="auth-avatar-placeholder">{(user.firstName||user.emailAddresses[0]?.emailAddress||"U")[0].toUpperCase()}</div>}
-            <button className="auth-btn signed-in" onClick={()=>signOut()}>Sign out</button>
-          </div>
-        ):(
-          <button className="auth-btn" onClick={()=>openSignIn()}>Sign in</button>
-        )}
+        <button className="bottom-tab" onClick={()=>user?signOut():openSignIn()}>
+          <span className="bt-icon">{user?"👤":"🔑"}</span>
+          <span className="bt-label">{user?"Account":"Sign in"}</span>
+        </button>
       </div>
       {tab==="search"&&SearchView()}
       {tab==="inspire"&&InspireView()}
