@@ -73,6 +73,29 @@ const CSS = `
     .nav-badge{position:absolute;top:3px;right:5px;background:#E8431A;color:#fff;font-size:9px;font-weight:700;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
   }
 
+  /* ── MOBILE TOP HEADER ── */
+  .mobile-header{
+    display:flex;align-items:center;justify-content:center;
+    background:#1A1F2E;height:52px;
+    position:sticky;top:0;z-index:100;
+    border-bottom:1px solid rgba(244,160,33,.15);
+  }
+  @media(min-width:768px){.mobile-header{display:none;}}
+  .mobile-header-brand{
+    background:none;border:none;cursor:pointer;
+    display:flex;align-items:baseline;gap:0.18em;padding:0;
+  }
+  .mobile-header-upright{
+    font-family:'Fraunces',serif;font-weight:700;
+    font-variation-settings:'opsz' 9,'WONK' 1;
+    font-size:26px;color:#FDFAF5;font-style:normal;letter-spacing:-0.5px;line-height:1;
+  }
+  .mobile-header-italic{
+    font-family:'Fraunces',serif;font-weight:700;
+    font-variation-settings:'opsz' 9,'WONK' 1;
+    font-size:26px;color:#F4A021;font-style:italic;letter-spacing:-0.5px;line-height:1;
+  }
+
   /* ── BOTTOM NAV (mobile) ── */
   .bottom-nav{
     display:flex;position:fixed;bottom:0;left:0;right:0;z-index:100;
@@ -132,8 +155,7 @@ const CSS = `
     100%{transform:translateY(-220px) scale(2.8);opacity:0;}
   }
   .hero-content{position:relative;z-index:2;max-width:560px;margin:0 auto;}
-  .hero-eyebrow{display:inline-flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:32px;}
-  @media(min-width:768px){.hero-eyebrow{display:none;}}
+  .hero-eyebrow{display:none;}
   .hero-eyebrow-pre{display:none;}
   .hero-eyebrow-name{font-family:'Fraunces',serif;font-size:40px;font-weight:700;font-variation-settings:'opsz' 9,'WONK' 1;letter-spacing:-1px;line-height:1;display:flex;align-items:baseline;gap:0.18em;}
   .hero-eyebrow-name .wm-upright{color:#1A1F2E;font-style:normal;}
@@ -1888,6 +1910,12 @@ export default function App(){
       </nav>
 
       {/* Mobile bottom nav */}
+      <div className="mobile-header">
+        <button className="mobile-header-brand" onClick={()=>{setTab("search");setStatus("idle");setRecipe(null);setQuery("");}}>
+          <span className="mobile-header-upright">every</span>
+          <span className="mobile-header-italic">chef</span>
+        </button>
+      </div>
       <div className="bottom-nav">
         <button className="bottom-nav-brand" onClick={()=>{setTab("search");setStatus("idle");setRecipe(null);setQuery("");}}>
           <span className="bnb-app-icon">e</span>
