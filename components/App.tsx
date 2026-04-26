@@ -30,8 +30,9 @@ const Ic = {
 };
 
 const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9,700;1,9,700&family=Outfit:wght@300;400;500;600;700&display=swap');
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  *{font-variation-settings:'opsz' 9,'WONK' 1;}
   body{font-family:'Outfit',sans-serif;background:#FDFAF5;color:#151210;min-height:100vh;padding-bottom:80px;}
   @media(min-width:768px){body{padding-bottom:0;}}
 
@@ -98,13 +99,13 @@ const CSS = `
     100%{transform:translateY(-220px) scale(2.8);opacity:0;}
   }
   .hero-content{position:relative;z-index:2;max-width:560px;margin:0 auto;}
-  .hero-eyebrow{display:inline-flex;flex-direction:column;align-items:center;gap:4px;background:#FFF0D4;border:1px solid #F4A021;border-radius:16px;padding:12px 28px;margin-bottom:20px;}
-  .hero-eyebrow-pre{font-family:'Outfit',sans-serif;font-size:11px;font-weight:500;color:#7A6E6A;letter-spacing:2px;text-transform:uppercase;}
-  .hero-eyebrow-name{font-family:'Fraunces',serif;font-size:32px;font-weight:700;letter-spacing:-0.5px;line-height:1;display:flex;align-items:baseline;gap:0.2em;}
-  .hero-eyebrow-name .wm-upright{color:#151210;font-style:normal;}
+  .hero-eyebrow{display:inline-flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:24px;}
+  .hero-eyebrow-pre{display:none;}
+  .hero-eyebrow-name{font-family:'Fraunces',serif;font-size:40px;font-weight:700;font-variation-settings:'opsz' 9,'WONK' 1;letter-spacing:-1px;line-height:1;display:flex;align-items:baseline;gap:0.18em;}
+  .hero-eyebrow-name .wm-upright{color:#1A1F2E;font-style:normal;}
   .hero-eyebrow-name .wm-italic{color:#F4A021;font-style:italic;}
-  .hero-eyebrow-sub{font-family:'Outfit',sans-serif;font-size:10px;font-weight:500;color:#7A6E6A;letter-spacing:1px;text-transform:uppercase;}
-  .hero-title{font-family:'Fraunces',serif;font-size:clamp(34px,6vw,56px);line-height:1.05;margin-bottom:0;color:#151210;font-weight:700;letter-spacing:-0.5px;}
+  .hero-eyebrow-sub{font-family:'Outfit',sans-serif;font-size:10px;font-weight:500;color:#7A6E6A;letter-spacing:2px;text-transform:uppercase;}
+  .hero-title{font-family:'Fraunces',serif;font-size:clamp(34px,6vw,56px);line-height:1.05;margin-bottom:0;color:#151210;font-weight:700;font-variation-settings:'opsz' 9,'WONK' 1;letter-spacing:-0.5px;}
   .hero-title em{color:#F4A021;font-style:italic;position:relative;}
   .hero-rule-wrap{display:none;}
   .hero-sub{font-size:15px;color:#7A6E6A;font-weight:300;line-height:1.6;max-width:480px;margin:16px auto 24px;}
