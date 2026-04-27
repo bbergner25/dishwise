@@ -34,8 +34,8 @@ const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9,700;1,9,700&family=Outfit:wght@300;400;500;600;700&display=swap');
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   *{font-variation-settings:'opsz' 9,'WONK' 1;}
-  html{background:#1A1F2E;overscroll-behavior:none;}
-  body{font-family:'Outfit',sans-serif;background:#FDFAF5;color:#151210;min-height:100vh;padding-bottom:80px;overscroll-behavior-y:none;}
+  html{background:#1A1F2E;}
+  body{font-family:'Outfit',sans-serif;background:#FDFAF5;color:#151210;min-height:100vh;padding-bottom:80px;}
   @media(min-width:768px){body{padding-bottom:0;}}
 
   /* ── TOP NAV (desktop) — midnight ribbon ── */
@@ -82,6 +82,7 @@ const CSS = `
     position:sticky;top:0;z-index:100;
     border-bottom:1px solid rgba(244,160,33,.15);
     padding:0 16px;
+    box-shadow:0 -100vh 0 100vh #1A1F2E;
   }
   @media(min-width:768px){.mobile-header{display:none;}}
   .mobile-header-brand{
