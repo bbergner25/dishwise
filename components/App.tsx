@@ -899,6 +899,7 @@ export default function App(){
   const inputRef    = useRef<HTMLInputElement>(null);
   const fileRef     = useRef<HTMLInputElement>(null);
   const lastScrollY = useRef(0);
+  const cloudLoaded = useRef(false);
 
   /* storage load */
   useEffect(()=>{
@@ -926,26 +927,29 @@ export default function App(){
   /* cloud sync — load on sign-in */
   useEffect(()=>{
     if(!isLoaded||!user)return;
+    cloudLoaded.current=false;
     (async()=>{
       try{
         const res=await fetch("/api/recipes");
-        if(!res.ok)return;
+        if(!res.ok){cloudLoaded.current=true;return;}
         const data=await res.json();
         const cloud:any[]=data.recipes||[];
-        if(!cloud.length)return;
-        setSaved(local=>{
-          const merged=[...local];
-          for(const r of cloud){if(!merged.some(x=>x.id===r.id))merged.push(r);}
-          return merged;
-        });
+        if(cloud.length){
+          setSaved(local=>{
+            const merged=[...local];
+            for(const r of cloud){if(!merged.some(x=>x.id===r.id))merged.push(r);}
+            return merged;
+          });
+        }
       }catch{}
+      finally{cloudLoaded.current=true;}
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[isLoaded,user?.id]);
 
-  /* cloud sync — push on save change */
+  /* cloud sync — push only after cloud pull is done */
   useEffect(()=>{
-    if(!ready||!user)return;
+    if(!ready||!user||!cloudLoaded.current)return;
     fetch("/api/recipes",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({recipes:saved})}).catch(()=>{});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[saved,ready,user?.id]);
