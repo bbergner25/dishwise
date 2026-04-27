@@ -248,7 +248,7 @@ const CSS = `
   .mosaic-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
   .mosaic-title{font-family:'Fraunces',serif;font-size:20px;color:#151210;font-weight:700;}
   .mosaic-title em{color:#F4A021;font-style:italic;}
-  .mosaic-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+  .mosaic-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
   @media(max-width:640px){.mosaic-grid{grid-template-columns:repeat(2,1fr);gap:10px;}}
   .mosaic-card{border-radius:16px;overflow:hidden;cursor:pointer;border:2px solid #EDE8E0;background:#fff;transition:transform .15s,box-shadow .15s,border-color .15s;}
   .mosaic-card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(21,18,16,.12);border-color:#F4A021;}
@@ -265,14 +265,14 @@ const CSS = `
   /* ── IMPORT PAIR (scan + url) ── */
   .import-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:860px;margin:0 auto;}
   @media(max-width:640px){.import-pair{grid-template-columns:1fr;}}
-  .import-card{background:#fff;border:2px solid #EDE8E0;border-radius:18px;padding:24px;display:flex;flex-direction:column;gap:0;transition:border-color .15s,box-shadow .15s;}
+  .import-card{background:#fff;border:2px solid #EDE8E0;border-radius:18px;padding:24px;display:flex;flex-direction:column;gap:0;transition:border-color .15s,box-shadow .15s;text-align:center;align-items:center;}
   .import-card:hover{border-color:#F4A021;box-shadow:4px 4px 0 #F4A021;}
   .import-card-eyebrow{font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#7A6E6A;margin-bottom:12px;}
   .import-card-icon{width:40px;height:40px;background:#1A1F2E;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#F4A021;margin-bottom:14px;flex-shrink:0;}
   .import-card-title{font-family:'Fraunces',serif;font-size:20px;font-weight:700;color:#151210;margin-bottom:6px;line-height:1.15;}
   .import-card-title em{color:#F4A021;font-style:italic;}
   .import-card-desc{font-size:13px;color:#7A6E6A;line-height:1.6;margin-bottom:18px;flex:1;}
-  .import-card-action{margin-top:auto;}
+  .import-card-action{margin-top:auto;width:100%;}
   /* Scan specific */
   .import-scan-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;background:#151210;color:#FDFAF5;border:none;border-radius:100px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;}
   .import-scan-btn:hover{background:#1E3A2F;}
@@ -294,12 +294,13 @@ const CSS = `
   .import-status-ok{padding:9px 12px;background:#F0F5EE;border:1px solid #b5c9a8;border-radius:8px;font-size:12px;color:#4a6040;margin-top:10px;}
   .import-status-err{font-size:12px;color:#E8431A;margin-top:8px;}
 
-  /* Loading */
-  .loading-wrap{text-align:center;padding:80px 24px;}
+  /* Loading overlay */
+  .loading-overlay{position:fixed;inset:0;z-index:200;background:rgba(253,250,245,.75);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .loading-card{background:#fff;border:1px solid #EDE8E0;border-radius:20px;padding:36px 48px;text-align:center;box-shadow:0 8px 40px rgba(26,31,46,.1);}
   .spinner{width:36px;height:36px;border:2.5px solid #EDE8E0;border-top-color:#F4A021;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 20px;}
   @keyframes spin{to{transform:rotate(360deg);}}
-  .loading-text{font-family:'Fraunces',serif;font-size:17px;font-style:italic;}
-  .loading-sub{font-size:13px;color:#7A6E6A;margin-top:8px;}
+  .loading-text{font-family:'Fraunces',serif;font-size:18px;font-style:italic;color:#151210;}
+  .loading-sub{font-size:13px;color:#7A6E6A;margin-top:6px;}
 
   /* ── PREMIUM RECIPE PAGE ── */
   .recipe-page{max-width:860px;margin:0 auto;padding:0 0 80px;}
@@ -621,30 +622,71 @@ const CSS = `
 const SUGGESTIONS = ["Miso Glazed Salmon","Birria Tacos","Shakshuka","Mushroom Risotto","Korean BBQ Bowl","Coconut Curry Noodles","French Onion Soup","Smash Burgers"];
 type CardDef={title:string;desc:string;time:string;category:string;headerBg:string;catColor:string;textLight:boolean};
 const CARD_POOL: CardDef[] = [
-  {title:"Miso Glazed Salmon",      desc:"Umami glaze, crispy skin",      time:"25 min · 4 srv", category:"Staff Pick",      headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
-  {title:"Shakshuka",               desc:"Eggs in spiced tomato",         time:"20 min · 2 srv", category:"Quick & Easy",    headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
-  {title:"Mushroom Risotto",        desc:"Creamy, earthy, indulgent",     time:"40 min · 4 srv", category:"Seasonal",        headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
-  {title:"Birria Tacos",            desc:"Slow-braised, consommé dip",    time:"3 hrs · 6 srv",  category:"Weekend Project", headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
-  {title:"French Onion Soup",       desc:"Classic bistro, gruyère",       time:"50 min · 4 srv", category:"Comfort Food",    headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
-  {title:"Korean BBQ Bowl",         desc:"Gochujang beef, pickled veg",   time:"30 min · 2 srv", category:"Bold & Spicy",    headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
-  {title:"Coconut Curry Noodles",   desc:"Fragrant, creamy, warming",     time:"35 min · 4 srv", category:"Fan Favourite",   headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
-  {title:"Smash Burgers",           desc:"Crispy edges, secret sauce",    time:"20 min · 4 srv", category:"Under 30 Mins",   headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
-  {title:"Beef Tacos",              desc:"Seasoned beef, all the toppings",time:"30 min · 4 srv", category:"Quick & Easy",   headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
-  {title:"Chicken Tikka Masala",    desc:"Tender chicken, rich tomato sauce",time:"45 min · 4 srv",category:"Comfort Food",  headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
-  {title:"Pad Thai",                desc:"Classic street noodles",        time:"25 min · 2 srv", category:"Under 30 Mins",   headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
-  {title:"Eggs Benedict",           desc:"Hollandaise, perfectly poached", time:"30 min · 2 srv", category:"Weekend Brunch", headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
-  {title:"Beef Bourguignon",        desc:"Slow-braised in red wine",      time:"3 hrs · 6 srv",  category:"Weekend Project", headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
-  {title:"Lemon Herb Salmon",       desc:"Bright, flaky, effortless",     time:"20 min · 2 srv", category:"Under 30 Mins",   headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
-  {title:"Butter Chicken",          desc:"Silky, aromatic, crowd-pleasing",time:"40 min · 4 srv", category:"Comfort Food",   headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
-  {title:"Caesar Salad",            desc:"Crispy romaine, house dressing", time:"15 min · 2 srv", category:"Quick & Easy",   headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
-  {title:"Margherita Pizza",        desc:"Fresh basil, buffalo mozzarella",time:"35 min · 4 srv", category:"Fan Favourite",  headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
-  {title:"Ramen",                   desc:"Rich broth, soft-boiled egg",   time:"1 hr · 2 srv",   category:"Weekend Project", headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
-  {title:"Fried Rice",              desc:"Wok-tossed, better than takeout",time:"20 min · 4 srv", category:"Under 30 Mins",  headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
-  {title:"Thai Green Curry",        desc:"Coconut, lemongrass, fragrant",  time:"35 min · 4 srv", category:"Bold & Spicy",   headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
-  {title:"Spaghetti Carbonara",     desc:"Silky egg sauce, crispy pancetta",time:"25 min · 2 srv", category:"Quick & Easy",  headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
-  {title:"Beef Short Ribs",         desc:"Fall-off-the-bone braised ribs",  time:"3.5 hrs · 4 srv",category:"Weekend Project",headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
-  {title:"Greek Salad",             desc:"Crisp, bright, feta-forward",    time:"15 min · 2 srv", category:"Quick & Easy",   headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
-  {title:"Crab Cakes",              desc:"Golden crust, lump crab",        time:"30 min · 4 srv", category:"Staff Pick",     headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  // Saffron
+  {title:"Miso Glazed Salmon",      desc:"Umami glaze, crispy skin",           time:"25 min · 4 srv", category:"Staff Pick",      headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Birria Tacos",            desc:"Slow-braised, consommé dip",         time:"3 hrs · 6 srv",  category:"Weekend Project", headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Coconut Curry Noodles",   desc:"Fragrant, creamy, warming",          time:"35 min · 4 srv", category:"Fan Favourite",   headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Lemon Herb Salmon",       desc:"Bright, flaky, effortless",          time:"20 min · 2 srv", category:"Under 30 Mins",   headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Margherita Pizza",        desc:"Fresh basil, buffalo mozzarella",    time:"35 min · 4 srv", category:"Fan Favourite",   headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Thai Green Curry",        desc:"Coconut, lemongrass, fragrant",      time:"35 min · 4 srv", category:"Bold & Spicy",    headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Chicken Tikka Masala",    desc:"Tender chicken, rich tomato sauce",  time:"45 min · 4 srv", category:"Comfort Food",    headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Greek Salad",             desc:"Crisp, bright, feta-forward",        time:"15 min · 2 srv", category:"Quick & Easy",    headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Crab Cakes",              desc:"Golden crust, lump crab",            time:"30 min · 4 srv", category:"Staff Pick",      headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Fried Rice",              desc:"Wok-tossed, better than takeout",    time:"20 min · 4 srv", category:"Under 30 Mins",   headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Honey Garlic Shrimp",     desc:"Sweet, sticky, 15 minutes",         time:"15 min · 2 srv", category:"Under 30 Mins",   headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Beef Bulgogi",            desc:"Korean BBQ, caramelised edges",      time:"30 min · 4 srv", category:"Fan Favourite",   headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Pulled Pork Sliders",     desc:"Low and slow, tangy slaw",           time:"6 hrs · 8 srv",  category:"Weekend Project", headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Lobster Bisque",          desc:"Rich, velvety, restaurant-worthy",   time:"1 hr · 4 srv",   category:"Staff Pick",      headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Peach Burrata Salad",     desc:"Summer on a plate",                  time:"10 min · 2 srv", category:"Seasonal",        headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Duck Confit",             desc:"Crispy skin, tender fall-off meat",  time:"2 hrs · 2 srv",  category:"Weekend Project", headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Butternut Squash Soup",   desc:"Velvety, warming, a little spice",   time:"40 min · 4 srv", category:"Seasonal",        headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Truffle Pasta",           desc:"Simple, indulgent, date-night",      time:"20 min · 2 srv", category:"Date Night",      headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Chicken Shawarma",        desc:"Spiced, charred, stuffed in pita",   time:"45 min · 4 srv", category:"Fan Favourite",   headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Mango Sticky Rice",       desc:"Thai classic, sweet coconut milk",   time:"30 min · 4 srv", category:"Dessert",         headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Smoked Brisket",          desc:"12-hour smoke, bark perfection",     time:"12 hrs · 8 srv", category:"Weekend Project", headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Baklava",                 desc:"Honey-soaked, flaky layers",         time:"1.5 hrs · 12 srv",category:"Weekend Project",headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Eggs Benedict",           desc:"Hollandaise, perfectly poached",     time:"30 min · 2 srv", category:"Weekend Brunch",  headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  {title:"Shakshuka",               desc:"Eggs poached in spiced tomato",      time:"25 min · 2 srv", category:"Weekend Brunch",  headerBg:"#F4A021",catColor:"#F4A021",textLight:false},
+  // Ember
+  {title:"French Onion Soup",       desc:"Classic bistro, gruyère lid",        time:"50 min · 4 srv", category:"Comfort Food",    headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Smash Burgers",           desc:"Crispy edges, secret sauce",         time:"20 min · 4 srv", category:"Under 30 Mins",   headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Beef Tacos",              desc:"Seasoned beef, all the toppings",    time:"30 min · 4 srv", category:"Quick & Easy",    headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Butter Chicken",          desc:"Silky, aromatic, crowd-pleasing",    time:"40 min · 4 srv", category:"Comfort Food",    headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Spaghetti Carbonara",     desc:"Silky egg sauce, crispy pancetta",   time:"25 min · 2 srv", category:"Quick & Easy",    headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Beef Short Ribs",         desc:"Fall-off-the-bone braised ribs",     time:"3.5 hrs · 4 srv",category:"Weekend Project",  headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Ramen",                   desc:"Rich broth, soft-boiled egg",        time:"1 hr · 2 srv",   category:"Weekend Project", headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Nashville Hot Chicken",   desc:"Fiery crust, pickle-topped",         time:"45 min · 4 srv", category:"Bold & Spicy",    headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Chili Con Carne",         desc:"Deep, smoky, slow-simmered",         time:"1.5 hrs · 6 srv",category:"Comfort Food",    headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Shakshuka Verde",         desc:"Tomatillo, green chilli, fresh",     time:"25 min · 2 srv", category:"Bold & Spicy",    headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Lamb Kofta",              desc:"Spiced, charred, with tzatziki",     time:"30 min · 4 srv", category:"Fan Favourite",   headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Lobster Rolls",           desc:"Maine-style, butter-poached",        time:"25 min · 2 srv", category:"Staff Pick",      headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Spicy Tuna Crispy Rice",  desc:"Restaurant trick, made at home",     time:"30 min · 4 srv", category:"Staff Pick",      headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Chorizo Hash",            desc:"Crispy potatoes, runny egg",         time:"25 min · 2 srv", category:"Weekend Brunch",  headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Beef Pho",                desc:"Clear broth, fragrant spices",       time:"3 hrs · 4 srv",  category:"Weekend Project", headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Harissa Roast Chicken",   desc:"North African spice, crispy skin",   time:"1 hr · 4 srv",   category:"Fan Favourite",   headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Szechuan Mapo Tofu",      desc:"Numbing, spicy, silky tofu",         time:"25 min · 2 srv", category:"Bold & Spicy",    headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"BBQ Ribs",                desc:"Sticky glaze, fall-off-the-bone",    time:"3 hrs · 4 srv",  category:"Weekend Project", headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Crème Brûlée",            desc:"Silky custard, crackable top",       time:"1 hr · 4 srv",   category:"Date Night",      headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  {title:"Shakshuka",               desc:"Eggs in spiced tomato",              time:"20 min · 2 srv", category:"Quick & Easy",    headerBg:"#E8431A",catColor:"#E8431A",textLight:true},
+  // Forest
+  {title:"Mushroom Risotto",        desc:"Creamy, earthy, indulgent",          time:"40 min · 4 srv", category:"Seasonal",        headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
+  {title:"Korean BBQ Bowl",         desc:"Gochujang beef, pickled veg",        time:"30 min · 2 srv", category:"Bold & Spicy",    headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
+  {title:"Pad Thai",                desc:"Classic street noodles",             time:"25 min · 2 srv", category:"Under 30 Mins",   headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
+  {title:"Beef Bourguignon",        desc:"Slow-braised in red wine",           time:"3 hrs · 6 srv",  category:"Weekend Project", headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
+  {title:"Caesar Salad",            desc:"Crispy romaine, house dressing",     time:"15 min · 2 srv", category:"Quick & Easy",    headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
+  {title:"Pesto Gnocchi",           desc:"Pillowy, herby, done in 20",         time:"20 min · 2 srv", category:"Under 30 Mins",   headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
+  {title:"Niçoise Salad",           desc:"French bistro, tuna, olives",        time:"20 min · 2 srv", category:"Quick & Easy",    headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
+  {title:"Leek & Potato Soup",      desc:"Velvety, simple, deeply comforting", time:"35 min · 4 srv", category:"Comfort Food",    headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
+  {title:"Prawn Linguine",          desc:"Garlic, chilli, white wine",         time:"20 min · 2 srv", category:"Date Night",      headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
+  {title:"Falafel Wraps",           desc:"Crispy chickpea, herby tahini",      time:"30 min · 4 srv", category:"Fan Favourite",   headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
+  {title:"Wild Mushroom Toast",     desc:"Earthy, buttery, on sourdough",      time:"15 min · 2 srv", category:"Weekend Brunch",  headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
+  {title:"Green Goddess Bowl",      desc:"Avocado dressing, ancient grains",   time:"20 min · 2 srv", category:"Quick & Easy",    headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
+  {title:"Osso Buco",               desc:"Milanese classic, gremolata",        time:"2.5 hrs · 4 srv",category:"Date Night",      headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
+  {title:"Roasted Cauliflower",     desc:"Tahini, pomegranate, za'atar",       time:"35 min · 4 srv", category:"Seasonal",        headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
+  {title:"Tiramisu",                desc:"Espresso-soaked, cloud-like",        time:"30 min + chill", category:"Date Night",      headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
+  {title:"Hainanese Chicken Rice",  desc:"Silky poached, fragrant rice",       time:"1 hr · 4 srv",   category:"Staff Pick",      headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
+  {title:"Vegetable Wellington",    desc:"Golden pastry, earthy filling",      time:"1.5 hrs · 6 srv",category:"Showstopper",     headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
+  {title:"Spinach & Feta Börek",   desc:"Flaky pastry, Turkish classic",      time:"1 hr · 6 srv",   category:"Showstopper",     headerBg:"#1E3A2F",catColor:"#1E3A2F",textLight:true},
 ];
 
 function seededShuffle<T>(arr: T[], seed: number): T[]{
@@ -653,9 +695,10 @@ function seededShuffle<T>(arr: T[], seed: number): T[]{
   for(let i=a.length-1;i>0;i--){s=(s*1664525+1013904223)&0xffffffff;const j=Math.abs(s)%(i+1);[a[i],a[j]]=[a[j],a[i]];}
   return a;
 }
-// Use day of year as seed so it changes daily but stays consistent within the same day
-const dayOfYear=Math.floor((Date.now()-new Date(new Date().getFullYear(),0,0).getTime())/86400000);
-const SUGGESTION_CARDS=seededShuffle(CARD_POOL,dayOfYear).slice(0,8);
+// Monthly seed — same set all month, rotates each month, no repeats for a full year
+const now=new Date();
+const monthSeed=now.getFullYear()*12+now.getMonth();
+const SUGGESTION_CARDS=seededShuffle(CARD_POOL,monthSeed).slice(0,6);
 const DIETS    = ["Vegetarian","Vegan","Gluten-Free","Dairy-Free","Keto","Low-Carb"];
 const DAYS     = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 const DAY_KEYS = ["mon","tue","wed","thu","fri","sat","sun"];
@@ -850,7 +893,7 @@ export default function App(){
   const [history,setHistory]     = useState<any[]>([]);
   const [savedTab,setSavedTab]   = useState("saved");
   const [savedSearch,setSavedSearch] = useState("");
-  const [cardSeed,setCardSeed]       = useState(dayOfYear);
+  const [cardSeed,setCardSeed]       = useState(monthSeed);
   const [showSavePrompt,setShowSavePrompt] = useState(false);
   const [pendingSave,setPendingSave]   = useState<any>(null);
   const [confirmRemove,setConfirmRemove] = useState<number|null>(null);
@@ -1291,7 +1334,7 @@ export default function App(){
               </button>
             </div>
             <div className="mosaic-grid">
-              {seededShuffle(CARD_POOL,cardSeed).slice(0,8).map((card)=>(
+              {seededShuffle(CARD_POOL,cardSeed).slice(0,6).map((card)=>(
                 <div key={card.title}
                   className="mosaic-card"
                   onClick={()=>{setQuery(card.title);doSearch(card.title);}}>
@@ -1381,9 +1424,12 @@ export default function App(){
           </div>
         )}
         {status==="loading"&&(
-          <div className="loading-wrap"><div className="spinner"/>
-            <div className="loading-text">{seasonal?"Finding what's fresh near you…":"Gathering the finest recipes…"}</div>
-            <div className="loading-sub">Synthesizing techniques from top sources</div>
+          <div className="loading-overlay">
+            <div className="loading-card">
+              <div className="spinner"/>
+              <div className="loading-text">{seasonal?"Finding what's fresh near you…":"Gathering the finest recipes…"}</div>
+              <div className="loading-sub">Synthesizing techniques from top sources</div>
+            </div>
           </div>
         )}
         {status==="error"&&(
@@ -1635,9 +1681,12 @@ export default function App(){
         )}
 
         {inspireStatus==="loading"&&(
-          <div className="loading-wrap"><div className="spinner"/>
-            <div className="loading-text">Thinking about tonight's dinner…</div>
-            <div className="loading-sub">Matching ideas to your mood</div>
+          <div className="loading-overlay">
+            <div className="loading-card">
+              <div className="spinner"/>
+              <div className="loading-text">Thinking about tonight's dinner…</div>
+              <div className="loading-sub">Matching ideas to your mood</div>
+            </div>
           </div>
         )}
 
