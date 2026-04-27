@@ -34,8 +34,8 @@ const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9,700;1,9,700&family=Outfit:wght@300;400;500;600;700&display=swap');
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   *{font-variation-settings:'opsz' 9,'WONK' 1;}
-  html{background:#1A1F2E;}
-  body{font-family:'Outfit',sans-serif;background:#FDFAF5;color:#151210;min-height:100vh;padding-bottom:80px;}
+  html{background:#1A1F2E;overscroll-behavior:none;}
+  body{font-family:'Outfit',sans-serif;background:#FDFAF5;color:#151210;min-height:100vh;padding-bottom:80px;overscroll-behavior-y:none;}
   @media(min-width:768px){body{padding-bottom:0;}}
 
   /* ── TOP NAV (desktop) — midnight ribbon ── */
@@ -820,6 +820,7 @@ function buildPrompt(dish: string,diets: string[],seasonal: boolean,location: st
     ?` Seasonal recipe for ${location} in ${monthYear}. Prioritize peak produce. Include a seasonal_note (one sentence).`
     :seasonal?` Prioritize ingredients in season (${monthYear}). Include a seasonal_note.`:"";
   return `Create a recipe for "${dish}".${d}${s}
+Use US imperial measurements only (cups, tbsp, tsp, oz, lbs, °F) — no grams, ml, or Celsius.
 Reply with ONLY valid JSON, no other text:
 {"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"4","ingredient_groups":[{"label":"For the Marinade","items":[{"amount":"2 tbsp","name":"soy sauce"}]},{"label":"","items":[{"amount":"1 cup","name":"rice"}]}],"steps":["Step one."],"grocery_items":["soy sauce","rice"],"sources":["AllRecipes","Serious Eats"],"source_note":"...","seasonal_note":"..."}
 Rules: group ingredients by component when useful; single group with empty label for simple recipes. 6-10 steps. grocery_items: flat names only. sources: 2-3 real sites. seasonal_note only if seasonal requested.`;
@@ -834,7 +835,7 @@ Make each suggestion meaningfully different from the others. Keep titles concise
 }
 
 function buildScanPrompt(): string{
-  return `Extract the recipe from this image. Reply with ONLY valid JSON:
+  return `Extract the recipe from this image. Use US imperial measurements only (cups, tbsp, tsp, oz, lbs, °F). Reply with ONLY valid JSON:
 {"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"4","ingredient_groups":[{"label":"","items":[{"amount":"2 tbsp","name":"olive oil"}]}],"steps":["Full step."],"grocery_items":["olive oil"],"sources":[],"source_note":"Digitized from a recipe card."}`;
 }
 
@@ -847,7 +848,7 @@ function buildRemixPrompt(dish: string, diets: string[], seasonal: boolean, loca
 }
 
 function buildUrlPrompt(): string{
-  return `Extract the recipe from the text content of this webpage. Ignore navigation, ads, comments, and all other non-recipe content. Reply with ONLY valid JSON:
+  return `Extract the recipe from the text content of this webpage. Ignore navigation, ads, comments, and all other non-recipe content. Use US imperial measurements only (cups, tbsp, tsp, oz, lbs, °F) — convert any metric amounts. Reply with ONLY valid JSON:
 {"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"4","ingredient_groups":[{"label":"","items":[{"amount":"2 tbsp","name":"olive oil"}]}],"steps":["Full detailed step."],"grocery_items":["olive oil"],"sources":[],"source_note":"Extracted from [site name]."}
 Group ingredients by component if applicable. Write full clear steps.`;
 }
