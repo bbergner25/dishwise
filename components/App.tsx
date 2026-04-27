@@ -76,10 +76,11 @@ const CSS = `
 
   /* ── MOBILE TOP HEADER ── */
   .mobile-header{
-    display:flex;align-items:center;justify-content:center;
+    display:flex;align-items:center;justify-content:space-between;
     background:#1A1F2E;height:52px;
     position:sticky;top:0;z-index:100;
     border-bottom:1px solid rgba(244,160,33,.15);
+    padding:0 16px;
   }
   @media(min-width:768px){.mobile-header{display:none;}}
   .mobile-header-brand{
@@ -96,17 +97,22 @@ const CSS = `
     font-variation-settings:'opsz' 9,'WONK' 1;
     font-size:26px;color:#F4A021;font-style:italic;letter-spacing:-0.5px;line-height:1;
   }
+  .mobile-header-auth{background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;}
+  .mobile-signin-btn{font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;color:rgba(253,250,245,.7);border:1.5px solid rgba(244,160,33,.4);border-radius:100px;padding:5px 14px;background:transparent;cursor:pointer;transition:all .15s;}
+  .mobile-signin-btn:hover{background:rgba(244,160,33,.15);color:#FDFAF5;}
 
   /* ── BOTTOM NAV (mobile) ── */
   .bottom-nav{
     display:flex;position:fixed;bottom:0;left:0;right:0;z-index:100;
-    background:#fff;border-top:2px solid #151210;
-    padding:0 16px;
-    padding-bottom:max(env(safe-area-inset-bottom,0px),8px);
-    height:calc(60px + max(env(safe-area-inset-bottom,0px),8px));
+    background:#fff;border-top:1px solid #EDE8E0;
+    padding:0 8px;
+    padding-bottom:max(env(safe-area-inset-bottom,0px),12px);
+    height:calc(72px + max(env(safe-area-inset-bottom,0px),12px));
     align-items:flex-start;
-    padding-top:8px;
+    padding-top:10px;
+    transition:transform .25s ease;
   }
+  .bottom-nav.hidden{transform:translateY(100%);}
   @media(min-width:768px){.bottom-nav{display:none;}}
   .bottom-nav-brand{
     display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -141,10 +147,54 @@ const CSS = `
   /* ── AUTH ── */
   .auth-btn{padding:6px 16px;border-radius:100px;border:1.5px solid rgba(244,160,33,.4);background:transparent;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;color:rgba(253,250,245,.8);cursor:pointer;transition:all .15s;white-space:nowrap;}
   .auth-btn:hover{background:rgba(244,160,33,.15);border-color:#F4A021;color:#FDFAF5;}
-  .auth-btn.signed-in{border-color:rgba(253,250,245,.2);color:rgba(253,250,245,.6);}
   .auth-user{display:flex;align-items:center;gap:8px;}
-  .auth-avatar{width:28px;height:28px;border-radius:50%;border:2px solid #F4A021;object-fit:cover;}
-  .auth-avatar-placeholder{width:28px;height:28px;border-radius:50%;background:#F4A021;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:13px;font-weight:700;color:#1A1F2E;}
+  .auth-avatar{width:30px;height:30px;border-radius:50%;border:2px solid #F4A021;object-fit:cover;cursor:pointer;}
+  .auth-avatar-placeholder{width:30px;height:30px;border-radius:50%;background:#F4A021;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:13px;font-weight:700;color:#1A1F2E;cursor:pointer;flex-shrink:0;}
+
+  /* Desktop account dropdown */
+  .account-wrap{position:relative;}
+  .account-dropdown{
+    position:absolute;top:calc(100% + 10px);left:0;
+    background:#fff;border:1px solid #EDE8E0;border-radius:14px;
+    padding:6px;min-width:220px;
+    box-shadow:0 8px 32px rgba(26,31,46,.18);z-index:200;
+  }
+  .account-dropdown-user{padding:12px 14px 10px;border-bottom:1px solid #EDE8E0;margin-bottom:6px;}
+  .account-dropdown-name{font-family:'Fraunces',serif;font-size:15px;font-weight:700;color:#151210;margin-bottom:2px;}
+  .account-dropdown-email{font-size:12px;color:#7A6E6A;}
+  .account-dropdown-item{display:flex;align-items:center;gap:10px;width:100%;padding:9px 14px;border:none;background:transparent;font-family:'Outfit',sans-serif;font-size:13px;color:#151210;cursor:pointer;border-radius:8px;text-align:left;transition:background .12s;}
+  .account-dropdown-item:hover{background:#FFF8F2;}
+  .account-dropdown-item.danger{color:#E8431A;}
+  .account-dropdown-item.danger:hover{background:#FEF2F0;}
+
+  /* Mobile account bottom sheet */
+  .account-sheet-overlay{position:fixed;inset:0;background:rgba(26,31,46,.5);z-index:300;display:flex;align-items:flex-end;}
+  .account-sheet{
+    background:#FDFAF5;border-radius:24px 24px 0 0;padding:0 0 max(env(safe-area-inset-bottom,0px),24px);
+    width:100%;box-shadow:0 -8px 40px rgba(26,31,46,.2);
+  }
+  .account-sheet-handle{width:36px;height:4px;background:#EDE8E0;border-radius:2px;margin:14px auto 0;}
+  .account-sheet-user{padding:20px 24px 16px;border-bottom:1px solid #EDE8E0;display:flex;align-items:center;gap:14px;}
+  .account-sheet-avatar{width:44px;height:44px;border-radius:50%;border:2px solid #F4A021;object-fit:cover;flex-shrink:0;}
+  .account-sheet-avatar-placeholder{width:44px;height:44px;border-radius:50%;background:#F4A021;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:20px;font-weight:700;color:#1A1F2E;flex-shrink:0;}
+  .account-sheet-name{font-family:'Fraunces',serif;font-size:18px;font-weight:700;color:#151210;}
+  .account-sheet-email{font-size:13px;color:#7A6E6A;margin-top:2px;}
+  .account-sheet-actions{padding:10px 16px;}
+  .account-sheet-btn{display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;border:none;background:transparent;font-family:'Outfit',sans-serif;font-size:15px;color:#151210;cursor:pointer;border-radius:12px;text-align:left;transition:background .12s;}
+  .account-sheet-btn:hover{background:#F5F0EA;}
+  .account-sheet-btn.danger{color:#E8431A;}
+  .account-sheet-btn.danger:hover{background:#FEF2F0;}
+  .account-sheet-cancel{width:calc(100% - 32px);margin:0 16px 8px;padding:14px;background:#fff;border:1.5px solid #EDE8E0;border-radius:12px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;color:#151210;cursor:pointer;text-align:center;}
+
+  /* Sign-out confirm */
+  .signout-confirm-overlay{position:fixed;inset:0;background:rgba(26,31,46,.6);z-index:400;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .signout-confirm{background:#FDFAF5;border-radius:20px;padding:28px 24px;max-width:340px;width:100%;text-align:center;}
+  .signout-confirm-title{font-family:'Fraunces',serif;font-size:22px;font-weight:700;color:#151210;margin-bottom:8px;}
+  .signout-confirm-sub{font-size:14px;color:#7A6E6A;line-height:1.5;margin-bottom:24px;}
+  .signout-confirm-btns{display:flex;gap:10px;}
+  .signout-confirm-cancel{flex:1;padding:12px;background:#fff;border:1.5px solid #EDE8E0;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;color:#151210;cursor:pointer;}
+  .signout-confirm-go{flex:1;padding:12px;background:#E8431A;border:none;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;color:#fff;cursor:pointer;}
+
   /* Save prompt modal */
   .save-prompt-overlay{position:fixed;inset:0;background:rgba(26,31,46,.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px;}
   .save-prompt{background:#FDFAF5;border-radius:24px;padding:32px 28px;max-width:380px;width:100%;text-align:center;}
@@ -855,8 +905,15 @@ export default function App(){
   const [familyStatus,setFamilyStatus] = useState("");
   const [familyStatusType,setFamilyStatusType] = useState("ok");
 
-  const inputRef = useRef<HTMLInputElement>(null);
-  const fileRef  = useRef<HTMLInputElement>(null);
+  // Auth UI
+  const [showAccountDropdown,setShowAccountDropdown] = useState(false);
+  const [showAccountSheet,setShowAccountSheet]       = useState(false);
+  const [showSignOutConfirm,setShowSignOutConfirm]   = useState(false);
+  const [navHidden,setNavHidden]                     = useState(false);
+
+  const inputRef   = useRef<HTMLInputElement>(null);
+  const fileRef    = useRef<HTMLInputElement>(null);
+  const lastScrollY = useRef(0);
 
   /* storage load */
   useEffect(()=>{
@@ -880,6 +937,49 @@ export default function App(){
   useEffect(()=>{if(ready&&retailer)try{localStorage.setItem("dw-retailer",retailer);}catch{};},[retailer,ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-ratings",JSON.stringify(ratings));}catch{};},[ratings,ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-cat-overrides",JSON.stringify(categoryOverrides));}catch{};},[categoryOverrides,ready]);
+
+  /* cloud sync — load recipes from Upstash when user signs in */
+  useEffect(()=>{
+    if(!isLoaded||!user)return;
+    (async()=>{
+      try{
+        const res=await fetch("/api/recipes");
+        if(!res.ok)return;
+        const data=await res.json();
+        const cloud:any[]=data.recipes||[];
+        if(cloud.length===0)return;
+        setSaved(local=>{
+          const merged=[...local];
+          for(const r of cloud){
+            if(!merged.some(x=>x.id===r.id))merged.push(r);
+          }
+          return merged;
+        });
+      }catch{}
+    })();
+  },[isLoaded,user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* cloud sync — push saved to Upstash whenever saved changes and user is signed in */
+  useEffect(()=>{
+    if(!ready||!user)return;
+    fetch("/api/recipes",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({recipes:saved}),
+    }).catch(()=>{});
+  },[saved,ready,user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* scroll-hide bottom nav */
+  useEffect(()=>{
+    const onScroll=()=>{
+      const y=window.scrollY;
+      if(y>lastScrollY.current+8)setNavHidden(true);
+      else if(y<lastScrollY.current-4)setNavHidden(false);
+      lastScrollY.current=y;
+    };
+    window.addEventListener("scroll",onScroll,{passive:true});
+    return()=>window.removeEventListener("scroll",onScroll);
+  },[]);
 
   /* family code helpers */
   const loadShared=async(code: string)=>{
@@ -956,6 +1056,11 @@ export default function App(){
   useEffect(()=>{
     if(ready&&familyCode)syncToFamily(saved,familyCode);
   },[saved,ready]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* auth helpers */
+  const userInitial=user?(user.firstName||user.emailAddresses?.[0]?.emailAddress||"U")[0].toUpperCase():"";
+  const doSignOut=()=>{setShowSignOutConfirm(true);setShowAccountDropdown(false);setShowAccountSheet(false);};
+  const confirmSignOut=()=>{signOut();setShowSignOutConfirm(false);};
 
   /* detect location */
   const detectLocation=()=>{
@@ -1911,17 +2016,27 @@ export default function App(){
       {/* Desktop top nav */}
       <nav className="nav">
         <div className="nav-left">
-          {user ? (
-            <div className="auth-user">
-              {user.imageUrl
-                ? <img className="auth-avatar" src={user.imageUrl} alt=""/>
-                : <div className="auth-avatar-placeholder">{(user.firstName||user.emailAddresses[0]?.emailAddress||"U")[0].toUpperCase()}</div>
-              }
-              <button className="auth-btn signed-in" onClick={()=>signOut()}>Sign out</button>
+          {isLoaded&&(user?(
+            <div className="account-wrap">
+              <div className="auth-user" style={{cursor:"pointer"}} onClick={()=>setShowAccountDropdown(o=>!o)}>
+                {user.imageUrl
+                  ?<img className="auth-avatar" src={user.imageUrl} alt=""/>
+                  :<div className="auth-avatar-placeholder">{userInitial}</div>
+                }
+              </div>
+              {showAccountDropdown&&(
+                <div className="account-dropdown">
+                  <div className="account-dropdown-user">
+                    <div className="account-dropdown-name">{user.firstName||"My Account"}</div>
+                    <div className="account-dropdown-email">{user.emailAddresses?.[0]?.emailAddress||""}</div>
+                  </div>
+                  <button className="account-dropdown-item danger" onClick={doSignOut}>Sign out</button>
+                </div>
+              )}
             </div>
-          ) : (
+          ):(
             <button className="auth-btn" onClick={()=>openSignIn()}>Sign in</button>
-          )}
+          ))}
         </div>
         <button className="nav-brand" onClick={()=>{setTab("search");setStatus("idle");setRecipe(null);setQuery("");}}>
           <span className="nav-brand-upright">every</span>
@@ -1942,14 +2057,26 @@ export default function App(){
         </div>
       </nav>
 
-      {/* Mobile bottom nav */}
+      {/* Mobile header */}
       <div className="mobile-header">
         <button className="mobile-header-brand" onClick={()=>{setTab("search");setStatus("idle");setRecipe(null);setQuery("");}}>
           <span className="mobile-header-upright">every</span>
           <span className="mobile-header-italic">chef</span>
         </button>
+        <div className="mobile-header-auth">
+          {isLoaded&&(user?(
+            <div onClick={()=>setShowAccountSheet(true)}>
+              {user.imageUrl
+                ?<img className="auth-avatar" src={user.imageUrl} alt=""/>
+                :<div className="auth-avatar-placeholder">{userInitial}</div>
+              }
+            </div>
+          ):(
+            <button className="mobile-signin-btn" onClick={()=>openSignIn()}>Sign in</button>
+          ))}
+        </div>
       </div>
-      <div className="bottom-nav">
+      <div className={`bottom-nav${navHidden?" hidden":""}`}>
         <button className="bottom-nav-brand" onClick={()=>{setTab("search");setStatus("idle");setRecipe(null);setQuery("");}}>
           <span className="bnb-app-icon">e</span>
           <span className="bnb-label">Home</span>
@@ -1966,10 +2093,6 @@ export default function App(){
             {badge?<span className="nav-badge">{badge}</span>:null}
           </button>
         ))}
-        <button className="bottom-tab" onClick={()=>user?signOut():openSignIn()}>
-          <span className="bt-icon">{user?"👤":"🔑"}</span>
-          <span className="bt-label">{user?"Account":"Sign in"}</span>
-        </button>
       </div>
       {tab==="search"&&SearchView()}
       {tab==="inspire"&&InspireView()}
@@ -1977,7 +2100,47 @@ export default function App(){
       {tab==="week"&&WeekView()}
       {tab==="family"&&FamilyView()}
       {Modal()}
-      {showSavePrompt&&(
+      {/* Mobile account bottom sheet */}
+      {showAccountSheet&&user&&(
+        <div className="account-sheet-overlay" onClick={()=>setShowAccountSheet(false)}>
+          <div className="account-sheet" onClick={e=>e.stopPropagation()}>
+            <div className="account-sheet-handle"/>
+            <div className="account-sheet-user">
+              {user.imageUrl
+                ?<img className="account-sheet-avatar" src={user.imageUrl} alt=""/>
+                :<div className="account-sheet-avatar-placeholder">{userInitial}</div>
+              }
+              <div>
+                <div className="account-sheet-name">{user.firstName||"My Account"}</div>
+                <div className="account-sheet-email">{user.emailAddresses?.[0]?.emailAddress||""}</div>
+              </div>
+            </div>
+            <div className="account-sheet-actions">
+              <button className="account-sheet-btn danger" onClick={doSignOut}>Sign out</button>
+            </div>
+            <button className="account-sheet-cancel" onClick={()=>setShowAccountSheet(false)}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {/* Sign-out confirm */}
+      {showSignOutConfirm&&(
+        <div className="signout-confirm-overlay" onClick={()=>setShowSignOutConfirm(false)}>
+          <div className="signout-confirm" onClick={e=>e.stopPropagation()}>
+            <div className="signout-confirm-title">Sign out?</div>
+            <div className="signout-confirm-sub">Your recipes are saved to your account and will be here when you come back.</div>
+            <div className="signout-confirm-btns">
+              <button className="signout-confirm-cancel" onClick={()=>setShowSignOutConfirm(false)}>Cancel</button>
+              <button className="signout-confirm-go" onClick={confirmSignOut}>Sign out</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Close desktop dropdown on outside click */}
+      {showAccountDropdown&&(
+        <div style={{position:"fixed",inset:0,zIndex:150}} onClick={()=>setShowAccountDropdown(false)}/>
+      )}
         <div className="save-prompt-overlay" onClick={()=>{setShowSavePrompt(false);setPendingSave(null);}}>
           <div className="save-prompt" onClick={e=>e.stopPropagation()}>
             <div className="save-prompt-icon">🔖</div>
