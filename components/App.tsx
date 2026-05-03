@@ -1189,15 +1189,36 @@ export default function App(){
     if(!url||!url.startsWith("http")){setUrlMsg("Please enter a valid URL starting with http");setUrlStatus("error");return;}
     setUrlStatus("loading");setUrlMsg("");
     try{
-      // Fetch via our server-side proxy to avoid CORS
-      const res=await fetch("/api/fetch-url",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({url}),
-      });
-      const {text,error}=await res.json();
-      if(error||!text)throw new Error(error||"Could not fetch page");
-      // Now send text to Claude to extract the recipe
+      // Fetch client-side — the browser makes the request directly from the user's device,
+      // just like Paprika and Mela. No server proxy, no scraping from our end.
+      let text="";
+      try{
+        const res=await fetch(url,{
+          headers:{"Accept":"text/html,application/xhtml+xml","Accept-Language":"en-US,en;q=0.9"},
+        });
+        if(!res.ok)throw new Error("HTTP "+res.status);
+        const html=await res.text();
+        // Strip tags, scripts, styles — keep readable text
+        text=html
+          .replace(/<script[\s\S]*?<\/script>/gi,"")
+          .replace(/<style[\s\S]*?<\/style>/gi,"")
+          .replace(/<[^>]+>/g," ")
+          .replace(/&nbsp;/g," ").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&#\d+;/g," ")
+          .replace(/\s{3,}/g,"\n\n")
+          .trim();
+      }catch(corsErr){
+        // CORS blocked — fall back to server proxy
+        const res=await fetch("/api/fetch-url",{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({url}),
+        });
+        const data=await res.json();
+        if(data.error||!data.text)throw new Error(data.error||"Could not fetch page — this site may be paywalled or unsupported.");
+        text=data.text;
+      }
+      if(!text||text.length<200)throw new Error("This site didn't return enough content. It may be paywalled or require a login.");
+      // Send text to Claude to extract the recipe
       const parsed=await callAPI([{role:"user",content:[
         {type:"text",text:buildUrlPrompt()+"\n\nPage content:\n"+text.slice(0,12000)},
       ]}]);
@@ -1205,7 +1226,10 @@ export default function App(){
       setSaved(l=>[r,...l]);
       setUrlStatus("done");setUrlMsg(`"${r.title}" saved to your collection!`);
       setUrlInput("");
-    }catch(e:any){setUrlStatus("error");setUrlMsg(e.message||"Could not import recipe. The site may be paywalled or unsupported.");}
+    }catch(e:any){
+      setUrlStatus("error");
+      setUrlMsg(e.message||"Could not import recipe. The site may be paywalled or unsupported.");
+    }
   };
 
   const doRemix=async()=>{
