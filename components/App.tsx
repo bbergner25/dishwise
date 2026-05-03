@@ -1495,10 +1495,10 @@ export default function App(){
                 <div className="import-card-eyebrow">Import</div>
                 <div className="import-card-icon">{Ic.link(20)}</div>
                 <div className="import-card-title">Paste a link.<br/><em>We'll kill the noise.</em></div>
-                <div className="import-card-desc">Drop in any recipe URL — we strip the ads, the life story, and the pop-ups. Just the recipe. Works on AllRecipes, Serious Eats, Simply Recipes, and most open sites.</div>
+                <div className="import-card-desc">Drop in any recipe URL — we strip the ads, the life story, and the pop-ups. Just the recipe. Works great on Serious Eats, Simply Recipes, Epicurious, Food52, and most open sites.</div>
                 <div className="import-card-action">
                   <div className="import-url-row">
-                    <input className="import-url-input" placeholder="https://www.allrecipes.com/recipe/…"
+                    <input className="import-url-input" placeholder="https://www.seriouseats.com/recipe/…"
                       value={urlInput} onChange={e=>setUrlInput(e.target.value)}
                       onKeyDown={e=>e.key==="Enter"&&doFetchUrl()}
                       disabled={urlStatus==="loading"}/>
