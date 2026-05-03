@@ -854,6 +854,66 @@ function buildUrlPrompt(): string{
 Group ingredients by component if applicable. Write full clear steps.`;
 }
 
+// Parse JSON-LD Recipe schema — the legal, structured data sites publish for Google
+function parseJsonLd(html: string, sourceUrl: string): any|null {
+  try {
+    const matches = html.match(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi);
+    if(!matches) return null;
+    for(const tag of matches){
+      const json=tag.replace(/<script[^>]*>/i,"").replace(/<\/script>/i,"").trim();
+      let data: any;
+      try{data=JSON.parse(json);}catch{continue;}
+      // Handle @graph arrays
+      const items=Array.isArray(data["@graph"])?data["@graph"]:[data];
+      for(const item of items){
+        if(!item["@type"])continue;
+        const type=Array.isArray(item["@type"])?item["@type"]:([item["@type"]] as string[]);
+        if(!type.some((t:string)=>t.toLowerCase().includes("recipe")))continue;
+        // Found a Recipe — map to our format
+        const getName=(v:any):string=>typeof v==="string"?v:(v?.name||v?.text||"");
+        const rawIngredients:string[]=item.recipeIngredient||item.ingredients||[];
+        // Group as single group since JSON-LD rarely has groups
+        const items2=rawIngredients.map((ing:string)=>{
+          const m=ing.match(/^([\d\/\s\.\u00BC-\u00BE\u2150-\u2189]+(?:cup|tbsp|tsp|oz|lb|lbs|pound|ounce|teaspoon|tablespoon|inch|clove|slice|can|pkg|package|bunch|sprig|pinch|dash|handful|head|stalk|strip|piece|fillet|sheet|loaf|stick|bar|block|bottle|jar|bag|box|container|quart|pint|gallon|fl oz|fluid ounce)?s?\b)?[.,]?\s*)(.*)/i);
+          if(m)return{amount:m[1].trim(),name:m[2].trim()};
+          return{amount:"",name:ing};
+        });
+        const rawSteps:any[]=item.recipeInstructions||[];
+        const steps=rawSteps.map((s:any)=>typeof s==="string"?s:(s?.text||s?.name||"")).filter(Boolean);
+        const prepTime=parseDuration(item.prepTime||"");
+        const cookTime=parseDuration(item.cookTime||item.totalTime||"");
+        const siteName=new URL(sourceUrl).hostname.replace("www.","");
+        return {
+          title:item.name||"Imported Recipe",
+          tagline:item.description?.replace(/<[^>]+>/g,"").slice(0,120)||`From ${siteName}`,
+          prep_time:prepTime||"—",
+          cook_time:cookTime||"—",
+          servings:String(item.recipeYield?.[0]||item.recipeYield||4).replace(/[^\d]/g,"")||"4",
+          ingredient_groups:[{label:"",items:items2}],
+          steps,
+          grocery_items:rawIngredients.map((ing:string)=>ing.replace(/^[\d\/\s\.\u00BC-\u00BE]+(?:cup|tbsp|tsp|oz|lb|lbs|pound|ounce|teaspoon|tablespoon)?s?\b[.,]?\s*/i,"").split(",")[0].trim()).filter(Boolean),
+          sources:[siteName],
+          source_note:`Imported from ${siteName}`,
+          _sourceUrl:sourceUrl,
+        };
+      }
+    }
+  }catch{}
+  return null;
+}
+
+function parseDuration(iso: string): string {
+  if(!iso)return"";
+  const m=iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+  if(!m)return iso;
+  const h=parseInt(m[1]||"0"),min=parseInt(m[2]||"0");
+  if(h&&min)return`${h} hr ${min} mins`;
+  if(h)return`${h} hr`;
+  if(min)return`${min} mins`;
+  return"";
+}
+}
+
 const LogoMark = ({size=32}:{size?:number}) => (
   <div style={{
     width:size,height:size,
@@ -1189,36 +1249,42 @@ export default function App(){
     if(!url||!url.startsWith("http")){setUrlMsg("Please enter a valid URL starting with http");setUrlStatus("error");return;}
     setUrlStatus("loading");setUrlMsg("");
     try{
-      // Fetch client-side — the browser makes the request directly from the user's device,
-      // just like Paprika and Mela. No server proxy, no scraping from our end.
-      let text="";
+      // Step 1: fetch the page HTML — try client-side first, fall back to server proxy
+      let html="";
       try{
-        const res=await fetch(url,{
-          headers:{"Accept":"text/html,application/xhtml+xml","Accept-Language":"en-US,en;q=0.9"},
-        });
+        const res=await fetch(url,{headers:{"Accept":"text/html","Accept-Language":"en-US,en;q=0.9"}});
         if(!res.ok)throw new Error("HTTP "+res.status);
-        const html=await res.text();
-        // Strip tags, scripts, styles — keep readable text
-        text=html
-          .replace(/<script[\s\S]*?<\/script>/gi,"")
-          .replace(/<style[\s\S]*?<\/style>/gi,"")
-          .replace(/<[^>]+>/g," ")
-          .replace(/&nbsp;/g," ").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&#\d+;/g," ")
-          .replace(/\s{3,}/g,"\n\n")
-          .trim();
-      }catch(corsErr){
-        // CORS blocked — fall back to server proxy
+        html=await res.text();
+      }catch{
+        // CORS blocked — use server proxy
         const res=await fetch("/api/fetch-url",{
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
+          method:"POST",headers:{"Content-Type":"application/json"},
           body:JSON.stringify({url}),
         });
         const data=await res.json();
-        if(data.error||!data.text)throw new Error(data.error||"Could not fetch page — this site may be paywalled or unsupported.");
-        text=data.text;
+        if(data.error||!data.text)throw new Error(data.error||"Could not fetch this page.");
+        html=data.text;
       }
-      if(!text||text.length<200)throw new Error("This site didn't return enough content. It may be paywalled or require a login.");
-      // Send text to Claude to extract the recipe
+      if(!html||html.length<200)throw new Error("This site didn't return content. It may be paywalled or require a login.");
+
+      // Step 2: try JSON-LD first — fast, legal, no Claude needed
+      const jsonLd=parseJsonLd(html,url);
+      if(jsonLd){
+        const r={...jsonLd,id:Date.now(),_imported:true};
+        setSaved(l=>[r,...l]);
+        setUrlStatus("done");setUrlMsg(`"${r.title}" saved to your collection!`);
+        setUrlInput("");
+        return;
+      }
+
+      // Step 3: JSON-LD not found — fall back to Claude text extraction
+      const text=html
+        .replace(/<script[\s\S]*?<\/script>/gi,"")
+        .replace(/<style[\s\S]*?<\/style>/gi,"")
+        .replace(/<[^>]+>/g," ")
+        .replace(/&nbsp;/g," ").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">")
+        .replace(/\s{3,}/g,"\n\n").trim();
+      if(text.length<200)throw new Error("Not enough content found. This site may be paywalled or unsupported.");
       const parsed=await callAPI([{role:"user",content:[
         {type:"text",text:buildUrlPrompt()+"\n\nPage content:\n"+text.slice(0,12000)},
       ]}]);
@@ -1228,7 +1294,7 @@ export default function App(){
       setUrlInput("");
     }catch(e:any){
       setUrlStatus("error");
-      setUrlMsg(e.message||"Could not import recipe. The site may be paywalled or unsupported.");
+      setUrlMsg(e.message||"Could not import recipe. This site may be paywalled or unsupported.");
     }
   };
 
