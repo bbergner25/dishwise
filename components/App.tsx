@@ -874,7 +874,7 @@ function parseJsonLd(html: string, sourceUrl: string): any|null {
         const rawIngredients:string[]=item.recipeIngredient||item.ingredients||[];
         // Group as single group since JSON-LD rarely has groups
         const items2=rawIngredients.map((ing:string)=>{
-          const m=ing.match(/^([\d\/\s\.½¼¾⅓⅔⅛⅜⅝⅞]+(?:cups?|tbsp|tsp|oz|lbs?|pounds?|ounces?|teaspoons?|tablespoons?|inches?|cloves?|slices?|cans?|pkgs?|packages?|bunches?|sprigs?|pinch|dash|handfuls?|heads?|stalks?|strips?|pieces?|fillets?|sheets?|loaves?|sticks?|bars?|blocks?|bottles?|jars?|bags?|boxes?|containers?|quarts?|pints?|gallons?)?\b)?[.,]?\s*)(.*)/i);
+          const m=ing.match(/^([\d\/\s\.]+(?:cups?|tbsp|tsp|oz|lbs?|pounds?|ounces?|teaspoons?|tablespoons?|inches?|cloves?|slices?|cans?|packages?|bunches?|sprigs?|pinch|dash|pieces?|fillets?|sticks?|jars?|bags?|boxes?|quarts?|pints?|gallons?)?\b)?[.,]?\s*(.*)/i);
           if(m&&m[1]&&m[2])return{amount:m[1].trim(),name:m[2].trim()};
           return{amount:"",name:ing};
         });
@@ -891,7 +891,7 @@ function parseJsonLd(html: string, sourceUrl: string): any|null {
           servings:String(item.recipeYield?.[0]||item.recipeYield||4).replace(/[^\d]/g,"")||"4",
           ingredient_groups:[{label:"",items:items2}],
           steps,
-          grocery_items:rawIngredients.map((ing:string)=>ing.replace(/^[\d\/\s\.½¼¾⅓⅔⅛⅜⅝⅞]+(?:cups?|tbsp|tsp|oz|lbs?|pounds?|ounces?|teaspoons?|tablespoons?)?\b[.,]?\s*/i,"").split(",")[0].trim()).filter(Boolean),
+          grocery_items:rawIngredients.map((ing:string)=>ing.replace(/^[\d\/\s\.]+(?:cups?|tbsp|tsp|oz|lbs?|pounds?|ounces?|teaspoons?|tablespoons?)?\b[.,]?\s*/i,"").split(",")[0].trim()).filter(Boolean),
           sources:[siteName],
           source_note:`Imported from ${siteName}`,
           _sourceUrl:sourceUrl,
