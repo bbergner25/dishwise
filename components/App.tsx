@@ -912,7 +912,6 @@ function parseDuration(iso: string): string {
   if(min)return`${min} mins`;
   return"";
 }
-}
 
 const LogoMark = ({size=32}:{size?:number}) => (
   <div style={{
