@@ -299,18 +299,19 @@ const CSS = `
   /* Loading overlay */
   .loading-overlay{position:fixed;inset:0;z-index:200;background:rgba(253,250,245,.82);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:center;justify-content:center;}
   .loading-card{background:#fff;border:1px solid #EDE8E0;border-radius:20px;padding:36px 48px;text-align:center;box-shadow:0 8px 40px rgba(26,31,46,.1);min-width:240px;}
-  .loading-icon-wrap{width:64px;height:64px;margin:0 auto 16px;position:relative;}
-  .loading-icon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;animation:iconFade 1.5s ease-in-out infinite;}
+  .loading-icon-wrap{width:64px;height:64px;margin:0 auto 20px;position:relative;}
+  .loading-icon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;animation:iconFade 6s ease-in-out infinite;}
   .loading-icon svg{width:48px;height:48px;}
   .loading-icon:nth-child(1){animation-delay:0s;}
   .loading-icon:nth-child(2){animation-delay:1.5s;}
   .loading-icon:nth-child(3){animation-delay:3s;}
   .loading-icon:nth-child(4){animation-delay:4.5s;}
   @keyframes iconFade{
-    0%{opacity:0;transform:scale(.85);}
-    10%{opacity:1;transform:scale(1);}
-    80%{opacity:1;transform:scale(1);}
-    100%{opacity:0;transform:scale(.85);}
+    0%{opacity:0;transform:scale(.88);}
+    8%{opacity:1;transform:scale(1);}
+    24%{opacity:1;transform:scale(1);}
+    33%{opacity:0;transform:scale(.88);}
+    100%{opacity:0;transform:scale(.88);}
   }
   .spinner{width:36px;height:36px;border:2.5px solid #EDE8E0;border-top-color:#F4A021;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 20px;}
   @keyframes spin{to{transform:rotate(360deg);}}
@@ -1545,7 +1546,7 @@ export default function App(){
                 <div className="loading-icon">
                   <svg viewBox="0 0 48 48" fill="none" stroke="#1A1F2E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M8 24c0-8.8 7.2-16 16-16s16 7.2 16 16"/><path d="M6 24h36"/><path d="M24 8v4M24 36v4M8 24H4M44 24h-4"/>
-                    <circle cx="24" cy="24" r="4" fill="none"/><circle cx="24" cy="36" r="2" fill="#F4A021" stroke="none"/>
+                    <circle cx="12" cy="24" r="2" fill="none"/><circle cx="24" cy="36" r="2" fill="#F4A021" stroke="none"/>
                   </svg>
                 </div>
                 <div className="loading-icon">
@@ -1557,13 +1558,29 @@ export default function App(){
                 </div>
                 <div className="loading-icon">
                   <svg viewBox="0 0 48 48" fill="none" stroke="#1A1F2E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M8 34c0-4 3-8 8-10l4-14h8l4 14c5 2 8 6 8 10"/><line x1="6" y1="38" x2="42" y2="38"/>
-                    <path d="M20 24c0 0 2 3 4 3s4-3 4-3"/>
-                    <circle cx="24" cy="16" r="2" fill="#F4A021" stroke="none"/>
+                    <ellipse cx="24" cy="36" rx="16" ry="4"/><path d="M8 36V20c0-6 7-12 16-12s16 6 16 12v16"/>
+                    <path d="M16 28c2-2 4-3 8-3s6 1 8 3"/>
+                    <circle cx="24" cy="20" r="2" fill="#F4A021" stroke="none"/>
                   </svg>
                 </div>
               </div>
-              <div className="loading-text">{seasonal?"Finding what's fresh near you…":"Gathering the finest recipes…"}</div>
+              <div style={{position:"relative",height:"28px",marginBottom:"6px"}}>
+                {[
+                  seasonal?"Finding what's in season…":"Firing up the burners…",
+                  "Stirring through the archives…",
+                  "Folding in the best techniques…",
+                  "Almost ready to plate…",
+                ].map((line,i)=>(
+                  <div key={i} style={{
+                    position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",
+                    fontFamily:"'Fraunces',serif",fontSize:"18px",fontStyle:"italic",color:"#151210",
+                    opacity:0,
+                    animation:`iconFade 6s ease-in-out infinite`,
+                    animationDelay:`${i*1.5}s`,
+                    whiteSpace:"nowrap",
+                  }}>{line}</div>
+                ))}
+              </div>
               <div className="loading-sub">Synthesizing techniques from top sources</div>
             </div>
           </div>
@@ -1848,7 +1865,23 @@ export default function App(){
                   </svg>
                 </div>
               </div>
-              <div className="loading-text">Thinking about tonight's dinner…</div>
+              <div style={{position:"relative",height:"28px",marginBottom:"6px"}}>
+                {[
+                  "Reading the room…",
+                  "Checking what's in season…",
+                  "Matching ideas to your mood…",
+                  "Almost ready to serve…",
+                ].map((line,i)=>(
+                  <div key={i} style={{
+                    position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",
+                    fontFamily:"'Fraunces',serif",fontSize:"18px",fontStyle:"italic",color:"#151210",
+                    opacity:0,
+                    animation:`iconFade 6s ease-in-out infinite`,
+                    animationDelay:`${i*1.5}s`,
+                    whiteSpace:"nowrap",
+                  }}>{line}</div>
+                ))}
+              </div>
               <div className="loading-sub">Matching ideas to your mood</div>
             </div>
           </div>
