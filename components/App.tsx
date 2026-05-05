@@ -299,9 +299,9 @@ const CSS = `
   /* Loading overlay */
   .loading-overlay{position:fixed;inset:0;z-index:200;background:rgba(253,250,245,.82);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:center;justify-content:center;}
   .loading-card{background:#fff;border:1px solid #EDE8E0;border-radius:20px;padding:36px 48px;text-align:center;box-shadow:0 8px 40px rgba(26,31,46,.1);min-width:240px;}
-  .loading-icon-wrap{width:64px;height:64px;margin:0 auto 20px;position:relative;}
+  .loading-icon-wrap{width:72px;height:72px;margin:0 auto 20px;position:relative;}
   .loading-icon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;animation:iconFade 8s ease-in-out infinite;}
-  .loading-icon svg{width:48px;height:48px;}
+  .loading-icon img{width:72px;height:72px;object-fit:contain;}
   .loading-icon:nth-child(1){animation-delay:0s;}
   .loading-icon:nth-child(2){animation-delay:2s;}
   .loading-icon:nth-child(3){animation-delay:4s;}
@@ -1537,10 +1537,10 @@ export default function App(){
           <div className="loading-overlay">
             <div className="loading-card">
               <div className="loading-icon-wrap">
-                <div className="loading-icon"><img src="/icon-flame.png" style={{width:64,height:64,objectFit:"contain"}}/></div>
-                <div className="loading-icon"><img src="/icon-whisk.png" style={{width:64,height:64,objectFit:"contain"}}/></div>
-                <div className="loading-icon"><img src="/icon-spoon.png" style={{width:64,height:64,objectFit:"contain"}}/></div>
-                <div className="loading-icon"><img src="/icon-timer.png" style={{width:64,height:64,objectFit:"contain"}}/></div>
+                <div className="loading-icon"><img src="/flame_icon.png" alt=""/></div>
+                <div className="loading-icon"><img src="/whisk_icon.png" alt=""/></div>
+                <div className="loading-icon"><img src="/spoon_icon.png" alt=""/></div>
+                <div className="loading-icon"><img src="/stopwatch_icon.png" alt=""/></div>
               </div>
               <div style={{position:"relative",height:"28px",marginBottom:"6px"}}>
                 {[
@@ -1815,10 +1815,10 @@ export default function App(){
           <div className="loading-overlay">
             <div className="loading-card">
               <div className="loading-icon-wrap">
-                <div className="loading-icon"><img src="/icon-stars.png" style={{width:64,height:64,objectFit:"contain"}}/></div>
-                <div className="loading-icon"><img src="/icon-spoon.png" style={{width:64,height:64,objectFit:"contain"}}/></div>
-                <div className="loading-icon"><img src="/icon-flame.png" style={{width:64,height:64,objectFit:"contain"}}/></div>
-                <div className="loading-icon"><img src="/icon-timer.png" style={{width:64,height:64,objectFit:"contain"}}/></div>
+                <div className="loading-icon"><img src="/sparkle_icon.png" alt=""/></div>
+                <div className="loading-icon"><img src="/spoon_icon.png" alt=""/></div>
+                <div className="loading-icon"><img src="/flame_icon.png" alt=""/></div>
+                <div className="loading-icon"><img src="/stopwatch_icon.png" alt=""/></div>
               </div>
               <div style={{position:"relative",height:"28px",marginBottom:"6px"}}>
                 {[
