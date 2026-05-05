@@ -297,8 +297,21 @@ const CSS = `
   .import-status-err{font-size:12px;color:#E8431A;margin-top:8px;}
 
   /* Loading overlay */
-  .loading-overlay{position:fixed;inset:0;z-index:200;background:rgba(253,250,245,.75);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:center;justify-content:center;}
-  .loading-card{background:#fff;border:1px solid #EDE8E0;border-radius:20px;padding:36px 48px;text-align:center;box-shadow:0 8px 40px rgba(26,31,46,.1);}
+  .loading-overlay{position:fixed;inset:0;z-index:200;background:rgba(253,250,245,.82);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .loading-card{background:#fff;border:1px solid #EDE8E0;border-radius:20px;padding:36px 48px;text-align:center;box-shadow:0 8px 40px rgba(26,31,46,.1);min-width:240px;}
+  .loading-icon-wrap{width:64px;height:64px;margin:0 auto 16px;position:relative;}
+  .loading-icon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;animation:iconFade 1.5s ease-in-out infinite;}
+  .loading-icon svg{width:48px;height:48px;}
+  .loading-icon:nth-child(1){animation-delay:0s;}
+  .loading-icon:nth-child(2){animation-delay:1.5s;}
+  .loading-icon:nth-child(3){animation-delay:3s;}
+  .loading-icon:nth-child(4){animation-delay:4.5s;}
+  @keyframes iconFade{
+    0%{opacity:0;transform:scale(.85);}
+    10%{opacity:1;transform:scale(1);}
+    80%{opacity:1;transform:scale(1);}
+    100%{opacity:0;transform:scale(.85);}
+  }
   .spinner{width:36px;height:36px;border:2.5px solid #EDE8E0;border-top-color:#F4A021;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 20px;}
   @keyframes spin{to{transform:rotate(360deg);}}
   .loading-text{font-family:'Fraunces',serif;font-size:18px;font-style:italic;color:#151210;}
@@ -307,77 +320,76 @@ const CSS = `
   /* ── PREMIUM RECIPE PAGE ── */
   .recipe-page{max-width:860px;margin:0 auto;padding:0 0 80px;}
 
-  /* Recipe banner — forest green */
-  /* Recipe banner — grid layout matching Every Chef design */
+  /* Recipe banner — warm dark */
   .recipe-banner{
-    background:#1E3A2F;
-    padding:28px 32px 0;
-    border-radius:20px;
+    background:#1C1410;
+    padding:20px 28px 0;
+    border-radius:16px;
     overflow:hidden;
-    margin:20px auto 0;
+    margin:16px auto 0;
     max-width:920px;
     position:relative;
     display:grid;
     grid-template-columns:1fr auto;
-    gap:16px;
+    gap:12px;
     align-items:start;
   }
-  .recipe-banner::before{content:"";position:absolute;top:-60px;right:-60px;width:240px;height:240px;border-radius:50%;background:rgba(244,160,33,.08);pointer-events:none;}
-  .recipe-banner::after{content:"";position:absolute;bottom:-40px;left:120px;width:160px;height:160px;border-radius:50%;background:rgba(244,160,33,.05);pointer-events:none;}
+  .recipe-banner::before{content:"";position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:rgba(244,160,33,.06);pointer-events:none;}
+  .recipe-banner::after{content:"";position:absolute;bottom:-30px;left:80px;width:120px;height:120px;border-radius:50%;background:rgba(244,160,33,.04);pointer-events:none;}
   .recipe-banner > *{position:relative;z-index:1;}
   @media(max-width:640px){
-    .recipe-banner{grid-template-columns:1fr;padding:20px 20px 0;margin:12px 12px 0;border-radius:16px;gap:12px;}
+    .recipe-banner{grid-template-columns:1fr;padding:16px 16px 0;margin:10px 10px 0;border-radius:14px;gap:10px;}
   }
   .recipe-banner-eyebrow{
     font-size:9px;letter-spacing:3px;text-transform:uppercase;
-    color:#F4A021;margin-bottom:8px;font-weight:500;opacity:.7;
+    color:#F4A021;margin-bottom:6px;font-weight:500;opacity:.7;
   }
   .recipe-banner-title{
     font-family:'Fraunces',serif;
-    font-size:clamp(22px,3.5vw,36px);
+    font-size:clamp(18px,3vw,28px);
     line-height:1.1;
     color:#fff;
-    margin-bottom:8px;
+    margin-bottom:4px;
     font-weight:700;
   }
   .recipe-banner-title em{color:#F4A021;font-style:italic;}
   .recipe-banner-desc{
-    font-size:13px;color:rgba(255,255,255,.55);
-    line-height:1.6;margin-bottom:0;font-weight:300;max-width:480px;
+    font-size:12px;color:rgba(255,255,255,.45);
+    line-height:1.5;margin-bottom:0;font-weight:300;max-width:480px;
   }
   .recipe-banner-meta{
     display:flex;gap:0;
-    border-top:1px solid rgba(255,255,255,.1);
-    padding:16px 0;margin-top:20px;
+    border-top:1px solid rgba(255,255,255,.08);
+    padding:12px 0;margin-top:14px;
     grid-column:1 / -1;
   }
   .recipe-banner-meta-item{
-    flex:1;text-align:center;padding:0 16px;
-    border-right:1px solid rgba(255,255,255,.08);
+    flex:1;text-align:center;padding:0 12px;
+    border-right:1px solid rgba(255,255,255,.06);
   }
   .recipe-banner-meta-item:last-child{border-right:none;}
   .recipe-banner-meta-label{
     font-size:9px;letter-spacing:2px;text-transform:uppercase;
-    color:rgba(255,255,255,.35);margin-bottom:4px;font-weight:500;
+    color:rgba(255,255,255,.3);margin-bottom:3px;font-weight:500;
   }
   .recipe-banner-meta-value{
-    font-family:'Fraunces',serif;font-size:18px;color:#fff;font-weight:700;
+    font-family:'Fraunces',serif;font-size:16px;color:#fff;font-weight:700;
   }
-  .recipe-banner-actions{display:flex;gap:8px;padding-top:4px;flex-shrink:0;}
-  .save-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:8px 16px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.8);display:flex;align-items:center;gap:5px;transition:all .15s;}
-  .save-btn:hover{background:rgba(255,255,255,.2);}
+  .recipe-banner-actions{display:flex;gap:8px;padding-top:2px;flex-shrink:0;}
+  .save-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:100px;padding:7px 14px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.75);display:flex;align-items:center;gap:5px;transition:all .15s;}
+  .save-btn:hover{background:rgba(255,255,255,.18);}
   .save-btn.saved{background:#F4A021;border-color:#F4A021;color:#151210;}
-  .print-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:8px 16px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.8);display:flex;align-items:center;gap:5px;transition:all .15s;}
-  .print-btn:hover{background:rgba(255,255,255,.2);}
-  .seasonal-note{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;background:rgba(122,140,110,.2);border:1px solid rgba(122,140,110,.4);border-radius:100px;font-size:12px;color:#a8c49a;margin-bottom:16px;}
+  .print-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:100px;padding:7px 14px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.75);display:flex;align-items:center;gap:5px;transition:all .15s;}
+  .print-btn:hover{background:rgba(255,255,255,.18);}
+  .seasonal-note{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:rgba(244,160,33,.1);border:1px solid rgba(244,160,33,.25);border-radius:100px;font-size:11px;color:rgba(244,160,33,.8);margin-bottom:10px;}
 
   /* Serving scaler — on banner */
-  .scaler{display:inline-flex;align-items:center;border:1px solid rgba(255,255,255,.2);border-radius:100px;overflow:hidden;margin:0 auto;}
-  .scaler-btn{width:32px;height:32px;border:none;background:rgba(255,255,255,.1);font-size:15px;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;transition:background .12s;font-family:'Outfit',sans-serif;}
-  .scaler-btn:hover{background:rgba(196,149,106,.2);}
-  .scaler-val{padding:0 12px;font-family:'Fraunces',serif;font-size:18px;font-weight:700;color:#fff;white-space:nowrap;}
-  .scaler-wrap{display:flex;flex-direction:column;align-items:center;gap:5px;}
-  .scaler-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(196,149,106,.7);font-weight:500;}
+  .scaler{display:inline-flex;align-items:center;border:1px solid rgba(255,255,255,.15);border-radius:100px;overflow:hidden;margin:0 auto;}
+  .scaler-btn{width:28px;height:28px;border:none;background:rgba(255,255,255,.08);font-size:14px;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;transition:background .12s;font-family:'Outfit',sans-serif;}
+  .scaler-btn:hover{background:rgba(244,160,33,.2);}
+  .scaler-val{padding:0 10px;font-family:'Fraunces',serif;font-size:16px;font-weight:700;color:#fff;white-space:nowrap;}
+  .scaler-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .scaler-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(244,160,33,.6);font-weight:500;}
 
   /* Recipe body */
   .recipe-body{padding:36px 32px 0;}
@@ -1523,7 +1535,34 @@ export default function App(){
         {status==="loading"&&(
           <div className="loading-overlay">
             <div className="loading-card">
-              <div className="spinner"/>
+              <div className="loading-icon-wrap">
+                <div className="loading-icon">
+                  <svg viewBox="0 0 48 48" fill="none" stroke="#1A1F2E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 6c0 0 2 4 2 10s-4 8-4 14h28c0-6-4-8-4-14s2-10 2-10"/><line x1="8" y1="6" x2="40" y2="6"/><path d="M20 30v8m8-8v8"/><line x1="16" y1="42" x2="32" y2="42"/>
+                    <circle cx="24" cy="20" r="2" fill="#F4A021" stroke="none"/>
+                  </svg>
+                </div>
+                <div className="loading-icon">
+                  <svg viewBox="0 0 48 48" fill="none" stroke="#1A1F2E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 24c0-8.8 7.2-16 16-16s16 7.2 16 16"/><path d="M6 24h36"/><path d="M24 8v4M24 36v4M8 24H4M44 24h-4"/>
+                    <circle cx="24" cy="24" r="4" fill="none"/><circle cx="24" cy="36" r="2" fill="#F4A021" stroke="none"/>
+                  </svg>
+                </div>
+                <div className="loading-icon">
+                  <svg viewBox="0 0 48 48" fill="none" stroke="#1A1F2E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 8c-1 4-2 8-2 12 0 6 5 11 12 11s12-5 12-11c0-4-1-8-2-12"/><line x1="10" y1="8" x2="38" y2="8"/>
+                    <path d="M20 31v5m8-5v5"/><path d="M16 40h16"/>
+                    <circle cx="24" cy="20" r="2" fill="#F4A021" stroke="none"/>
+                  </svg>
+                </div>
+                <div className="loading-icon">
+                  <svg viewBox="0 0 48 48" fill="none" stroke="#1A1F2E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 34c0-4 3-8 8-10l4-14h8l4 14c5 2 8 6 8 10"/><line x1="6" y1="38" x2="42" y2="38"/>
+                    <path d="M20 24c0 0 2 3 4 3s4-3 4-3"/>
+                    <circle cx="24" cy="16" r="2" fill="#F4A021" stroke="none"/>
+                  </svg>
+                </div>
+              </div>
               <div className="loading-text">{seasonal?"Finding what's fresh near you…":"Gathering the finest recipes…"}</div>
               <div className="loading-sub">Synthesizing techniques from top sources</div>
             </div>
@@ -1780,7 +1819,35 @@ export default function App(){
         {inspireStatus==="loading"&&(
           <div className="loading-overlay">
             <div className="loading-card">
-              <div className="spinner"/>
+              <div className="loading-icon-wrap">
+                <div className="loading-icon">
+                  <svg viewBox="0 0 48 48" fill="none" stroke="#1A1F2E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 8c-1 4-2 8-2 12 0 6 5 11 12 11s12-5 12-11c0-4-1-8-2-12"/><line x1="10" y1="8" x2="38" y2="8"/>
+                    <path d="M20 31v5m8-5v5"/><path d="M16 40h16"/>
+                    <circle cx="24" cy="20" r="2" fill="#F4A021" stroke="none"/>
+                  </svg>
+                </div>
+                <div className="loading-icon">
+                  <svg viewBox="0 0 48 48" fill="none" stroke="#1A1F2E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 34c0-4 3-8 8-10l4-14h8l4 14c5 2 8 6 8 10"/><line x1="6" y1="38" x2="42" y2="38"/>
+                    <path d="M20 24c0 0 2 3 4 3s4-3 4-3"/>
+                    <circle cx="24" cy="16" r="2" fill="#F4A021" stroke="none"/>
+                  </svg>
+                </div>
+                <div className="loading-icon">
+                  <svg viewBox="0 0 48 48" fill="none" stroke="#1A1F2E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 6c0 0 2 4 2 10s-4 8-4 14h28c0-6-4-8-4-14s2-10 2-10"/><line x1="8" y1="6" x2="40" y2="6"/><path d="M20 30v8m8-8v8"/><line x1="16" y1="42" x2="32" y2="42"/>
+                    <circle cx="24" cy="20" r="2" fill="#F4A021" stroke="none"/>
+                  </svg>
+                </div>
+                <div className="loading-icon">
+                  <svg viewBox="0 0 48 48" fill="none" stroke="#1A1F2E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <ellipse cx="24" cy="36" rx="16" ry="4"/><path d="M8 36V20c0-6 7-12 16-12s16 6 16 12v16"/>
+                    <path d="M16 28c2-2 4-3 8-3s6 1 8 3"/>
+                    <circle cx="24" cy="20" r="2" fill="#F4A021" stroke="none"/>
+                  </svg>
+                </div>
+              </div>
               <div className="loading-text">Thinking about tonight's dinner…</div>
               <div className="loading-sub">Matching ideas to your mood</div>
             </div>
