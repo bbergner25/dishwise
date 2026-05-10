@@ -382,6 +382,40 @@ const CSS = `
   .save-btn.saved{background:#F4A021;border-color:#F4A021;color:#151210;}
   .print-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:100px;padding:7px 14px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;color:rgba(255,255,255,.75);display:flex;align-items:center;gap:5px;transition:all .15s;}
   .print-btn:hover{background:rgba(255,255,255,.18);}
+  .icon-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:100px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(255,255,255,.75);transition:all .15s;flex-shrink:0;}
+  .icon-btn:hover{background:rgba(255,255,255,.2);}
+  /* Recipe photo hero */
+  .recipe-banner-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.35;border-radius:16px;}
+  /* Edit recipe panel */
+  .edit-panel-overlay{position:fixed;inset:0;background:rgba(26,31,46,.6);z-index:300;display:flex;align-items:flex-end;}
+  @media(min-width:768px){.edit-panel-overlay{align-items:center;justify-content:center;}}
+  .edit-panel{background:#FDFAF5;border-radius:24px 24px 0 0;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;}
+  @media(min-width:768px){.edit-panel{border-radius:20px;max-width:600px;max-height:80vh;}}
+  .edit-panel-handle{width:36px;height:4px;background:#EDE8E0;border-radius:2px;margin:14px auto 0;flex-shrink:0;}
+  .edit-panel-header{padding:16px 20px 12px;border-bottom:1px solid #EDE8E0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+  .edit-panel-title{font-family:'Fraunces',serif;font-size:18px;color:#151210;}
+  .edit-panel-close{background:none;border:none;cursor:pointer;font-size:20px;color:#7A6E6A;padding:0;line-height:1;}
+  .edit-panel-body{overflow-y:auto;flex:1;padding:16px 20px;}
+  .edit-section-label{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#E8431A;margin-bottom:10px;margin-top:16px;}
+  .edit-section-label:first-child{margin-top:0;}
+  .edit-ing-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+  .edit-ing-amt{width:80px;padding:8px 10px;border:1.5px solid #EDE8E0;border-radius:8px;font-family:'Outfit',sans-serif;font-size:13px;color:#151210;outline:none;flex-shrink:0;}
+  .edit-ing-amt:focus{border-color:#F4A021;}
+  .edit-ing-name{flex:1;padding:8px 10px;border:1.5px solid #EDE8E0;border-radius:8px;font-family:'Outfit',sans-serif;font-size:13px;color:#151210;outline:none;}
+  .edit-ing-name:focus{border-color:#F4A021;}
+  .edit-delete-btn{width:28px;height:28px;border:none;background:none;cursor:pointer;color:#D4CCC0;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:color .12s;}
+  .edit-delete-btn:hover{color:#E8431A;}
+  .edit-add-btn{display:flex;align-items:center;gap:6px;background:none;border:1.5px dashed #EDE8E0;border-radius:8px;padding:8px 14px;font-family:'Outfit',sans-serif;font-size:13px;color:#7A6E6A;cursor:pointer;width:100%;justify-content:center;margin-top:4px;transition:all .15s;}
+  .edit-add-btn:hover{border-color:#F4A021;color:#F4A021;}
+  .edit-step-row{display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;}
+  .edit-step-num{width:24px;height:24px;border-radius:50%;background:#151210;color:#FDFAF5;font-family:'Fraunces',serif;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:8px;}
+  .edit-step-text{flex:1;padding:8px 10px;border:1.5px solid #EDE8E0;border-radius:8px;font-family:'Outfit',sans-serif;font-size:13px;color:#151210;outline:none;resize:vertical;min-height:60px;line-height:1.5;}
+  .edit-step-text:focus{border-color:#F4A021;}
+  .edit-panel-footer{padding:14px 20px;border-top:1px solid #EDE8E0;flex-shrink:0;}
+  .edit-save-btn{width:100%;padding:13px;background:#F4A021;color:#151210;border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;cursor:pointer;}
+  /* Text size toggle */
+  .text-size-btn{background:none;border:1.5px solid #EDE8E0;border-radius:100px;padding:4px 10px;font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;color:#7A6E6A;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:4px;}
+  .text-size-btn:hover{border-color:#151210;color:#151210;}
   .seasonal-note{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:rgba(244,160,33,.1);border:1px solid rgba(244,160,33,.25);border-radius:100px;font-size:11px;color:rgba(244,160,33,.8);margin-bottom:10px;}
 
   /* Serving scaler — on banner */
@@ -798,6 +832,11 @@ function wmUrl(item: string){ return `https://www.walmart.com/search?q=${encodeU
 function tgUrl(item: string){ return `https://www.target.com/s?searchTerm=${encodeURIComponent(item)}`; }
 
 /* ── UTILS ── */
+function normalizeAmount(s: string): string {
+  if(!s) return s;
+  // Insert space between number/fraction and following letter: "1medium" → "1 medium"
+  return s.replace(/(\d)(\/\d+)?([a-zA-Z])/g, '$1$2 $3');
+}
 function parseNum(s: string): number|null{
   const t=s.trim();
   const mx=t.match(/^(\d+)\s+(\d+)\/(\d+)$/);if(mx)return+mx[1]+ +mx[2]/+mx[3];
@@ -1004,6 +1043,11 @@ export default function App(){
   const [remixStatus,setRemixStatus] = useState("idle");
   const [retailer,setRetailer] = useState<string>("");
   const [retailerOpen,setRetailerOpen] = useState(false);
+  const [showEditPanel,setShowEditPanel] = useState(false);
+  const [editRecipe,setEditRecipe] = useState<any>(null);
+  const [ingTextSize,setIngTextSize] = useState<"normal"|"large"|"xl">("normal");
+  const [recipePhotos,setRecipePhotos] = useState<Record<number,string>>({});
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   // Inspire Me
   const [inspireTime,setInspireTime]   = useState("");
@@ -1592,13 +1636,39 @@ export default function App(){
     const sources=recipe.sources||[];
     const groups=recipe.ingredient_groups||(recipe.ingredients?[{label:"",items:recipe.ingredients}]:[]);
     const firstItem=(recipe.grocery_items||[])[0]||"";
+    const photo=recipe?.id?recipePhotos[recipe.id]:null;
+    const ingFontSize=ingTextSize==="xl"?17:ingTextSize==="large"?15.5:14;
+
+    const handlePhotoUpload=(e:React.ChangeEvent<HTMLInputElement>)=>{
+      const file=e.target.files?.[0];
+      if(!file||!recipe?.id)return;
+      const reader=new FileReader();
+      reader.onload=()=>{
+        if(typeof reader.result==="string"){
+          setRecipePhotos(prev=>({...prev,[recipe.id]:reader.result as string}));
+        }
+      };
+      reader.readAsDataURL(file);
+    };
+
+    const openEdit=()=>{
+      setEditRecipe(JSON.parse(JSON.stringify(recipe)));
+      setShowEditPanel(true);
+    };
+
     return(
       <div className="recipe-page">
-        {/* Premium dark banner */}
-        <div className="recipe-banner">
+        {/* Banner */}
+        <div className="recipe-banner" style={{position:"relative",overflow:"hidden"}}>
+          {photo&&<img src={photo} className="recipe-banner-photo" alt="dish"/>}
           <div className="recipe-banner-actions">
             <button className="print-btn" onClick={()=>window.print()} style={{display:"flex",alignItems:"center",gap:6}}>{Ic.printer(14)} Print</button>
             <button className={`save-btn${sv?" saved":""}`} onClick={()=>toggleSave(recipe)} style={{display:"flex",alignItems:"center",gap:5}}>{sv?Ic.heartFill(14):Ic.heart(14)} {sv?"Saved":"Save"}</button>
+            <button className="icon-btn" title="Add photo" onClick={()=>photoInputRef.current?.click()}>{Ic.camera(15)}</button>
+            <button className="icon-btn" title="Edit recipe" onClick={openEdit}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <input ref={photoInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handlePhotoUpload}/>
           </div>
           <div className="recipe-banner-eyebrow">{recipe._scanned?"Scanned Card":"· Every Chef ·"}</div>
           <h2 className="recipe-banner-title">{recipe.title}</h2>
@@ -1627,16 +1697,21 @@ export default function App(){
         <div className="recipe-body">
         <div className="two-col">
           <div>
-            <div className="section-label">Ingredients</div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+              <div className="section-label" style={{marginBottom:0}}>Ingredients</div>
+              <button className="text-size-btn" onClick={()=>setIngTextSize(s=>s==="normal"?"large":s==="large"?"xl":"normal")}>
+                Aa {ingTextSize==="normal"?"·":ingTextSize==="large"?"··":"···"}
+              </button>
+            </div>
             {groups.map((g:any,gi:number)=>(
               <div key={gi} className="ing-group">
                 {g.label&&<div className="ing-group-label">{g.label}</div>}
                 <ul className="ing-list">
                   {(g.items||[]).map((ing:any,ii:number)=>(
-                    <li key={ii} className="ing-item">
+                    <li key={ii} className="ing-item" style={{fontSize:ingFontSize}}>
                       <span className="ing-dot"/>
                       <span className="ing-text">
-                        <span className="ing-amount">{scaleAmt(ing.amount,ratio)}</span>{" "}
+                        <span className="ing-amount">{normalizeAmount(scaleAmt(ing.amount,ratio))}</span>{" "}
                         <span className="ing-name">{ing.name}</span>
                       </span>
                       {retailer&&(
@@ -2379,6 +2454,90 @@ export default function App(){
       )}
       {showAccountDropdown&&(
         <div style={{position:"fixed",inset:0,zIndex:150}} onClick={()=>setShowAccountDropdown(false)}/>
+      )}
+      {/* Edit Recipe Panel */}
+      {showEditPanel&&editRecipe&&(
+        <div className="edit-panel-overlay" onClick={()=>setShowEditPanel(false)}>
+          <div className="edit-panel" onClick={e=>e.stopPropagation()}>
+            <div className="edit-panel-handle"/>
+            <div className="edit-panel-header">
+              <div className="edit-panel-title">Edit Recipe</div>
+              <button className="edit-panel-close" onClick={()=>setShowEditPanel(false)}>×</button>
+            </div>
+            <div className="edit-panel-body">
+              {/* Title */}
+              <div className="edit-section-label">Title</div>
+              <input
+                style={{width:"100%",padding:"8px 10px",border:"1.5px solid #EDE8E0",borderRadius:8,fontFamily:"'Fraunces',serif",fontSize:15,color:"#151210",outline:"none",marginBottom:4,boxSizing:"border-box" as const}}
+                value={editRecipe.title||""}
+                onChange={e=>setEditRecipe((r:any)=>({...r,title:e.target.value}))}
+              />
+              {/* Ingredients */}
+              <div className="edit-section-label">Ingredients</div>
+              {(editRecipe.ingredient_groups||[{label:"",items:editRecipe.ingredients||[]}]).map((g:any,gi:number)=>(
+                <div key={gi}>
+                  {g.label&&<div style={{fontSize:11,fontWeight:700,letterSpacing:1,textTransform:"uppercase" as const,color:"#151210",marginBottom:6,marginTop:4}}>{g.label}</div>}
+                  {(g.items||[]).map((ing:any,ii:number)=>(
+                    <div key={ii} className="edit-ing-row">
+                      <input className="edit-ing-amt" value={ing.amount||""} placeholder="amt"
+                        onChange={e=>{
+                          const groups=[...(editRecipe.ingredient_groups||[{label:"",items:editRecipe.ingredients||[]}])];
+                          groups[gi]={...groups[gi],items:[...groups[gi].items]};
+                          groups[gi].items[ii]={...groups[gi].items[ii],amount:e.target.value};
+                          setEditRecipe((r:any)=>({...r,ingredient_groups:groups}));
+                        }}/>
+                      <input className="edit-ing-name" value={ing.name||""} placeholder="ingredient"
+                        onChange={e=>{
+                          const groups=[...(editRecipe.ingredient_groups||[{label:"",items:editRecipe.ingredients||[]}])];
+                          groups[gi]={...groups[gi],items:[...groups[gi].items]};
+                          groups[gi].items[ii]={...groups[gi].items[ii],name:e.target.value};
+                          setEditRecipe((r:any)=>({...r,ingredient_groups:groups}));
+                        }}/>
+                      <button className="edit-delete-btn" onClick={()=>{
+                        const groups=[...(editRecipe.ingredient_groups||[{label:"",items:editRecipe.ingredients||[]}])];
+                        groups[gi]={...groups[gi],items:groups[gi].items.filter((_:any,i:number)=>i!==ii)};
+                        setEditRecipe((r:any)=>({...r,ingredient_groups:groups}));
+                      }}>×</button>
+                    </div>
+                  ))}
+                  <button className="edit-add-btn" onClick={()=>{
+                    const groups=[...(editRecipe.ingredient_groups||[{label:"",items:editRecipe.ingredients||[]}])];
+                    groups[gi]={...groups[gi],items:[...groups[gi].items,{amount:"",name:""}]};
+                    setEditRecipe((r:any)=>({...r,ingredient_groups:groups}));
+                  }}>+ Add ingredient</button>
+                </div>
+              ))}
+              {/* Steps */}
+              <div className="edit-section-label">Steps</div>
+              {(editRecipe.steps||[]).map((step:string,si:number)=>(
+                <div key={si} className="edit-step-row">
+                  <div className="edit-step-num">{si+1}</div>
+                  <textarea className="edit-step-text" value={step}
+                    onChange={e=>{
+                      const steps=[...(editRecipe.steps||[])];
+                      steps[si]=e.target.value;
+                      setEditRecipe((r:any)=>({...r,steps}));
+                    }}/>
+                  <button className="edit-delete-btn" onClick={()=>{
+                    const steps=(editRecipe.steps||[]).filter((_:any,i:number)=>i!==si);
+                    setEditRecipe((r:any)=>({...r,steps}));
+                  }}>×</button>
+                </div>
+              ))}
+              <button className="edit-add-btn" onClick={()=>{
+                const steps=[...(editRecipe.steps||[]),""];
+                setEditRecipe((r:any)=>({...r,steps}));
+              }}>+ Add step</button>
+            </div>
+            <div className="edit-panel-footer">
+              <button className="edit-save-btn" onClick={()=>{
+                setRecipe(editRecipe);
+                if(isSaved(recipe))setSaved((l:any[])=>l.map((r:any)=>r.id===editRecipe.id?editRecipe:r));
+                setShowEditPanel(false);
+              }}>Save Changes</button>
+            </div>
+          </div>
+        </div>
       )}
       {showSavePrompt&&(
         <div className="save-prompt-overlay" onClick={()=>{setShowSavePrompt(false);setPendingSave(null);}}>
