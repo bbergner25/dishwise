@@ -1812,7 +1812,7 @@ export default function App(){
               </div>
             </div>
             <div className="inspire-section">
-              <div className="inspire-section-label">Anything in the fridge to use up? <span style={{color:"#7A6E6A",fontWeight:400,letterSpacing:0,textTransform:"none",fontSize:11}}>(optional)</span></div>
+              <div className="inspire-section-label">Anything in the fridge to use up? <span style={{color:"#7A6E6A",fontWeight:400 as const,fontSize:11,letterSpacing:"0",textTransform:"none" as const}}>(optional)</span></div>
               <textarea
                 className="inspire-fridge-input"
                 rows={2}
@@ -2234,7 +2234,7 @@ export default function App(){
                 />
                 <div className="modal-list">
                   {filtered.length===0?(
-                    <p style={{color:"#7A6E6A",fontSize:13,textAlign:"center",padding:"20px 0"}}>No recipes match "{modalSearch}"</p>
+                    <p style={{color:"#7A6E6A",fontSize:13,textAlign:"center",padding:"20px 0"}}>No recipes match &ldquo;{modalSearch}&rdquo;</p>
                   ):sortedCats.length>0?sortedCats.map(cat=>(
                     <div key={cat}>
                       <div className="modal-cat-label">{cat}</div>
