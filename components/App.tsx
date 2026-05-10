@@ -554,6 +554,9 @@ const CSS = `
   .inspire-go-btn{width:100%;padding:15px;background:#F4A021;color:#fff;border:none;border-radius:100px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:500;cursor:pointer;transition:background .15s;margin-top:8px;}
   .inspire-go-btn:hover:not(:disabled){background:#D88815;}
   .inspire-go-btn:disabled{background:#7A6E6A;cursor:not-allowed;}
+  .inspire-fridge-input{width:100%;padding:12px 16px;border:1.5px solid #EDE8E0;border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;color:#151210;outline:none;background:#fff;transition:border-color .15s;resize:none;line-height:1.5;}
+  .inspire-fridge-input:focus{border-color:#F4A021;}
+  .inspire-fridge-input::placeholder{color:#7A6E6A;}
   .inspire-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:28px;}
   .inspire-card{background:#fff;border:1px solid #EDE8E0;border-radius:14px;padding:20px;cursor:pointer;transition:all .15s;border-left:4px solid #F4A021;}
   .inspire-card:hover{box-shadow:0 6px 24px rgba(61,43,31,.1);transform:translateY(-2px);}
@@ -594,9 +597,14 @@ const CSS = `
 
   /* Modal */
   .modal-overlay{position:fixed;inset:0;background:rgba(61,43,31,.45);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;}
-  .modal{background:#FDFAF5;border-radius:18px;padding:26px;width:100%;max-width:480px;max-height:70vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.25);}
-  .modal-title{font-family:'Fraunces',serif;font-size:20px;margin-bottom:16px;flex-shrink:0;}
-  .modal-list{overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:8px;}
+  .modal{background:#FDFAF5;border-radius:18px;padding:26px;width:100%;max-width:480px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+  .modal-title{font-family:'Fraunces',serif;font-size:20px;margin-bottom:12px;flex-shrink:0;}
+  .modal-search{width:100%;padding:10px 14px;border:1.5px solid #EDE8E0;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:#151210;outline:none;background:#fff;margin-bottom:14px;flex-shrink:0;transition:border-color .15s;box-sizing:border-box;}
+  .modal-search:focus{border-color:#F4A021;}
+  .modal-search::placeholder{color:#7A6E6A;}
+  .modal-list{overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:4px;}
+  .modal-cat-label{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#E8431A;padding:10px 0 4px;display:flex;align-items:center;gap:8px;flex-shrink:0;}
+  .modal-cat-label::after{content:'';flex:1;height:1px;background:#EDE8E0;}
   .modal-item{background:#fff;border:1px solid #EDE8E0;border-radius:10px;padding:12px 14px;cursor:pointer;transition:all .12s;}
   .modal-item:hover{border-color:#F4A021;background:#FFF8F5;}
   .modal-item-title{font-family:'Fraunces',serif;font-size:15px;}
@@ -840,9 +848,10 @@ Reply with ONLY valid JSON, no other text:
 Rules: group ingredients by component when useful; single group with empty label for simple recipes. 6-10 steps. grocery_items: flat names only. sources: 2-3 real sites. seasonal_note only if seasonal requested.`;
 }
 
-function buildInspirePrompt(time: string,vibe: string,serves: string,diets: string[]): string{
+function buildInspirePrompt(time: string,vibe: string,serves: string,diets: string[],fridge?: string): string{
   const d=diets.length?" Dietary restrictions: "+diets.join(", ")+".":"";
-  return `Suggest 3 distinct recipe ideas for someone who wants: time available: "${time}", vibe: "${vibe}", serving size: "${serves}".${d}
+  const f=fridge?.trim()?` Try to incorporate some or all of these ingredients the user already has: ${fridge.trim()}.`:"";
+  return `Suggest 3 distinct recipe ideas for someone who wants: time available: "${time}", vibe: "${vibe}", serving size: "${serves}".${d}${f}
 Reply with ONLY valid JSON, no other text:
 {"suggestions":[{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"2","why":"One sentence on why this fits their request perfectly."},{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"2","why":"..."},{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"2","why":"..."}]}
 Make each suggestion meaningfully different from the others. Keep titles concise and appetizing.`;
@@ -982,6 +991,7 @@ export default function App(){
   const [editingCategory,setEditingCategory] = useState<number|null>(null);
   const [plan,setPlan]           = useState<Record<string,any>>({});
   const [assignDay,setAssignDay] = useState<string|null>(null);
+  const [modalSearch,setModalSearch] = useState("");
   const [scanPreview,setScanPreview] = useState<string|null>(null);
   const [scanMime,setScanMime]   = useState("image/jpeg");
   const [scanStatus,setScanStatus] = useState("idle");
@@ -999,6 +1009,7 @@ export default function App(){
   const [inspireTime,setInspireTime]   = useState("");
   const [inspireVibe,setInspireVibe]   = useState("");
   const [inspireServes,setInspireServes] = useState("");
+  const [inspireFridge,setInspireFridge] = useState("");
   const [inspireStatus,setInspireStatus] = useState("idle");
   const [inspireSuggestions,setInspireSuggestions] = useState<any[]>([]);
 
@@ -1196,7 +1207,7 @@ export default function App(){
     if(!inspireTime||!inspireVibe||!inspireServes)return;
     setInspireStatus("loading");setInspireSuggestions([]);
     try{
-      const parsed=await callAPI([{role:"user",content:buildInspirePrompt(inspireTime,inspireVibe,inspireServes,diets)}]);
+      const parsed=await callAPI([{role:"user",content:buildInspirePrompt(inspireTime,inspireVibe,inspireServes,diets,inspireFridge)}]);
       setInspireSuggestions(parsed.suggestions||[]);setInspireStatus("done");
     }catch(e:any){setInspireStatus("error");}
   };
@@ -1800,6 +1811,16 @@ export default function App(){
                 ))}
               </div>
             </div>
+            <div className="inspire-section">
+              <div className="inspire-section-label">Anything in the fridge to use up? <span style={{color:"#7A6E6A",fontWeight:400,letterSpacing:0,textTransform:"none",fontSize:11}}>(optional)</span></div>
+              <textarea
+                className="inspire-fridge-input"
+                rows={2}
+                placeholder="e.g. chicken thighs, half a lemon, spinach…"
+                value={inspireFridge}
+                onChange={e=>setInspireFridge(e.target.value)}
+              />
+            </div>
             {diets.length>0&&(
               <div style={{fontSize:12,color:C.muted,marginBottom:16,textAlign:"center"}}>
                 Using your dietary filters: {diets.join(", ")}
@@ -2169,17 +2190,32 @@ export default function App(){
     const isRedirect=assignDay.startsWith("fromSaved_");
     const dayKey=isRedirect?null:assignDay;
     const allRecipes=[...saved,...sharedRecipes.filter(r=>!saved.some(s=>s.id===r.id))];
+
+    // Filter by search
+    const filtered=modalSearch.trim()===""?allRecipes:allRecipes.filter((r:any)=>
+      (r.title||"").toLowerCase().includes(modalSearch.toLowerCase())
+    );
+
+    // Group by category
+    const grouped: Record<string,any[]>={};
+    filtered.forEach((r:any)=>{
+      const cat=categoryOverrides[r.id]||guessCategory(r);
+      if(!grouped[cat])grouped[cat]=[];
+      grouped[cat].push(r);
+    });
+    const sortedCats=RECIPE_CATEGORIES.filter(c=>grouped[c]&&grouped[c].length>0);
+
     return(
-      <div className="modal-overlay" onClick={()=>setAssignDay(null)}>
+      <div className="modal-overlay" onClick={()=>{setAssignDay(null);setModalSearch("");}}>
         <div className="modal" onClick={e=>e.stopPropagation()}>
-          <div className="modal-title">{dayKey?`Add recipe to ${DAYS[DAY_KEYS.indexOf(dayKey)]}`:"Choose a day"}</div>
+          <div className="modal-title">{dayKey?`Add to ${DAYS[DAY_KEYS.indexOf(dayKey)]}`:"Choose a day"}</div>
           {isRedirect?(
             <div className="modal-list">
               {DAY_KEYS.map((k,i)=>{
                 const rid=assignDay.replace("fromSaved_","");
                 const r=allRecipes.find(s=>String(s.id)===rid);
                 return(
-                  <div key={k} className="modal-item" onClick={()=>{if(r){setPlan(p=>({...p,[k]:r}));setAssignDay(null);}}}>
+                  <div key={k} className="modal-item" onClick={()=>{if(r){setPlan(p=>({...p,[k]:r}));setAssignDay(null);setModalSearch("");}}>
                     <div className="modal-item-title">{DAYS[i]}</div>
                     {plan[k]&&<div className="modal-item-meta">Currently: {plan[k].title}</div>}
                   </div>
@@ -2187,18 +2223,41 @@ export default function App(){
               })}
             </div>
           ):(
-            allRecipes.length===0?<p style={{color:C.muted,fontSize:14}}>No saved recipes yet.</p>:(
-              <div className="modal-list">
-                {allRecipes.map((r:any)=>(
-                  <div key={r.id} className="modal-item" onClick={()=>{setPlan(p=>({...p,[dayKey!]:r}));setAssignDay(null);}}>
-                    <div className="modal-item-title">{r.title}</div>
-                    <div className="modal-item-meta">{r.prep_time} prep · {r.cook_time} cook</div>
-                  </div>
-                ))}
-              </div>
+            allRecipes.length===0?<p style={{color:"#7A6E6A",fontSize:14}}>No saved recipes yet.</p>:(
+              <>
+                <input
+                  className="modal-search"
+                  placeholder="Search recipes…"
+                  value={modalSearch}
+                  onChange={e=>setModalSearch(e.target.value)}
+                  autoFocus
+                />
+                <div className="modal-list">
+                  {filtered.length===0?(
+                    <p style={{color:"#7A6E6A",fontSize:13,textAlign:"center",padding:"20px 0"}}>No recipes match "{modalSearch}"</p>
+                  ):sortedCats.length>0?sortedCats.map(cat=>(
+                    <div key={cat}>
+                      <div className="modal-cat-label">{cat}</div>
+                      {grouped[cat].map((r:any)=>(
+                        <div key={r.id} className="modal-item" onClick={()=>{setPlan(p=>({...p,[dayKey!]:r}));setAssignDay(null);setModalSearch("");}}>
+                          <div className="modal-item-title">{r.title}</div>
+                          <div className="modal-item-meta">{r.prep_time} prep · {r.cook_time} cook</div>
+                        </div>
+                      ))}
+                    </div>
+                  )):(
+                    filtered.map((r:any)=>(
+                      <div key={r.id} className="modal-item" onClick={()=>{setPlan(p=>({...p,[dayKey!]:r}));setAssignDay(null);setModalSearch("");}}>
+                        <div className="modal-item-title">{r.title}</div>
+                        <div className="modal-item-meta">{r.prep_time} prep · {r.cook_time} cook</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </>
             )
           )}
-          <button className="modal-close" onClick={()=>setAssignDay(null)}>Cancel</button>
+          <button className="modal-close" onClick={()=>{setAssignDay(null);setModalSearch("");}}>Cancel</button>
         </div>
       </div>
     );
