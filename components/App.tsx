@@ -2215,7 +2215,7 @@ export default function App(){
                 const rid=assignDay.replace("fromSaved_","");
                 const r=allRecipes.find(s=>String(s.id)===rid);
                 return(
-                  <div key={k} className="modal-item" onClick={()=>{if(r){setPlan(p=>({...p,[k]:r}));setAssignDay(null);setModalSearch("");}}>
+                  <div key={k} className="modal-item" onClick={()=>{if(r){setPlan(p=>({...p,[k]:r}));setAssignDay(null);setModalSearch("");}}}>
                     <div className="modal-item-title">{DAYS[i]}</div>
                     {plan[k]&&<div className="modal-item-meta">Currently: {plan[k].title}</div>}
                   </div>
