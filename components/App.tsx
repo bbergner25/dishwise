@@ -1239,8 +1239,30 @@ export default function App(){
     const q=(dish||query).trim();if(!q)return;
     setStatus("loading");setRecipe(null);setServings(null);setErrorMsg("");
     try{
-      const parsed=await callAPI([{role:"user",content:buildPrompt(q,diets,seasonal,location)}]);
-      const r={...parsed,id:Date.now(),_dish:q,_ts:Date.now()};
+      const canCache=diets.length===0&&!seasonal;
+      let parsed:any=null;
+      let fromCache=false;
+
+      if(canCache){
+        // Start both simultaneously — cache check and Claude
+        const cachePromise=fetch(`/api/cache?q=${encodeURIComponent(q)}`)
+          .then(r=>r.json()).catch(()=>({found:false}));
+        const claudePromise=callAPI([{role:"user",content:buildPrompt(q,diets,seasonal,location)}]);
+        // Check cache first (fast) — if hit, we're done and Claude runs in background wasted
+        // If miss, await Claude which is already running
+        const cacheData=await cachePromise;
+        if(cacheData.found&&cacheData.recipe){
+          parsed=cacheData.recipe;
+          fromCache=true;
+        }else{
+          parsed=await claudePromise;
+          fetch("/api/cache",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({dish:q,recipe:parsed})}).catch(()=>{});
+        }
+      }else{
+        parsed=await callAPI([{role:"user",content:buildPrompt(q,diets,seasonal,location)}]);
+      }
+
+      const r={...parsed,id:Date.now(),_dish:q,_ts:Date.now(),_fromCache:fromCache};
       setRecipe(r);setStatus("done");
       setHistory(h=>[r,...h.filter((x:any)=>x.id!==r.id)].slice(0,30));
     }catch(e:any){setErrorMsg(e.message||String(e));setStatus("error");}
@@ -1670,7 +1692,7 @@ export default function App(){
             </button>
             <input ref={photoInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handlePhotoUpload}/>
           </div>
-          <div className="recipe-banner-eyebrow">{recipe._scanned?"Scanned Card":"· Every Chef ·"}</div>
+          <div className="recipe-banner-eyebrow">{recipe._scanned?"Scanned Card":recipe._fromCache?"· Community Recipe ·":"· Every Chef ·"}</div>
           <h2 className="recipe-banner-title">{recipe.title}</h2>
           <p className="recipe-banner-desc">{recipe.tagline}</p>
           {recipe.seasonal_note&&<div className="seasonal-note"><span style={{display:"flex",alignItems:"center"}}>{Ic.leaf(12)}</span> {recipe.seasonal_note}</div>}
