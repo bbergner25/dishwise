@@ -1529,6 +1529,7 @@ export default function App(){
                 </div>
               </div>
               )}
+              {homeMode==="inspire"&&(
               <div className="home-inspire-wrap">
                 {inspireStatus!=="done"&&(
                   <>
