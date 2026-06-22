@@ -954,7 +954,7 @@ export default function App(){
   const {user,isLoaded}          = useUser();
   const {signOut,openSignIn}     = useClerk();
   const [tab,setTab]             = useState("search");
-  const [homeMode,setHomeMode]   = useState<"search"|"inspire">("search");
+  const [homeMode,setHomeMode]   = useState<"search"|"inspire"|"tryme">("search");
   const [communityRecipes,setCommunityRecipes] = useState<any[]>([]);
   const [communityStatus,setCommunityStatus]   = useState("idle");
   const [communityAuthed,setCommunityAuthed]   = useState(false);
@@ -1458,11 +1458,12 @@ export default function App(){
               </div>
               <h1 className="hero-title">What would you<br/><em>like to cook?</em></h1>
               <div className="hero-rule-wrap"><div className="hero-rule"/><div className="hero-diamond"/><div className="hero-rule"/></div>
-              <p className="hero-sub">{homeMode==="search"?<>The <strong>best recipes on the internet</strong>, combined, refined, just for you.</>:"Answer three quick questions and we'll serve up ideas tailored to your night."}</p>
+              <p className="hero-sub">{homeMode==="search"?<>The <strong>best recipes on the internet</strong>, combined, refined, just for you.</>:homeMode==="inspire"?"Answer three quick questions and we'll serve up ideas tailored to your night.":"Flip through dishes until something catches your eye."}</p>
 
               <div className="home-mode-toggle">
                 <button className={`home-mode-btn${homeMode==="search"?" active":""}`} onClick={()=>setHomeMode("search")}>{Ic.search(14)} Search</button>
-                <button className={`home-mode-btn${homeMode==="inspire"?" active":""}`} onClick={()=>setHomeMode("inspire")}>{Ic.inspire(14)} Inspire me</button>
+                <button className={`home-mode-btn${homeMode==="inspire"?" active":""}`} onClick={()=>setHomeMode("inspire")}>{Ic.inspire(14)} Inspire Me</button>
+                <button className={`home-mode-btn${homeMode==="tryme"?" active":""}`} onClick={()=>setHomeMode("tryme")}>{Ic.refresh(14)} Try Me</button>
               </div>
 
               {homeMode==="search"&&(
@@ -1495,7 +1496,39 @@ export default function App(){
               </div>
               )}
 
-              {homeMode==="inspire"&&(
+              {homeMode==="tryme"&&(
+              <div style={{width:"100%",maxWidth:960,margin:"0 auto"}}>
+                <div className="mosaic-header" style={{marginBottom:12}}>
+                  <div className="mosaic-title">Or try <em>one of these</em></div>
+                  <button onClick={()=>setCardSeed(s=>s+1)} style={{background:"none",border:"1.5px solid #EDE8E0",borderRadius:"100px",padding:"5px 14px",fontFamily:"'Outfit',sans-serif",fontSize:12,fontWeight:600,color:"#7A6E6A",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
+                    {Ic.refresh(13)} Shuffle
+                  </button>
+                </div>
+                <div className="mosaic-cat-tabs">
+                  {["All","Quick & Easy","Comfort Food","Date Night","Weekend Project","Bold & Spicy","Light & Fresh","Brunch","Crowd Pleaser","Dessert","Showstopper","Staff Pick","Seasonal"].map(cat=>(
+                    <button key={cat} className={`mosaic-cat-tab${activeCardCat===cat?" active":""}`} onClick={()=>setActiveCardCat(cat)}>{cat}</button>
+                  ))}
+                </div>
+                <div className="mosaic-grid">
+                  {(()=>{
+                    const pool=activeCardCat==="All"?CARD_POOL:CARD_POOL.filter(c=>c.category===activeCardCat);
+                    return seededShuffle(pool,cardSeed).slice(0,8).map((card)=>(
+                      <div key={card.title+cardSeed}
+                        className="mosaic-card"
+                        onClick={()=>{setQuery(card.title);doSearch(card.title);}}>
+                        <div className="mosaic-card-header" style={{background:card.headerBg}}>
+                          <div className="mosaic-card-header-title" style={{color:card.textLight?"#fff":"#151210"}}>{card.title}</div>
+                          <div className="mosaic-card-header-desc" style={{color:card.textLight?"rgba(255,255,255,.8)":"rgba(21,18,16,.7)"}}>{card.desc}</div>
+                        </div>
+                        <div className="mosaic-card-body">
+                          <div className="mosaic-card-category" style={{color:card.catColor}}>{card.category}</div>
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </div>
+              )}
               <div className="home-inspire-wrap">
                 {inspireStatus!=="done"&&(
                   <>
@@ -1606,38 +1639,6 @@ export default function App(){
           </div>
 
           {/* ── Mosaic suggestion cards ── */}
-          <div className="mosaic-section">
-            <div className="mosaic-header">
-              <div className="mosaic-title">Or try <em>one of these</em></div>
-              <button onClick={()=>setCardSeed(s=>s+1)} style={{background:"none",border:"1.5px solid #EDE8E0",borderRadius:"100px",padding:"5px 14px",fontFamily:"'Outfit',sans-serif",fontSize:12,fontWeight:600,color:"#7A6E6A",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
-                {Ic.refresh(13)} Shuffle
-              </button>
-            </div>
-            <div className="mosaic-cat-tabs">
-              {["All","Quick & Easy","Comfort Food","Date Night","Weekend Project","Bold & Spicy","Light & Fresh","Brunch","Crowd Pleaser","Dessert","Showstopper","Staff Pick","Seasonal"].map(cat=>(
-                <button key={cat} className={`mosaic-cat-tab${activeCardCat===cat?" active":""}`} onClick={()=>setActiveCardCat(cat)}>{cat}</button>
-              ))}
-            </div>
-            <div className="mosaic-grid">
-              {(()=>{
-                const pool=activeCardCat==="All"?CARD_POOL:CARD_POOL.filter(c=>c.category===activeCardCat);
-                return seededShuffle(pool,cardSeed).slice(0,8).map((card)=>(
-                  <div key={card.title+cardSeed}
-                    className="mosaic-card"
-                    onClick={()=>{setQuery(card.title);doSearch(card.title);}}>
-                    <div className="mosaic-card-header" style={{background:card.headerBg}}>
-                      <div className="mosaic-card-header-title" style={{color:card.textLight?"#fff":"#151210"}}>{card.title}</div>
-                      <div className="mosaic-card-header-desc" style={{color:card.textLight?"rgba(255,255,255,.8)":"rgba(21,18,16,.7)"}}>{card.desc}</div>
-                    </div>
-                    <div className="mosaic-card-body">
-                      <div className="mosaic-card-category" style={{color:card.catColor}}>{card.category}</div>
-                    </div>
-                  </div>
-                ));
-              })()}
-            </div>
-          </div>
-
           {/* Scan + URL — scan first, then URL, extra bottom padding for mobile nav */}
           {/* ── Import pair ── */}
           <div style={{maxWidth:860,margin:"32px auto 0",padding:"0 20px"}}>
