@@ -628,6 +628,11 @@ const CSS = `
   .community-gate-btn{background:#F4A021;border:none;border-radius:100px;padding:10px 22px;font-family:'Outfit',sans-serif;font-weight:600;font-size:13px;color:#151210;cursor:pointer;white-space:nowrap;flex-shrink:0;}
   .community-grid{grid-template-columns:repeat(4,1fr);}
   @media(max-width:640px){.community-grid{grid-template-columns:repeat(2,1fr);}}
+  .community-cat-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;margin-bottom:20px;scrollbar-width:none;}
+  .community-cat-tabs::-webkit-scrollbar{display:none;}
+  .community-cat-tab{padding:7px 18px;border-radius:100px;border:1.5px solid #EDE8E0;background:#fff;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;color:#7A6E6A;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0;}
+  .community-cat-tab.active{background:#1A1F2E;border-color:#1A1F2E;color:#FDFAF5;}
+  .community-cat-tab:not(.active):hover{border-color:#151210;color:#151210;}
 
   /* Family */
   .family-wrap{max-width:560px;margin:0 auto;padding:40px 24px 40px;}
@@ -951,8 +956,9 @@ export default function App(){
   const [tab,setTab]             = useState("search");
   const [homeMode,setHomeMode]   = useState<"search"|"inspire">("search");
   const [communityRecipes,setCommunityRecipes] = useState<any[]>([]);
-  const [communityStatus,setCommunityStatus]   = useState("idle"); // idle | loading | done | error
+  const [communityStatus,setCommunityStatus]   = useState("idle");
   const [communityAuthed,setCommunityAuthed]   = useState(false);
+  const [communityTab,setCommunityTab]         = useState("All");
   const [query,setQuery]         = useState("");
   const [diets,setDiets]         = useState<string[]>([]);
   const [seasonal,setSeasonal]   = useState(false);
@@ -1240,6 +1246,14 @@ export default function App(){
     const full={...r,id:Date.now(),_dish:r.title,_ts:Date.now(),_fromCache:true};
     setRecipe(full);setServings(null);setStatus("done");setTab("search");
   };
+
+  function communityCategory(title:string):string{
+    const t=title.toLowerCase();
+    if(/cake|cookie|brownie|pie|tart|crumble|pudding|mousse|cheesecake|tiramisu|panna cotta|cr[eè]me|brûlée|brulee|gelato|ice cream|sorbet|macaron|baklava|mochi|churro|financier|pavlova|profiterole|toffee|banana foster|tres leches|galette|île flottante|lemon tart|chocolate lava|mango sticky|earl grey pear|cardamom rice|hazelnut|sticky toffee|banana bread|blueberry muffin|peach cobbler|bread pudding|apple pie|cheesecake|baklava|crème caramel|tarte tatin/.test(t)) return "Desserts";
+    if(/soup|bisque|chowder|gazpacho|broth|consommé|bouillabaisse|minestrone|ribollita|borscht|tom kha|tom yum|pho|ramen|salad|slaw|niçoise|caprese|tabboul|fattoush|panzanella|waldorf|caesar|kale|watermelon feta|beet|peach burrata|smashed cucumber|laab|gado|soba noodle|spring roll|ceviche/.test(t)) return "Soups & Salads";
+    if(/pancake|waffle|egg|shakshuka|benedict|florentine|frittata|quiche|french toast|huevos|bagel|smoked salmon|biscuit|granola|burrito|monte cristo|chilaquiles|dutch baby|smorgasbord|croque|avocado toast|avocado smash|acai|zucchini fritter|arepas|ful medames|dosa|churro waffle/.test(t)) return "Brunch";
+    return "Mains";
+  }
 
   const pickInspiredRecipe=async(suggestion: any)=>{
     setTab("search");setQuery(suggestion.title);
@@ -1962,6 +1976,12 @@ export default function App(){
 
   /* ── COMMUNITY VIEW ── */
   function CommunityView(){
+    const COMM_CATS=["All","Soups & Salads","Mains","Brunch","Desserts"];
+    const filtered=communityTab==="All"
+      ?communityRecipes
+      :communityRecipes.filter(r=>communityCategory(r.title)===communityTab);
+    const colors=["#F4A021","#E8431A","#1E3A2F"];
+    const lightText=(bg:string)=>bg!=="#F4A021";
     return(
       <div className="community-wrap">
         <div className="community-header">
@@ -1983,31 +2003,42 @@ export default function App(){
         {communityStatus==="loading"&&(
           <div style={{textAlign:"center",padding:"60px 20px",color:C.muted,fontSize:14}}>Loading recipes…</div>
         )}
-
         {communityStatus==="error"&&(
           <div style={{textAlign:"center",padding:"60px 20px",color:C.muted,fontSize:14}}>Couldn't load Community right now. Try again in a moment.</div>
         )}
 
-        {communityStatus==="done"&&communityRecipes.length===0&&(
-          <div style={{textAlign:"center",padding:"60px 20px",color:C.muted,fontSize:14}}>
-            {communityAuthed?"No community recipes yet — check back soon.":"No featured recipes yet — check back soon."}
-          </div>
-        )}
+        {communityStatus==="done"&&(
+          <>
+            <div className="community-cat-tabs">
+              {COMM_CATS.map(cat=>(
+                <button key={cat} className={`community-cat-tab${communityTab===cat?" active":""}`} onClick={()=>setCommunityTab(cat)}>{cat}</button>
+              ))}
+            </div>
 
-        {communityStatus==="done"&&communityRecipes.length>0&&(
-          <div className="mosaic-grid community-grid">
-            {communityRecipes.map((r:any,i:number)=>(
-              <div key={r.title+i} className="mosaic-card" onClick={()=>openCommunityRecipe(r)}>
-                <div className="mosaic-card-header" style={{background:i%3===0?"#F4A021":i%3===1?"#E8431A":"#1E3A2F"}}>
-                  <div className="mosaic-card-header-title" style={{color:i%3===1||i%3===2?"#fff":"#151210"}}>{r.title}</div>
-                  <div className="mosaic-card-header-desc" style={{color:i%3===1||i%3===2?"rgba(255,255,255,.8)":"rgba(21,18,16,.7)"}}>{r.tagline}</div>
-                </div>
-                <div className="mosaic-card-body">
-                  <div className="mosaic-card-category" style={{color:"#7A6E6A"}}>Community Recipe</div>
-                </div>
+            {filtered.length===0?(
+              <div style={{textAlign:"center",padding:"40px 20px",color:C.muted,fontSize:14}}>
+                No {communityTab==="All"?"community":communityTab.toLowerCase()} recipes yet — check back soon.
               </div>
-            ))}
-          </div>
+            ):(
+              <div className="mosaic-grid community-grid">
+                {filtered.map((r:any,i:number)=>{
+                  const bg=colors[i%3];
+                  const light=lightText(bg);
+                  return(
+                    <div key={r.title+i} className="mosaic-card" onClick={()=>openCommunityRecipe(r)}>
+                      <div className="mosaic-card-header" style={{background:bg}}>
+                        <div className="mosaic-card-header-title" style={{color:light?"#fff":"#151210"}}>{r.title}</div>
+                        <div className="mosaic-card-header-desc" style={{color:light?"rgba(255,255,255,.75)":"rgba(21,18,16,.65)"}}>{r.tagline}</div>
+                      </div>
+                      <div className="mosaic-card-body">
+                        <div className="mosaic-card-category" style={{color:"#7A6E6A"}}>{communityCategory(r.title)}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
       </div>
     );
