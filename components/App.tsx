@@ -337,7 +337,7 @@ const CSS = `
 
   /* Recipe banner — warm dark */
   .recipe-banner{
-    background:#1C1410;
+    background:#1A1F2E;
     padding:20px 28px 0;
     border-radius:16px;
     overflow:hidden;
@@ -349,8 +349,8 @@ const CSS = `
     gap:12px;
     align-items:start;
   }
-  .recipe-banner::before{content:"";position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:rgba(244,160,33,.06);pointer-events:none;}
-  .recipe-banner::after{content:"";position:absolute;bottom:-30px;left:80px;width:120px;height:120px;border-radius:50%;background:rgba(244,160,33,.04);pointer-events:none;}
+  .recipe-banner::before{content:"";position:absolute;top:-60px;right:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(244,160,33,.07) 0%,transparent 70%);pointer-events:none;}
+  .recipe-banner::after{content:none;}
   .recipe-banner > *{position:relative;z-index:1;}
   @media(max-width:640px){
     .recipe-banner{grid-template-columns:1fr;padding:16px 16px 0;margin:10px 10px 0;border-radius:14px;gap:10px;}
@@ -698,7 +698,7 @@ const CSS = `
     .source-links,.card-actions,.grocery-section,.scan-divider,.scan-area{display:none !important;}
     body{background:#fff;padding-bottom:0;}
     .recipe-page{max-width:100%;padding:0;}
-    .recipe-banner{background:#1E3A2F;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .recipe-banner{background:#1A1F2E;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     .two-col{grid-template-columns:200px 1fr;gap:24px;}
   }
 `;
