@@ -197,8 +197,10 @@ const CSS = `
   .save-prompt-skip{background:none;border:none;font-family:'Outfit',sans-serif;font-size:13px;color:#7A6E6A;cursor:pointer;text-decoration:underline;text-underline-offset:3px;}
 
   /* ── HERO — Every Chef ── */
-  .hero{position:relative;overflow:hidden;padding:56px 24px 44px;text-align:center;background:#fff;border-bottom:1px solid #EDE8E0;}
-  @media(max-width:640px){.hero{padding:44px 20px 36px;}}
+  .hero{position:relative;overflow:hidden;padding:48px 24px 36px;text-align:center;background:#1A1F2E;}
+  @media(max-width:640px){.hero{padding:40px 20px 32px;}}
+  .hero-glow-a{position:absolute;top:-80px;right:-60px;width:280px;height:280px;background:radial-gradient(circle,rgba(244,160,33,.1) 0%,transparent 65%);pointer-events:none;}
+  .hero-glow-b{position:absolute;bottom:-40px;left:-40px;width:200px;height:200px;background:radial-gradient(circle,rgba(232,67,26,.07) 0%,transparent 65%);pointer-events:none;}
   .hero-particles{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
   .hero-particle{position:absolute;border-radius:50%;animation:particleRise linear infinite;}
   @keyframes particleRise{
@@ -217,37 +219,37 @@ const CSS = `
   .hero-eyebrow{display:none;}
   .hero-eyebrow-pre{display:none;}
   .hero-eyebrow-name{font-family:'Fraunces',serif;font-size:40px;font-weight:700;font-variation-settings:'opsz' 9,'WONK' 1;letter-spacing:-1px;line-height:1;display:flex;align-items:baseline;gap:0.18em;}
-  .hero-eyebrow-name .wm-upright{color:#1A1F2E;font-style:normal;}
+  .hero-eyebrow-name .wm-upright{color:#FDFAF5;font-style:normal;}
   .hero-eyebrow-name .wm-italic{color:#F4A021;font-style:italic;}
-  .hero-eyebrow-sub{font-family:'Outfit',sans-serif;font-size:10px;font-weight:500;color:#7A6E6A;letter-spacing:2px;text-transform:uppercase;}
-  .hero-title{font-family:'Fraunces',serif;font-size:clamp(34px,6vw,56px);line-height:1.05;margin-bottom:0;color:#151210;font-weight:700;font-variation-settings:'opsz' 9,'WONK' 1;letter-spacing:-0.5px;}
+  .hero-eyebrow-sub{font-family:'Outfit',sans-serif;font-size:10px;font-weight:500;color:rgba(253,250,245,.45);letter-spacing:2px;text-transform:uppercase;}
+  .hero-title{font-family:'Fraunces',serif;font-size:clamp(30px,6vw,52px);line-height:1.05;margin-bottom:0;color:#FDFAF5;font-weight:700;font-variation-settings:'opsz' 9,'WONK' 1;letter-spacing:-0.5px;}
   @media(max-width:767px){.hero-title{margin-top:4px;}}
   .hero-title em{color:#F4A021;font-style:italic;position:relative;}
   .hero-rule-wrap{display:none;}
-  .hero-sub{font-size:15px;color:#7A6E6A;font-weight:300;line-height:1.6;max-width:480px;margin:16px auto 24px;}
-  .hero-sub strong{color:#151210;font-weight:600;}
+  .hero-sub{font-size:14px;color:rgba(253,250,245,.5);font-weight:300;line-height:1.6;max-width:480px;margin:12px auto 20px;}
+  .hero-sub strong{color:rgba(253,250,245,.85);font-weight:600;}
   .search-wrap{max-width:560px;margin:0 auto;}
-  .home-mode-toggle{display:flex;justify-content:center;gap:8px;margin-bottom:24px;}
-  .home-mode-btn{display:flex;align-items:center;gap:6px;padding:8px 20px;border-radius:100px;border:1.5px solid #EDE8E0;background:#fff;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;color:#7A6E6A;cursor:pointer;transition:all .15s;}
-  .home-mode-btn.active{background:#1A1F2E;border-color:#1A1F2E;color:#FDFAF5;}
-  .home-mode-btn:not(.active):hover{border-color:#151210;color:#151210;}
+  .home-mode-toggle{display:flex;background:rgba(255,255,255,.08);border-radius:100px;padding:3px;gap:2px;max-width:340px;margin:0 auto 20px;}
+  .home-mode-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 10px;border-radius:100px;border:none;background:transparent;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;color:rgba(253,250,245,.45);cursor:pointer;transition:all .15s;white-space:nowrap;}
+  .home-mode-btn.active{background:#F4A021;color:#151210;}
+  .home-mode-btn:not(.active):hover{color:rgba(253,250,245,.8);}
   .home-inspire-wrap{max-width:680px;margin:0 auto;}
-  .search-bar{display:flex;background:#fff;border:2px solid #151210;border-radius:16px;overflow:hidden;box-shadow:4px 4px 0 #151210;transition:box-shadow .15s,transform .15s;}
-  .search-bar:focus-within{box-shadow:6px 6px 0 #F4A021;transform:translate(-1px,-1px);}
-  .search-input{flex:1;border:none;outline:none;padding:16px 20px;font-family:'Outfit',sans-serif;font-size:15px;color:#151210;background:transparent;font-weight:400;}
-  .search-input::placeholder{color:#7A6E6A;}
-  .search-btn{margin:6px;padding:10px 22px;background:#F4A021;color:#151210;border:none;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;white-space:nowrap;display:flex;align-items:center;gap:6px;}
-  .search-btn:hover:not(:disabled){background:#D88815;}
-  .search-btn:disabled{background:#F4A021;color:#151210;opacity:.5;cursor:not-allowed;}
+  .search-bar{display:flex;background:#FDFAF5;border-radius:14px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.2);}
+  .search-bar:focus-within{box-shadow:0 4px 24px rgba(244,160,33,.3);}
+  .search-input{flex:1;border:none;outline:none;padding:14px 16px;font-family:'Outfit',sans-serif;font-size:14px;color:#151210;background:transparent;font-weight:400;}
+  .search-input::placeholder{color:#B8B0A8;}
+  .search-btn{margin:6px;padding:10px 20px;background:#1A1F2E;color:#F4A021;border:none;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;white-space:nowrap;display:flex;align-items:center;gap:6px;}
+  .search-btn:hover:not(:disabled){background:#0F1320;}
+  .search-btn:disabled{opacity:.5;cursor:not-allowed;}
 
-  /* Filters */
-  .filter-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#7A6E6A;margin:16px 0 8px;text-align:center;}
+  /* Filters — adapted for dark hero */
+  .filter-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(253,250,245,.4);margin:14px 0 8px;text-align:center;}
   .diet-filters{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;}
-  .diet-chip{padding:5px 13px;border-radius:100px;border:1px solid #EDE8E0;background:transparent;font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;color:#7A6E6A;cursor:pointer;transition:all .15s;}
-  .diet-chip.on{background:#1E3A2F;border-color:#1E3A2F;color:#fff;}
+  .diet-chip{padding:5px 13px;border-radius:100px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;color:rgba(253,250,245,.6);cursor:pointer;transition:all .15s;}
+  .diet-chip.on{background:rgba(244,160,33,.18);border-color:rgba(244,160,33,.5);color:#F4A021;}
   .seasonal-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px;flex-wrap:wrap;}
-  .seasonal-chip{padding:5px 13px;border-radius:100px;border:1.5px solid #1E3A2F;background:transparent;font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;color:#1E3A2F;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px;}
-  .seasonal-chip.on{background:#1E3A2F;color:#fff;}
+  .seasonal-chip{padding:5px 13px;border-radius:100px;border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;color:rgba(253,250,245,.6);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px;}
+  .seasonal-chip.on{background:rgba(30,58,47,.6);border-color:#1E3A2F;color:#FDFAF5;}
   .location-wrap{display:flex;align-items:center;gap:6px;}
   .location-input{padding:5px 12px;border:1px solid #EDE8E0;border-radius:100px;font-family:'Outfit',sans-serif;font-size:12px;color:#151210;outline:none;width:160px;}
   .location-input:focus{border-color:#1E3A2F;}
@@ -267,12 +269,12 @@ const CSS = `
   .mosaic-cat-tab:not(.active):hover{border-color:#151210;color:#151210;}
   .mosaic-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
   @media(max-width:640px){.mosaic-grid{grid-template-columns:repeat(2,1fr);gap:10px;}}
-  .mosaic-card{border-radius:16px;overflow:hidden;cursor:pointer;border:2px solid #EDE8E0;background:#fff;transition:transform .15s,box-shadow .15s,border-color .15s;}
-  .mosaic-card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(21,18,16,.12);border-color:#F4A021;}
+  .mosaic-card{border-radius:16px;overflow:hidden;cursor:pointer;background:#fff;box-shadow:0 2px 8px rgba(21,18,16,.07),0 1px 2px rgba(21,18,16,.04);transition:transform .15s,box-shadow .15s;}
+  .mosaic-card:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(21,18,16,.13);}
   .mosaic-card-header{padding:16px 14px 14px;display:flex;flex-direction:column;justify-content:flex-end;}
   .mosaic-card-header-title{font-family:'Fraunces',serif;font-size:15px;font-weight:700;line-height:1.2;margin-bottom:3px;}
   .mosaic-card-header-desc{font-size:10px;font-weight:400;opacity:.75;line-height:1.3;}
-  .mosaic-card-body{padding:8px 14px 12px;border-top:1px solid rgba(0,0,0,.06);}
+  .mosaic-card-body{padding:8px 14px 12px;display:flex;align-items:center;justify-content:space-between;}
   .mosaic-card-category{font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:0;}
   .mosaic-card-meta{font-size:10px;color:#7A6E6A;margin-top:2px;}
 
@@ -458,9 +460,9 @@ const CSS = `
     border-bottom:2px solid #F4A021;margin-bottom:2px;display:inline-block;
   }
   .ing-list{list-style:none;}
-  .ing-item{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #EDE8E0;font-size:14px;line-height:1.4;}
+  .ing-item{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #EDE8E0;font-size:14px;line-height:1.4;}
   .ing-item:last-child{border-bottom:none;}
-  .ing-dot{width:4px;height:4px;border-radius:50%;background:#F4A021;flex-shrink:0;}
+  .ing-dot{width:6px;height:6px;border-radius:50%;background:#F4A021;flex-shrink:0;}
   .ing-text{flex:1;}
   .ing-amount{font-weight:600;color:#151210;}
   .ing-name{color:#6B5A4E;}
@@ -1440,51 +1442,10 @@ export default function App(){
       <>
         {status!=="done"&&(
           <div>
-          {/* ── Particle + smoke hero ── */}
+          {/* ── Clean dark hero ── */}
           <div className="hero">
-            {/* Particles */}
-            <div className="hero-particles">
-              {[
-                {s:4, l:"18%", d:"6.5s", dl:"0s",   drift:"12px",  color:"rgba(196,94,62,.35)"},
-                {s:3, l:"31%", d:"8s",   dl:"1.2s",  drift:"-8px",  color:"rgba(196,149,106,.4)"},
-                {s:5, l:"44%", d:"7s",   dl:"0.4s",  drift:"6px",   color:"rgba(122,140,110,.35)"},
-                {s:3, l:"57%", d:"9s",   dl:"2.1s",  drift:"-14px", color:"rgba(196,94,62,.3)"},
-                {s:4, l:"68%", d:"6s",   dl:"0.8s",  drift:"10px",  color:"rgba(196,149,106,.35)"},
-                {s:5, l:"82%", d:"7.5s", dl:"3s",    drift:"-6px",  color:"rgba(122,140,110,.3)"},
-                {s:3, l:"24%", d:"10s",  dl:"1.6s",  drift:"8px",   color:"rgba(196,149,106,.3)"},
-                {s:4, l:"72%", d:"8.5s", dl:"2.8s",  drift:"-10px", color:"rgba(196,94,62,.25)"},
-                {s:3, l:"50%", d:"7s",   dl:"4s",    drift:"14px",  color:"rgba(122,140,110,.25)"},
-                {s:5, l:"38%", d:"9.5s", dl:"1s",    drift:"-8px",  color:"rgba(196,149,106,.35)"},
-                {s:3, l:"62%", d:"6.5s", dl:"3.5s",  drift:"6px",   color:"rgba(196,94,62,.3)"},
-                {s:4, l:"88%", d:"8s",   dl:"0.6s",  drift:"-12px", color:"rgba(122,140,110,.3)"},
-              ].map((p,i)=>(
-                <div key={i} className="hero-particle" style={{
-                  width:p.s,height:p.s,
-                  left:p.l,bottom:"5%",
-                  background:p.color,
-                  animationDuration:p.d,
-                  animationDelay:p.dl,
-                  ["--pdrift" as any]:p.drift,
-                }}/>
-              ))}
-              {/* Smoke wisps */}
-              {[
-                {w:60, h:60, l:"20%", d:"9s",  dl:"0s",   op:.14},
-                {w:80, h:80, l:"45%", d:"12s", dl:"2s",   op:.1},
-                {w:50, h:50, l:"70%", d:"10s", dl:"1s",   op:.12},
-                {w:70, h:70, l:"35%", d:"11s", dl:"3.5s", op:.09},
-                {w:55, h:55, l:"80%", d:"9.5s",dl:"1.8s", op:.11},
-                {w:90, h:90, l:"60%", d:"13s", dl:"4s",   op:.08},
-              ].map((s,i)=>(
-                <div key={"s"+i} className="hero-smoke" style={{
-                  width:s.w,height:s.h,
-                  left:s.l,bottom:"8%",
-                  background:`rgba(155,140,126,${s.op})`,
-                  animationDuration:s.d,
-                  animationDelay:s.dl,
-                }}/>
-              ))}
-            </div>
+            <div className="hero-glow-a"/>
+            <div className="hero-glow-b"/>
             {/* Content */}
             <div className="hero-content">
               <div className="hero-eyebrow">
@@ -1561,6 +1522,7 @@ export default function App(){
                         </div>
                         <div className="mosaic-card-body">
                           <div className="mosaic-card-category" style={{color:card.catColor}}>{card.category}</div>
+                          <span className="mosaic-card-arrow">›</span>
                         </div>
                       </div>
                     ));
