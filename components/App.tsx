@@ -640,6 +640,13 @@ const CSS = `
   .community-list-tagline{font-size:12px;color:#7A6E6A;line-height:1.4;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;}
   .community-list-cat{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-top:4px;}
   .community-list-arrow{color:#C8C0B8;flex-shrink:0;}
+  .community-search-wrap{position:relative;margin-bottom:16px;}
+  .community-search-input{width:100%;padding:11px 16px 11px 40px;border-radius:12px;border:1.5px solid #EDE8E0;background:#fff;font-family:'Outfit',sans-serif;font-size:14px;color:#151210;outline:none;transition:border-color .15s;box-sizing:border-box;}
+  .community-search-input:focus{border-color:#1A1F2E;}
+  .community-search-input::placeholder{color:#B8B0A8;}
+  .community-search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#B8B0A8;pointer-events:none;}
+  .community-search-clear{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#B8B0A8;font-size:16px;line-height:1;padding:0;}
+  .community-result-count{font-size:12px;color:#7A6E6A;margin-bottom:12px;}
   .community-cat-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;margin-bottom:20px;scrollbar-width:none;}
   .community-cat-tabs::-webkit-scrollbar{display:none;}
   .community-cat-tab{padding:7px 18px;border-radius:100px;border:1.5px solid #EDE8E0;background:#fff;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;color:#7A6E6A;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0;}
@@ -987,6 +994,7 @@ export default function App(){
   const [communityStatus,setCommunityStatus]   = useState("idle");
   const [communityAuthed,setCommunityAuthed]   = useState(false);
   const [communityTab,setCommunityTab]         = useState("All");
+  const [communitySearch,setCommunitySearch]   = useState("");
   const [showShare,setShowShare]               = useState(false);
   const [query,setQuery]         = useState("");
   const [diets,setDiets]         = useState<string[]>([]);
@@ -1278,9 +1286,11 @@ export default function App(){
 
   function communityCategory(title:string):string{
     const t=title.toLowerCase();
-    if(/cake|cookie|brownie|pie|tart|crumble|pudding|mousse|cheesecake|tiramisu|panna cotta|cr[eè]me|brûlée|brulee|gelato|ice cream|sorbet|macaron|baklava|mochi|churro|financier|pavlova|profiterole|toffee|banana foster|tres leches|galette|île flottante|lemon tart|chocolate lava|mango sticky|earl grey pear|cardamom rice|hazelnut|sticky toffee|banana bread|blueberry muffin|peach cobbler|bread pudding|apple pie|cheesecake|baklava|crème caramel|tarte tatin/.test(t)) return "Desserts";
-    if(/soup|bisque|chowder|gazpacho|broth|consommé|bouillabaisse|minestrone|ribollita|borscht|tom kha|tom yum|pho|ramen|salad|slaw|niçoise|caprese|tabboul|fattoush|panzanella|waldorf|caesar|kale|watermelon feta|beet|peach burrata|smashed cucumber|laab|gado|soba noodle|spring roll|ceviche/.test(t)) return "Soups & Salads";
-    if(/pancake|waffle|egg|shakshuka|benedict|florentine|frittata|quiche|french toast|huevos|bagel|smoked salmon|biscuit|granola|burrito|monte cristo|chilaquiles|dutch baby|smorgasbord|croque|avocado toast|avocado smash|acai|zucchini fritter|arepas|ful medames|dosa|churro waffle/.test(t)) return "Brunch";
+    if(/cake|cookie|brownie|pie|tart|crumble|pudding|mousse|cheesecake|tiramisu|panna cotta|cr[eè]me|brûlée|brulee|gelato|ice cream|sorbet|macaron|baklava|mochi|churro|financier|pavlova|profiterole|toffee|banana foster|tres leches|galette|île flottante|lemon tart|chocolate lava|mango sticky|earl grey pear|cardamom rice|hazelnut|sticky toffee|banana bread|blueberry muffin|peach cobbler|bread pudding|apple pie|crème caramel|tarte tatin|churro/.test(t)) return "Desserts";
+    if(/soup|bisque|chowder|gazpacho|broth|consommé|bouillabaisse|minestrone|ribollita|borscht|tom kha|tom yum|pho|ramen|goulash|chili|chilli|dal|lentil soup|congee|stew|tagine|kimchi jjigae|smoky black bean|carrot ginger|corn chowder|pea and mint|leek/.test(t)) return "Soups & Stews";
+    if(/salad|slaw|niçoise|caprese|tabboul|fattoush|panzanella|waldorf|caesar|kale|watermelon feta|beet.*goat|peach burrata|smashed cucumber|laab|gado|soba noodle|green goddess|ceviche|fattoush|poke/.test(t)) return "Salads";
+    if(/pancake|waffle|eggs? benedict|eggs? florentine|shakshuka|frittata|quiche|french toast|huevos|smoked salmon bagel|biscuit and gravy|granola|breakfast burrito|monte cristo|chilaquiles|dutch baby|smorgasbord|croque|avocado toast|avocado smash|acai bowl|zucchini fritter|arepas|ful medames|dosa|chorizo hash|churro waffle/.test(t)) return "Brunch";
+    if(/crab cake|devilled egg|baked brie|patatas bravas|spinach artichoke|baba ganoush|spring roll|tempura|arancini|empanada|prawn cocktail|tapenade|bruschetta|falafel|hummus|muhammara|spicy tuna crispy rice|doubles|pork dumpling|gyoza|edamame|nachos/.test(t)) return "Appetizers & Snacks";
     return "Mains";
   }
 
@@ -2008,12 +2018,23 @@ export default function App(){
 
   /* ── COMMUNITY VIEW ── */
   function CommunityView(){
-    const COMM_CATS=["All","Soups & Salads","Mains","Brunch","Desserts"];
-    const filtered=communityTab==="All"
-      ?communityRecipes
-      :communityRecipes.filter(r=>communityCategory(r.title)===communityTab);
-    const colors=["#F4A021","#E8431A","#1E3A2F"];
-    const lightText=(bg:string)=>bg!=="#F4A021";
+    const COMM_CATS=["All","Appetizers & Snacks","Soups & Stews","Salads","Mains","Brunch","Desserts"];
+    const sq=communitySearch.trim().toLowerCase();
+
+    function matchesSearch(r:any):boolean{
+      if(!sq) return true;
+      if(r.title?.toLowerCase().includes(sq)) return true;
+      // Search ingredient names too
+      const ingredients=(r.ingredient_groups||[])
+        .flatMap((g:any)=>(g.items||[]).map((item:any)=>item.name?.toLowerCase()||""));
+      return ingredients.some((ing:string)=>ing.includes(sq));
+    }
+
+    const filtered=communityRecipes.filter(r=>{
+      const catMatch=communityTab==="All"||communityCategory(r.title)===communityTab;
+      return catMatch&&matchesSearch(r);
+    });
+
     return(
       <div className="community-wrap">
         <div className="community-header">
@@ -2041,15 +2062,40 @@ export default function App(){
 
         {communityStatus==="done"&&(
           <>
-            <div className="community-cat-tabs">
-              {COMM_CATS.map(cat=>(
-                <button key={cat} className={`community-cat-tab${communityTab===cat?" active":""}`} onClick={()=>setCommunityTab(cat)}>{cat}</button>
-              ))}
+            {/* Search */}
+            <div className="community-search-wrap">
+              <span className="community-search-icon">{Ic.search(16)}</span>
+              <input
+                className="community-search-input"
+                placeholder="Search by dish or ingredient…"
+                value={communitySearch}
+                onChange={e=>setCommunitySearch(e.target.value)}
+              />
+              {communitySearch&&(
+                <button className="community-search-clear" onClick={()=>setCommunitySearch("")}>×</button>
+              )}
             </div>
+
+            {/* Category tabs — hidden during active search */}
+            {!sq&&(
+              <div className="community-cat-tabs">
+                {COMM_CATS.map(cat=>(
+                  <button key={cat} className={`community-cat-tab${communityTab===cat?" active":""}`} onClick={()=>setCommunityTab(cat)}>{cat}</button>
+                ))}
+              </div>
+            )}
+
+            {sq&&(
+              <div className="community-result-count">
+                {filtered.length===0?"No results":""}
+                {filtered.length===1?"1 recipe found":""}
+                {filtered.length>1?`${filtered.length} recipes found`:""}
+              </div>
+            )}
 
             {filtered.length===0?(
               <div style={{textAlign:"center",padding:"40px 20px",color:C.muted,fontSize:14}}>
-                No {communityTab==="All"?"community":communityTab.toLowerCase()} recipes yet — check back soon.
+                {sq?`No recipes found for "${communitySearch}"`:`No ${communityTab==="All"?"community":communityTab.toLowerCase()} recipes yet — check back soon.`}
               </div>
             ):(
               <div className="community-list">
