@@ -32,6 +32,7 @@ const Ic = {
   photo:(s=20)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
   grid:(s=20)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
   lock:(s=14)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
+  share:(s=14)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>,
 };
 
 const CSS = `
@@ -633,6 +634,22 @@ const CSS = `
   .community-cat-tab{padding:7px 18px;border-radius:100px;border:1.5px solid #EDE8E0;background:#fff;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;color:#7A6E6A;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0;}
   .community-cat-tab.active{background:#1A1F2E;border-color:#1A1F2E;color:#FDFAF5;}
   .community-cat-tab:not(.active):hover{border-color:#151210;color:#151210;}
+  /* ── Share sheet ── */
+  .share-overlay{position:fixed;inset:0;background:rgba(21,18,16,.5);z-index:200;display:flex;align-items:flex-end;justify-content:center;}
+  @media(min-width:640px){.share-overlay{align-items:center;}}
+  .share-sheet{background:#FDFAF5;border-radius:24px 24px 0 0;padding:28px 24px 40px;width:100%;max-width:480px;position:relative;}
+  @media(min-width:640px){.share-sheet{border-radius:24px;padding:32px;}}
+  .share-sheet-title{font-family:'Fraunces',serif;font-size:20px;font-weight:700;margin-bottom:4px;}
+  .share-sheet-dish{font-size:13px;color:#7A6E6A;margin-bottom:24px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .share-url-row{display:flex;align-items:center;gap:8px;background:#F0ECE6;border-radius:12px;padding:12px 14px;margin-bottom:20px;}
+  .share-url-text{flex:1;font-size:12px;color:#151210;font-family:'Outfit',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .share-copy-btn{background:#1A1F2E;color:#FDFAF5;border:none;border-radius:8px;padding:7px 14px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;transition:background .15s;}
+  .share-copy-btn.copied{background:#1E3A2F;}
+  .share-qr{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:24px;}
+  .share-qr img{width:160px;height:160px;border-radius:12px;border:4px solid #fff;box-shadow:0 2px 12px rgba(0,0,0,.08);}
+  .share-qr-label{font-size:11px;color:#7A6E6A;letter-spacing:1px;text-transform:uppercase;}
+  .share-native-btn{width:100%;background:#F4A021;border:none;border-radius:100px;padding:13px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;color:#151210;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .share-close{position:absolute;top:20px;right:20px;background:none;border:none;cursor:pointer;color:#7A6E6A;font-size:22px;line-height:1;}
 
   /* Family */
   .family-wrap{max-width:560px;margin:0 auto;padding:40px 24px 40px;}
@@ -959,6 +976,7 @@ export default function App(){
   const [communityStatus,setCommunityStatus]   = useState("idle");
   const [communityAuthed,setCommunityAuthed]   = useState(false);
   const [communityTab,setCommunityTab]         = useState("All");
+  const [showShare,setShowShare]               = useState(false);
   const [query,setQuery]         = useState("");
   const [diets,setDiets]         = useState<string[]>([]);
   const [seasonal,setSeasonal]   = useState(false);
@@ -1788,6 +1806,7 @@ export default function App(){
           <div className="recipe-banner-actions">
             <button className="print-btn" onClick={()=>window.print()} style={{display:"flex",alignItems:"center",gap:6}}>{Ic.printer(14)} Print</button>
             <button className={`save-btn${sv?" saved":""}`} onClick={()=>toggleSave(recipe)} style={{display:"flex",alignItems:"center",gap:5}}>{sv?Ic.heartFill(14):Ic.heart(14)} {sv?"Saved":"Save"}</button>
+            <button className="icon-btn" title="Share recipe" onClick={()=>setShowShare(true)}>{Ic.share(15)}</button>
             <button className="icon-btn" title="Add photo" onClick={()=>photoInputRef.current?.click()}>{Ic.camera(15)}</button>
             <button className="icon-btn" title="Edit recipe" onClick={openEdit}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -2534,6 +2553,44 @@ export default function App(){
       {showAccountDropdown&&(
         <div style={{position:"fixed",inset:0,zIndex:150}} onClick={()=>setShowAccountDropdown(false)}/>
       )}
+      {/* Share Sheet */}
+      {showShare&&recipe&&(()=>{
+        const slug=recipe.title.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+        const shareUrl=`https://everychef.app/r/${slug}`;
+        const qrSrc=`https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=1A1F2E&bgcolor=FDFAF5&data=${encodeURIComponent(shareUrl)}`;
+        const [copied,setCopied]=([false,(_:any)=>{}] as any);
+        const doCopy=()=>{
+          navigator.clipboard.writeText(shareUrl).then(()=>{
+            const btn=document.getElementById("share-copy-btn");
+            if(btn){btn.textContent="Copied!";btn.classList.add("copied");setTimeout(()=>{btn.textContent="Copy";btn.classList.remove("copied");},2000);}
+          }).catch(()=>{});
+        };
+        const doNativeShare=()=>{
+          if(navigator.share){navigator.share({title:recipe.title,text:`Check out this recipe on Every Chef: ${recipe.title}`,url:shareUrl}).catch(()=>{});}
+        };
+        return(
+          <div className="share-overlay" onClick={()=>setShowShare(false)}>
+            <div className="share-sheet" onClick={e=>e.stopPropagation()}>
+              <button className="share-close" onClick={()=>setShowShare(false)}>×</button>
+              <div className="share-sheet-title">Share Recipe</div>
+              <div className="share-sheet-dish">{recipe.title}</div>
+              <div className="share-url-row">
+                <div className="share-url-text">{shareUrl}</div>
+                <button id="share-copy-btn" className="share-copy-btn" onClick={doCopy}>Copy</button>
+              </div>
+              <div className="share-qr">
+                <img src={qrSrc} alt="QR code"/>
+                <div className="share-qr-label">Scan to open</div>
+              </div>
+              {typeof navigator!=="undefined"&&"share" in navigator&&(
+                <button className="share-native-btn" onClick={doNativeShare}>
+                  {Ic.share(16)} Share via…
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })()}
       {/* Edit Recipe Panel */}
       {showEditPanel&&editRecipe&&(
         <div className="edit-panel-overlay" onClick={()=>setShowEditPanel(false)}>
