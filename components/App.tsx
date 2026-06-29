@@ -629,6 +629,17 @@ const CSS = `
   .community-gate-btn{background:#F4A021;border:none;border-radius:100px;padding:10px 22px;font-family:'Outfit',sans-serif;font-weight:600;font-size:13px;color:#151210;cursor:pointer;white-space:nowrap;flex-shrink:0;}
   .community-grid{grid-template-columns:repeat(4,1fr);}
   @media(max-width:640px){.community-grid{grid-template-columns:repeat(2,1fr);}}
+  .community-list{display:flex;flex-direction:column;gap:0;}
+  .community-list-item{display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid #EDE8E0;cursor:pointer;transition:background .12s;}
+  .community-list-item:first-child{border-top:1px solid #EDE8E0;}
+  .community-list-item:hover{background:#F8F4EE;margin:0 -8px;padding:14px 8px;border-radius:10px;border-color:transparent;}
+  .community-list-item:hover+.community-list-item{border-top-color:transparent;}
+  .community-list-swatch{width:6px;height:48px;border-radius:3px;flex-shrink:0;}
+  .community-list-text{flex:1;min-width:0;}
+  .community-list-title{font-family:'Fraunces',serif;font-size:16px;font-weight:700;color:#151210;line-height:1.2;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .community-list-tagline{font-size:12px;color:#7A6E6A;line-height:1.4;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;}
+  .community-list-cat{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-top:4px;}
+  .community-list-arrow{color:#C8C0B8;flex-shrink:0;}
   .community-cat-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;margin-bottom:20px;scrollbar-width:none;}
   .community-cat-tabs::-webkit-scrollbar{display:none;}
   .community-cat-tab{padding:7px 18px;border-radius:100px;border:1.5px solid #EDE8E0;background:#fff;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;color:#7A6E6A;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0;}
@@ -2041,19 +2052,20 @@ export default function App(){
                 No {communityTab==="All"?"community":communityTab.toLowerCase()} recipes yet — check back soon.
               </div>
             ):(
-              <div className="mosaic-grid community-grid">
+              <div className="community-list">
                 {filtered.map((r:any,i:number)=>{
-                  const bg=colors[i%3];
-                  const light=lightText(bg);
+                  const swatchColors=["#F4A021","#E8431A","#1E3A2F"];
+                  const swatch=swatchColors[i%3];
+                  const cat=communityCategory(r.title);
                   return(
-                    <div key={r.title+i} className="mosaic-card" onClick={()=>openCommunityRecipe(r)}>
-                      <div className="mosaic-card-header" style={{background:bg}}>
-                        <div className="mosaic-card-header-title" style={{color:light?"#fff":"#151210"}}>{r.title}</div>
-                        <div className="mosaic-card-header-desc" style={{color:light?"rgba(255,255,255,.75)":"rgba(21,18,16,.65)"}}>{r.tagline}</div>
+                    <div key={r.title+i} className="community-list-item" onClick={()=>openCommunityRecipe(r)}>
+                      <div className="community-list-swatch" style={{background:swatch}}/>
+                      <div className="community-list-text">
+                        <div className="community-list-title">{r.title}</div>
+                        <div className="community-list-tagline">{r.tagline}</div>
+                        <div className="community-list-cat" style={{color:swatch}}>{cat}</div>
                       </div>
-                      <div className="mosaic-card-body">
-                        <div className="mosaic-card-category" style={{color:"#7A6E6A"}}>{communityCategory(r.title)}</div>
-                      </div>
+                      <svg className="community-list-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                     </div>
                   );
                 })}
