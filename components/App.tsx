@@ -197,10 +197,8 @@ const CSS = `
   .save-prompt-skip{background:none;border:none;font-family:'Outfit',sans-serif;font-size:13px;color:#7A6E6A;cursor:pointer;text-decoration:underline;text-underline-offset:3px;}
 
   /* ── HERO — Every Chef ── */
-  .hero{position:relative;overflow:hidden;padding:48px 24px 36px;text-align:center;background:#1A1F2E;}
-  @media(max-width:640px){.hero{padding:40px 20px 32px;}}
-  .hero-glow-a{position:absolute;top:-80px;right:-60px;width:280px;height:280px;background:radial-gradient(circle,rgba(244,160,33,.1) 0%,transparent 65%);pointer-events:none;}
-  .hero-glow-b{position:absolute;bottom:-40px;left:-40px;width:200px;height:200px;background:radial-gradient(circle,rgba(232,67,26,.07) 0%,transparent 65%);pointer-events:none;}
+  .hero{position:relative;overflow:hidden;padding:32px 24px 28px;text-align:center;background:#FDFAF5;border-bottom:1px solid #EDE8E0;}
+  @media(max-width:640px){.hero{padding:28px 20px 24px;}}
   .hero-particles{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
   .hero-particle{position:absolute;border-radius:50%;animation:particleRise linear infinite;}
   @keyframes particleRise{
@@ -219,37 +217,37 @@ const CSS = `
   .hero-eyebrow{display:none;}
   .hero-eyebrow-pre{display:none;}
   .hero-eyebrow-name{font-family:'Fraunces',serif;font-size:40px;font-weight:700;font-variation-settings:'opsz' 9,'WONK' 1;letter-spacing:-1px;line-height:1;display:flex;align-items:baseline;gap:0.18em;}
-  .hero-eyebrow-name .wm-upright{color:#FDFAF5;font-style:normal;}
+  .hero-eyebrow-name .wm-upright{color:#1A1F2E;font-style:normal;}
   .hero-eyebrow-name .wm-italic{color:#F4A021;font-style:italic;}
-  .hero-eyebrow-sub{font-family:'Outfit',sans-serif;font-size:10px;font-weight:500;color:rgba(253,250,245,.45);letter-spacing:2px;text-transform:uppercase;}
-  .hero-title{font-family:'Fraunces',serif;font-size:clamp(30px,6vw,52px);line-height:1.05;margin-bottom:0;color:#FDFAF5;font-weight:700;font-variation-settings:'opsz' 9,'WONK' 1;letter-spacing:-0.5px;}
+  .hero-eyebrow-sub{font-family:'Outfit',sans-serif;font-size:10px;font-weight:500;color:#7A6E6A;letter-spacing:2px;text-transform:uppercase;}
+  .hero-title{font-family:'Fraunces',serif;font-size:clamp(30px,6vw,52px);line-height:1.05;margin-bottom:0;color:#151210;font-weight:700;font-variation-settings:'opsz' 9,'WONK' 1;letter-spacing:-0.5px;}
   @media(max-width:767px){.hero-title{margin-top:4px;}}
   .hero-title em{color:#F4A021;font-style:italic;position:relative;}
   .hero-rule-wrap{display:none;}
-  .hero-sub{font-size:14px;color:rgba(253,250,245,.5);font-weight:300;line-height:1.6;max-width:480px;margin:12px auto 20px;}
-  .hero-sub strong{color:rgba(253,250,245,.85);font-weight:600;}
+  .hero-sub{font-size:14px;color:#7A6E6A;font-weight:300;line-height:1.6;max-width:480px;margin:10px auto 18px;}
+  .hero-sub strong{color:#151210;font-weight:600;}
   .search-wrap{max-width:560px;margin:0 auto;}
-  .home-mode-toggle{display:flex;background:rgba(255,255,255,.08);border-radius:100px;padding:3px;gap:2px;max-width:340px;margin:0 auto 20px;}
-  .home-mode-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 10px;border-radius:100px;border:none;background:transparent;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;color:rgba(253,250,245,.45);cursor:pointer;transition:all .15s;white-space:nowrap;}
-  .home-mode-btn.active{background:#F4A021;color:#151210;}
-  .home-mode-btn:not(.active):hover{color:rgba(253,250,245,.8);}
+  .home-mode-toggle{display:flex;background:#F0ECE6;border-radius:100px;padding:3px;gap:2px;max-width:340px;margin:0 auto 18px;}
+  .home-mode-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 10px;border-radius:100px;border:none;background:transparent;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;color:#7A6E6A;cursor:pointer;transition:all .15s;white-space:nowrap;}
+  .home-mode-btn.active{background:#1A1F2E;color:#FDFAF5;}
+  .home-mode-btn:not(.active):hover{color:#151210;}
   .home-inspire-wrap{max-width:680px;margin:0 auto;}
-  .search-bar{display:flex;background:#FDFAF5;border-radius:14px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.2);}
-  .search-bar:focus-within{box-shadow:0 4px 24px rgba(244,160,33,.3);}
+  .search-bar{display:flex;background:#fff;border:1.5px solid #EDE8E0;border-radius:14px;overflow:hidden;box-shadow:0 2px 8px rgba(21,18,16,.05);}
+  .search-bar:focus-within{border-color:#1A1F2E;box-shadow:0 2px 12px rgba(21,18,16,.1);}
   .search-input{flex:1;border:none;outline:none;padding:14px 16px;font-family:'Outfit',sans-serif;font-size:14px;color:#151210;background:transparent;font-weight:400;}
   .search-input::placeholder{color:#B8B0A8;}
-  .search-btn{margin:6px;padding:10px 20px;background:#1A1F2E;color:#F4A021;border:none;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;white-space:nowrap;display:flex;align-items:center;gap:6px;}
-  .search-btn:hover:not(:disabled){background:#0F1320;}
+  .search-btn{margin:6px;padding:10px 20px;background:#F4A021;color:#151210;border:none;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;white-space:nowrap;display:flex;align-items:center;gap:6px;}
+  .search-btn:hover:not(:disabled){background:#D88815;}
   .search-btn:disabled{opacity:.5;cursor:not-allowed;}
 
-  /* Filters — adapted for dark hero */
-  .filter-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(253,250,245,.4);margin:14px 0 8px;text-align:center;}
+  /* Filters — cream background */
+  .filter-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#7A6E6A;margin:14px 0 8px;text-align:center;}
   .diet-filters{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;}
-  .diet-chip{padding:5px 13px;border-radius:100px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;color:rgba(253,250,245,.6);cursor:pointer;transition:all .15s;}
-  .diet-chip.on{background:rgba(244,160,33,.18);border-color:rgba(244,160,33,.5);color:#F4A021;}
+  .diet-chip{padding:5px 13px;border-radius:100px;border:1px solid #EDE8E0;background:transparent;font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;color:#7A6E6A;cursor:pointer;transition:all .15s;}
+  .diet-chip.on{background:#1E3A2F;border-color:#1E3A2F;color:#fff;}
   .seasonal-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px;flex-wrap:wrap;}
-  .seasonal-chip{padding:5px 13px;border-radius:100px;border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;color:rgba(253,250,245,.6);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px;}
-  .seasonal-chip.on{background:rgba(30,58,47,.6);border-color:#1E3A2F;color:#FDFAF5;}
+  .seasonal-chip{padding:5px 13px;border-radius:100px;border:1.5px solid #1E3A2F;background:transparent;font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;color:#1E3A2F;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px;}
+  .seasonal-chip.on{background:#1E3A2F;color:#fff;}
   .location-wrap{display:flex;align-items:center;gap:6px;}
   .location-input{padding:5px 12px;border:1px solid #EDE8E0;border-radius:100px;font-family:'Outfit',sans-serif;font-size:12px;color:#151210;outline:none;width:160px;}
   .location-input:focus{border-color:#1E3A2F;}
@@ -271,9 +269,9 @@ const CSS = `
   @media(max-width:640px){.mosaic-grid{grid-template-columns:repeat(2,1fr);gap:10px;}}
   .mosaic-card{border-radius:16px;overflow:hidden;cursor:pointer;background:#fff;box-shadow:0 2px 8px rgba(21,18,16,.07),0 1px 2px rgba(21,18,16,.04);transition:transform .15s,box-shadow .15s;}
   .mosaic-card:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(21,18,16,.13);}
-  .mosaic-card-header{padding:16px 14px 14px;display:flex;flex-direction:column;justify-content:flex-end;}
-  .mosaic-card-header-title{font-family:'Fraunces',serif;font-size:15px;font-weight:700;line-height:1.2;margin-bottom:3px;}
-  .mosaic-card-header-desc{font-size:10px;font-weight:400;opacity:.75;line-height:1.3;}
+  .mosaic-card-header{padding:14px 14px 12px;display:flex;flex-direction:column;justify-content:flex-end;border-bottom:1px solid #F0ECE6;}
+  .mosaic-card-header-title{font-family:'Fraunces',serif;font-size:15px;font-weight:700;line-height:1.2;margin-bottom:4px;color:#151210;}
+  .mosaic-card-header-desc{font-size:10px;font-weight:400;line-height:1.3;color:#7A6E6A;}
   .mosaic-card-body{padding:8px 14px 12px;display:flex;align-items:center;justify-content:space-between;}
   .mosaic-card-category{font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:0;}
   .mosaic-card-meta{font-size:10px;color:#7A6E6A;margin-top:2px;}
@@ -1442,10 +1440,8 @@ export default function App(){
       <>
         {status!=="done"&&(
           <div>
-          {/* ── Clean dark hero ── */}
+          {/* ── Hero ── */}
           <div className="hero">
-            <div className="hero-glow-a"/>
-            <div className="hero-glow-b"/>
             {/* Content */}
             <div className="hero-content">
               <div className="hero-eyebrow">
@@ -1516,9 +1512,9 @@ export default function App(){
                       <div key={card.title+cardSeed}
                         className="mosaic-card"
                         onClick={()=>{setQuery(card.title);doSearch(card.title);}}>
-                        <div className="mosaic-card-header" style={{background:card.headerBg}}>
-                          <div className="mosaic-card-header-title" style={{color:card.textLight?"#fff":"#151210"}}>{card.title}</div>
-                          <div className="mosaic-card-header-desc" style={{color:card.textLight?"rgba(255,255,255,.8)":"rgba(21,18,16,.7)"}}>{card.desc}</div>
+                        <div className="mosaic-card-header" style={{background:"#fff"}}>
+                          <div className="mosaic-card-header-title" style={{color:"#151210"}}>{card.title}</div>
+                          <div className="mosaic-card-header-desc" style={{color:"#7A6E6A"}}>{card.desc}</div>
                         </div>
                         <div className="mosaic-card-body">
                           <div className="mosaic-card-category" style={{color:card.catColor}}>{card.category}</div>
