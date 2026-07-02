@@ -224,7 +224,7 @@ const CSS = `
   @media(max-width:767px){.hero-title{margin-top:4px;}}
   .hero-title em{color:#F4A021;font-style:italic;position:relative;}
   .hero-rule-wrap{display:none;}
-  .hero-sub{font-size:14px;color:#7A6E6A;font-weight:300;line-height:1.6;max-width:480px;margin:10px auto 18px;min-height:46px;display:flex;align-items:center;justify-content:center;text-align:center;}
+  .hero-sub{font-size:14px;color:#7A6E6A;font-weight:300;line-height:1.6;max-width:480px;margin:10px auto 0;min-height:46px;text-align:center;padding-bottom:18px;}
   .hero-sub strong{color:#151210;font-weight:600;}
   .search-wrap{max-width:560px;margin:0 auto;}
   .home-mode-toggle{position:relative;display:flex;background:#F0ECE6;border-radius:100px;padding:3px;gap:2px;max-width:340px;margin:0 auto 18px;}
