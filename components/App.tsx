@@ -224,12 +224,13 @@ const CSS = `
   @media(max-width:767px){.hero-title{margin-top:4px;}}
   .hero-title em{color:#F4A021;font-style:italic;position:relative;}
   .hero-rule-wrap{display:none;}
-  .hero-sub{font-size:14px;color:#7A6E6A;font-weight:300;line-height:1.6;max-width:480px;margin:10px auto 18px;}
+  .hero-sub{font-size:14px;color:#7A6E6A;font-weight:300;line-height:1.6;max-width:480px;margin:10px auto 18px;min-height:46px;display:flex;align-items:center;justify-content:center;text-align:center;}
   .hero-sub strong{color:#151210;font-weight:600;}
   .search-wrap{max-width:560px;margin:0 auto;}
-  .home-mode-toggle{display:flex;background:#F0ECE6;border-radius:100px;padding:3px;gap:2px;max-width:340px;margin:0 auto 18px;}
-  .home-mode-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 10px;border-radius:100px;border:none;background:transparent;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;color:#7A6E6A;cursor:pointer;transition:all .15s;white-space:nowrap;}
-  .home-mode-btn.active{background:#1A1F2E;color:#FDFAF5;}
+  .home-mode-toggle{position:relative;display:flex;background:#F0ECE6;border-radius:100px;padding:3px;gap:2px;max-width:340px;margin:0 auto 18px;}
+  .home-mode-slider{position:absolute;top:3px;left:3px;width:calc((100% - 10px) / 3);height:calc(100% - 6px);background:#1A1F2E;border-radius:100px;transition:transform .22s cubic-bezier(.4,0,.2,1);pointer-events:none;z-index:0;}
+  .home-mode-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 10px;border-radius:100px;border:none;background:transparent;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;color:#7A6E6A;cursor:pointer;transition:color .15s;white-space:nowrap;position:relative;z-index:1;}
+  .home-mode-btn.active{color:#FDFAF5;}
   .home-mode-btn:not(.active):hover{color:#151210;}
   .home-inspire-wrap{max-width:680px;margin:0 auto;}
   .search-bar{display:flex;background:#fff;border:1.5px solid #EDE8E0;border-radius:14px;overflow:hidden;box-shadow:0 2px 8px rgba(21,18,16,.05);}
@@ -1457,6 +1458,9 @@ export default function App(){
               <p className="hero-sub">{homeMode==="search"?<>The <strong>best recipes on the internet</strong>, combined, refined, just for you.</>:homeMode==="inspire"?"Answer three quick questions and we'll serve up ideas tailored to your night.":"Flip through dishes until something catches your eye."}</p>
 
               <div className="home-mode-toggle">
+                <div className="home-mode-slider" style={{
+                  transform:`translateX(${homeMode==="search"?"0":homeMode==="inspire"?"calc(100% + 2px)":"calc(200% + 4px)"})`
+                }}/>
                 <button className={`home-mode-btn${homeMode==="search"?" active":""}`} onClick={()=>setHomeMode("search")}>{Ic.search(14)} Search</button>
                 <button className={`home-mode-btn${homeMode==="inspire"?" active":""}`} onClick={()=>setHomeMode("inspire")}>{Ic.inspire(14)} Inspire Me</button>
                 <button className={`home-mode-btn${homeMode==="tryme"?" active":""}`} onClick={()=>setHomeMode("tryme")}>{Ic.refresh(14)} Try Me</button>
