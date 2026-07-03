@@ -224,8 +224,9 @@ const CSS = `
   @media(max-width:767px){.hero-title{margin-top:4px;}}
   .hero-title em{color:#F4A021;font-style:italic;position:relative;}
   .hero-rule-wrap{display:none;}
-  .hero-sub{font-size:14px;color:#7A6E6A;font-weight:300;line-height:1.6;max-width:480px;margin:10px auto 0;min-height:46px;text-align:center;padding-bottom:18px;}
+  .hero-sub{font-size:14px;color:#7A6E6A;font-weight:300;line-height:1.6;max-width:480px;margin:10px auto 20px;text-align:center;}
   .hero-sub strong{color:#151210;font-weight:600;}
+  .hero-mode-desc{font-size:12px;color:#B8B0A8;text-align:center;margin:8px auto 0;max-width:340px;line-height:1.5;}
   .search-wrap{max-width:560px;margin:0 auto;}
   .home-mode-toggle{position:relative;display:flex;background:#F0ECE6;border-radius:100px;padding:3px;gap:2px;max-width:340px;margin:0 auto 18px;}
   .home-mode-slider{position:absolute;top:3px;left:3px;width:calc((100% - 10px) / 3);height:calc(100% - 6px);background:#1A1F2E;border-radius:100px;transition:transform .22s cubic-bezier(.4,0,.2,1);pointer-events:none;z-index:0;}
@@ -1455,7 +1456,7 @@ export default function App(){
               </div>
               <h1 className="hero-title">What would you<br/><em>like to cook?</em></h1>
               <div className="hero-rule-wrap"><div className="hero-rule"/><div className="hero-diamond"/><div className="hero-rule"/></div>
-              <p className="hero-sub">{homeMode==="search"?<>The <strong>best recipes on the internet</strong>, combined, refined, just for you.</>:homeMode==="inspire"?"Answer three quick questions and we'll serve up ideas tailored to your night.":"Flip through dishes until something catches your eye."}</p>
+              <p className="hero-sub">The <strong>best recipes on the internet</strong>, combined, refined, just for you.</p>
 
               <div className="home-mode-toggle">
                 <div className="home-mode-slider" style={{
@@ -1465,6 +1466,9 @@ export default function App(){
                 <button className={`home-mode-btn${homeMode==="inspire"?" active":""}`} onClick={()=>setHomeMode("inspire")}>{Ic.inspire(14)} Inspire Me</button>
                 <button className={`home-mode-btn${homeMode==="tryme"?" active":""}`} onClick={()=>setHomeMode("tryme")}>{Ic.refresh(14)} Try Me</button>
               </div>
+              <p className="hero-mode-desc">
+                {homeMode==="search"?"Type a dish name and we'll build the perfect recipe.":homeMode==="inspire"?"Answer a few questions and we'll pick something for you.":"Flip through dishes until one catches your eye."}
+              </p>
 
               {homeMode==="search"&&(
               <div className="search-wrap">
