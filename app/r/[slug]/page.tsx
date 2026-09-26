@@ -18,9 +18,15 @@ function normalize(q: string): string {
 }
 
 async function getRecipe(slug: string) {
-  const title = slugToTitle(slug);
-  const key = `recipe-cache:${CACHE_VERSION}:${normalize(title)}`;
   try {
+    // 1) share permalinks: /r/<title-slug>-<8 hex>. app/api/share/route.ts stores
+    //    the snapshot under recipe-share:<that exact slug>.
+    const shared = await redis.get<any>(`recipe-share:${slug}`);
+    if (shared) return shared;
+
+    // 2) legacy links: /r/<title-slug>  ->  dish cache
+    const title = slugToTitle(slug);
+    const key = `recipe-cache:${CACHE_VERSION}:${normalize(title)}`;
     const recipe = await redis.get<any>(key);
     return recipe || null;
   } catch {
