@@ -1268,18 +1268,13 @@ export default function App(){
       let fromCache=false;
 
       if(canCache){
-        // Start both simultaneously — cache check and Claude
-        const cachePromise=fetch(`/api/cache?q=${encodeURIComponent(q)}`)
+        const cacheData=await fetch(`/api/cache?q=${encodeURIComponent(q)}`)
           .then(r=>r.json()).catch(()=>({found:false}));
-        const claudePromise=callAPI([{role:"user",content:buildPrompt(q,diets,seasonal,location)}]);
-        // Check cache first (fast) — if hit, we're done and Claude runs in background wasted
-        // If miss, await Claude which is already running
-        const cacheData=await cachePromise;
         if(cacheData.found&&cacheData.recipe){
           parsed=cacheData.recipe;
           fromCache=true;
         }else{
-          parsed=await claudePromise;
+          parsed=await callAPI([{role:"user",content:buildPrompt(q,diets,seasonal,location)}]);
           fetch("/api/cache",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({dish:q,recipe:parsed})}).catch(()=>{});
         }
       }else{
@@ -1289,7 +1284,7 @@ export default function App(){
       const r={...parsed,id:Date.now(),_dish:q,_ts:Date.now(),_fromCache:fromCache};
       setRecipe(r);setStatus("done");
       setHistory(h=>[r,...h.filter((x:any)=>x.id!==r.id)].slice(0,30));
-    }catch(e:any){setErrorMsg(e.message||String(e));setStatus("error");}
+    }catch(e:any){setErrorMsg(e.message||String(e));setStatus("error");window.scrollTo({top:0,behavior:"smooth"});}
   };
 
   /* inspire */
@@ -1472,6 +1467,17 @@ export default function App(){
   function SearchView(){
     return(
       <>
+        {status==="error"&&(
+          <div className="error-box" style={{margin:"20px auto 0",maxWidth:560}}>
+            <h3>We couldn't build that recipe</h3>
+            <p style={{fontSize:13,color:"#7A6E6A",marginTop:6,lineHeight:1.5}}>
+              {/timed? ?out|timeout|504/i.test(errorMsg)?"That one took too long to generate. Give it another try.":"Something went wrong on our end. Please try again."}
+            </p>
+            <p style={{fontSize:11,fontFamily:"monospace",background:"#f5f5f5",padding:"8px 12px",borderRadius:6,marginTop:8,textAlign:"left",wordBreak:"break-all",color:"#555"}}>{errorMsg}</p>
+            <button className="back-btn" onClick={()=>doSearch()}>Try again</button>
+            <button className="back-btn" style={{marginLeft:8}} onClick={()=>setStatus("idle")}>Dismiss</button>
+          </div>
+        )}
         {status!=="done"&&(
           <div>
           {/* ── Hero ── */}
@@ -1794,12 +1800,6 @@ export default function App(){
               </div>
               <div className="loading-sub">Synthesizing techniques from top sources</div>
             </div>
-          </div>
-        )}
-        {status==="error"&&(
-          <div className="error-box"><h3>Something went wrong</h3>
-            <p style={{fontSize:12,fontFamily:"monospace",background:"#f5f5f5",padding:"8px 12px",borderRadius:6,marginTop:8,textAlign:"left",wordBreak:"break-all",color:"#555"}}>{errorMsg}</p>
-            <button className="back-btn" onClick={()=>setStatus("idle")}>← Try again</button>
           </div>
         )}
         {status==="done"&&recipe&&RecipeView()}
