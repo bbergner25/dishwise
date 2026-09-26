@@ -112,28 +112,22 @@ export async function GET(req: NextRequest) {
     const dishes = await fetchTrendingDishes();
 
     // 2. For each dish: check cache → generate if missing → store
-    const finalDishes: string[] = [];
-
-    for (const dish of dishes) {
+    // Run all dishes in parallel — one after another can blow past the 60s limit
+    const settled = await Promise.all(dishes.map(async (dish) => {
       const cacheKey = `recipe-cache:${CACHE_VERSION}:${normalize(dish)}`;
       try {
         const existing = await redis.get(cacheKey);
-        if (existing) {
-          results.push({ dish, status: "already-cached" });
-          finalDishes.push(dish);
-          continue;
-        }
-        // Generate and cache
+        if (existing) return { dish, status: "already-cached" };
         const recipe = await generateRecipe(req, dish);
         await redis.set(cacheKey, recipe);
-        results.push({ dish, status: "generated" });
-        finalDishes.push(dish);
+        return { dish, status: "generated" };
       } catch (err: any) {
-        results.push({ dish, status: "failed", error: String(err?.message || err) });
-        // Still add to the list even if generation failed — app will generate on demand
-        finalDishes.push(dish);
+        // Still listed even if generation failed — the app generates it on demand when tapped
+        return { dish, status: "failed", error: String(err?.message || err) };
       }
-    }
+    }));
+    results.push(...settled);
+    const finalDishes: string[] = settled.map((r) => r.dish);
 
     // 3. Write trending list to Redis (no expiry — overwrites on each run)
     const trendingData = {
