@@ -1845,11 +1845,12 @@ export default function App(){
             <button className="icon-btn" title="Share recipe" onClick={async()=>{
               setShowShare(true);setShareUrl(null);setShareLoading(true);
               try{
-                const res=await fetch("/api/share",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({recipe})});
+                // Strip internal flags and any large photo data before sending
+                const {_scanned,_imported,_fromCache,_ts,id,_sourceUrl,...shareableRecipe}=recipe as any;
+                const res=await fetch("/api/share",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({recipe:shareableRecipe})});
                 const data=await res.json();
                 setShareUrl(data.url||null);
               }catch{
-                // fallback to slug-based URL
                 const slug=recipe.title.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
                 setShareUrl(`https://everychef.app/r/${slug}`);
               }finally{setShareLoading(false);}
