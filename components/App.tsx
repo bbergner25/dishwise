@@ -230,11 +230,11 @@ const CSS = `
   /* Trending strip */
   .trending-strip{padding:20px 20px 0;max-width:960px;margin:0 auto;}
   .trending-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#7A6E6A;font-weight:600;display:flex;align-items:center;gap:6px;margin-bottom:10px;}
-  .trending-scroll{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;}
+  .trending-scroll{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;padding-right:28px;-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 28px),transparent);}
   .trending-scroll::-webkit-scrollbar{display:none;}
-  .trending-card{flex-shrink:0;background:#fff;border:1.5px solid #EDE8E0;border-radius:14px;padding:10px 14px;cursor:pointer;transition:all .15s;max-width:160px;}
+  .trending-card{flex-shrink:0;width:150px;display:flex;flex-direction:column;justify-content:space-between;background:#fff;border:1.5px solid #EDE8E0;border-radius:14px;padding:10px 14px;cursor:pointer;transition:all .15s;}
   .trending-card:hover{border-color:#E8431A;box-shadow:0 4px 12px rgba(232,67,26,.1);}
-  .trending-card-title{font-family:'Fraunces',serif;font-size:13px;font-weight:700;color:#151210;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .trending-card-title{font-family:'Fraunces',serif;font-size:13px;font-weight:700;color:#151210;line-height:1.2;text-wrap:balance;overflow-wrap:break-word;}
   .trending-card-badge{font-size:9px;color:#E8431A;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:3px;}
   .search-wrap{max-width:560px;margin:0 auto;}
   .home-mode-toggle{position:relative;display:flex;background:#F0ECE6;border-radius:100px;padding:3px;gap:2px;max-width:340px;margin:0 auto 18px;}
