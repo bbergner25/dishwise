@@ -227,6 +227,15 @@ const CSS = `
   .hero-sub{font-size:14px;color:#7A6E6A;font-weight:300;line-height:1.6;max-width:480px;margin:10px auto 20px;text-align:center;}
   .hero-sub strong{color:#151210;font-weight:600;}
   .hero-mode-desc{font-size:12px;color:#B8B0A8;text-align:center;margin:8px auto 0;max-width:340px;line-height:1.5;}
+  /* Trending strip */
+  .trending-strip{padding:20px 20px 0;max-width:960px;margin:0 auto;}
+  .trending-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#7A6E6A;font-weight:600;display:flex;align-items:center;gap:6px;margin-bottom:10px;}
+  .trending-scroll{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;}
+  .trending-scroll::-webkit-scrollbar{display:none;}
+  .trending-card{flex-shrink:0;background:#fff;border:1.5px solid #EDE8E0;border-radius:14px;padding:10px 14px;cursor:pointer;transition:all .15s;max-width:160px;}
+  .trending-card:hover{border-color:#E8431A;box-shadow:0 4px 12px rgba(232,67,26,.1);}
+  .trending-card-title{font-family:'Fraunces',serif;font-size:13px;font-weight:700;color:#151210;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .trending-card-badge{font-size:9px;color:#E8431A;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:3px;}
   .search-wrap{max-width:560px;margin:0 auto;}
   .home-mode-toggle{position:relative;display:flex;background:#F0ECE6;border-radius:100px;padding:3px;gap:2px;max-width:340px;margin:0 auto 18px;}
   .home-mode-slider{position:absolute;top:3px;left:3px;width:calc((100% - 10px) / 3);height:calc(100% - 6px);background:#1A1F2E;border-radius:100px;transition:transform .22s cubic-bezier(.4,0,.2,1);pointer-events:none;z-index:0;}
@@ -497,8 +506,11 @@ const CSS = `
   .grocery-check{width:15px;height:15px;border-radius:4px;border:1.5px solid #EDE8E0;background:#fff;flex-shrink:0;cursor:pointer;appearance:none;transition:all .12s;}
   .grocery-check:checked{background:#1E3A2F;border-color:#1E3A2F;}
   .grocery-item-wrap{flex:1;min-width:0;}
-  .grocery-name{font-size:12px;line-height:1.3;}
-  .grocery-shop-links{display:flex;gap:4px;margin-top:3px;}
+  .grocery-name{font-size:13px;font-weight:600;line-height:1.3;color:#151210;}
+  .grocery-entries{margin-top:5px;display:flex;flex-direction:column;gap:3px;}
+  .grocery-entry{font-size:11px;color:#7A6E6A;line-height:1.3;display:flex;align-items:baseline;gap:4px;}
+  .grocery-entry-amount{color:#F4A021;font-weight:600;flex-shrink:0;}
+  .grocery-entry-recipe{color:#B8B0A8;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .grocery-shop-link{font-size:10px;padding:1px 6px;border-radius:100px;text-decoration:none;border:1px solid #EDE8E0;color:#7A6E6A;transition:all .12s;}
   .grocery-shop-link:hover{border-color:#0071CE;color:#0071CE;}
   .grocery-shop-link.tg:hover{border-color:#CC0000;color:#CC0000;}
@@ -854,13 +866,25 @@ function scaleAmt(str: string,ratio: number): string{
   return formatNum(n*ratio)+m[2];
 }
 function consolidate(plan: Record<string,any>){
-  const map: Record<string,{name:string;recipes:string[]}> = {};
+  const map: Record<string,{name:string;entries:{recipe:string;amount:string}[]}> = {};
   for(const k of DAY_KEYS){
     const r=plan[k];if(!r)continue;
+    // Build a lookup of ingredient name → amount from ingredient_groups
+    const amountLookup: Record<string,string> = {};
+    for(const group of(r.ingredient_groups||[])){
+      for(const item of(group.items||[])){
+        const key=(item.name||"").toLowerCase().trim();
+        if(key)amountLookup[key]=item.amount||"";
+      }
+    }
     for(const item of(r.grocery_items||[])){
       const key=item.toLowerCase().trim();
-      if(!map[key])map[key]={name:item,recipes:[]};
-      if(!map[key].recipes.includes(r.title))map[key].recipes.push(r.title);
+      if(!map[key])map[key]={name:item,entries:[]};
+      const alreadyAdded=map[key].entries.some(e=>e.recipe===r.title);
+      if(!alreadyAdded){
+        const amount=amountLookup[key]||"";
+        map[key].entries.push({recipe:r.title,amount});
+      }
     }
   }
   return Object.values(map).sort((a,b)=>a.name.localeCompare(b.name));
@@ -998,6 +1022,9 @@ export default function App(){
   const [communityTab,setCommunityTab]         = useState("All");
   const [communitySearch,setCommunitySearch]   = useState("");
   const [showShare,setShowShare]               = useState(false);
+  const [shareUrl,setShareUrl]                 = useState<string|null>(null);
+  const [shareLoading,setShareLoading]         = useState(false);
+  const [trendingDishes,setTrendingDishes]     = useState<string[]>([]);
   const [query,setQuery]         = useState("");
   const [diets,setDiets]         = useState<string[]>([]);
   const [seasonal,setSeasonal]   = useState(false);
@@ -1088,6 +1115,11 @@ export default function App(){
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-ratings",JSON.stringify(ratings));}catch{};},[ratings,ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-cat-overrides",JSON.stringify(categoryOverrides));}catch{};},[categoryOverrides,ready]);
   useEffect(()=>{if(tab==="community"&&communityStatus==="idle")loadCommunity();},[tab,communityStatus]);
+  useEffect(()=>{
+    fetch("/api/trending").then(r=>r.json()).then(d=>{
+      if(d.dishes?.length)setTrendingDishes(d.dishes);
+    }).catch(()=>{});
+  },[]);
 
   /* cloud sync — load on sign-in */
   useEffect(()=>{
@@ -1644,6 +1676,23 @@ export default function App(){
             </div>
           </div>
 
+          {/* ── Trending strip ── */}
+          {trendingDishes.length>0&&(
+            <div className="trending-strip">
+              <div className="trending-label">
+                <span>🔥</span> Trending right now
+              </div>
+              <div className="trending-scroll">
+                {trendingDishes.map((dish,i)=>(
+                  <div key={i} className="trending-card" onClick={()=>{setQuery(dish);doSearch(dish);}}>
+                    <div className="trending-card-title">{dish}</div>
+                    <div className="trending-card-badge">Trending</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* ── Mosaic suggestion cards ── */}
           {/* Scan + URL — scan first, then URL, extra bottom padding for mobile nav */}
           {/* ── Import pair ── */}
@@ -1793,7 +1842,18 @@ export default function App(){
           <div className="recipe-banner-actions">
             <button className="print-btn" onClick={()=>window.print()} style={{display:"flex",alignItems:"center",gap:6}}>{Ic.printer(14)} Print</button>
             <button className={`save-btn${sv?" saved":""}`} onClick={()=>toggleSave(recipe)} style={{display:"flex",alignItems:"center",gap:5}}>{sv?Ic.heartFill(14):Ic.heart(14)} {sv?"Saved":"Save"}</button>
-            <button className="icon-btn" title="Share recipe" onClick={()=>setShowShare(true)}>{Ic.share(15)}</button>
+            <button className="icon-btn" title="Share recipe" onClick={async()=>{
+              setShowShare(true);setShareUrl(null);setShareLoading(true);
+              try{
+                const res=await fetch("/api/share",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({recipe})});
+                const data=await res.json();
+                setShareUrl(data.url||null);
+              }catch{
+                // fallback to slug-based URL
+                const slug=recipe.title.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+                setShareUrl(`https://everychef.app/r/${slug}`);
+              }finally{setShareLoading(false);}
+            }}>{Ic.share(15)}</button>
             <button className="icon-btn" title="Add photo" onClick={()=>photoInputRef.current?.click()}>{Ic.camera(15)}</button>
             <button className="icon-btn" title="Edit recipe" onClick={openEdit}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -2294,9 +2354,16 @@ export default function App(){
                   <input type="checkbox" className="grocery-check"/>
                   <div className="grocery-item-wrap">
                     <div className="grocery-name">{item.name}</div>
-                    {item.recipes.length>1&&<div style={{fontSize:10,color:C.muted,marginTop:1}}>{item.recipes.length} meals</div>}
+                    <div className="grocery-entries">
+                      {item.entries.map((e,j)=>(
+                        <div key={j} className="grocery-entry">
+                          {e.amount&&<span className="grocery-entry-amount">{e.amount}</span>}
+                          <span className="grocery-entry-recipe">{e.recipe}</span>
+                        </div>
+                      ))}
+                    </div>
                     {retailer&&(
-                      <div className="grocery-shop-links">
+                      <div className="grocery-shop-links" style={{marginTop:6}}>
                         <a href={RETAILERS.find(r=>r.id===retailer)?.url(item.name)||"#"}
                           target="_blank" rel="noopener noreferrer" className="grocery-shop-link">
                           {RETAILERS.find(r=>r.id===retailer)?.name}
@@ -2579,18 +2646,18 @@ export default function App(){
       )}
       {/* Share Sheet */}
       {showShare&&recipe&&(()=>{
-        const slug=recipe.title.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
-        const shareUrl=`https://everychef.app/r/${slug}`;
-        const qrSrc=`https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=1A1F2E&bgcolor=FDFAF5&data=${encodeURIComponent(shareUrl)}`;
-        const [copied,setCopied]=([false,(_:any)=>{}] as any);
+        const displayUrl=shareUrl||"Generating link…";
+        const qrSrc=shareUrl?`https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=1A1F2E&bgcolor=FDFAF5&data=${encodeURIComponent(shareUrl)}`:null;
         const doCopy=()=>{
+          if(!shareUrl)return;
           navigator.clipboard.writeText(shareUrl).then(()=>{
             const btn=document.getElementById("share-copy-btn");
             if(btn){btn.textContent="Copied!";btn.classList.add("copied");setTimeout(()=>{btn.textContent="Copy";btn.classList.remove("copied");},2000);}
           }).catch(()=>{});
         };
         const doNativeShare=()=>{
-          if(navigator.share){navigator.share({title:recipe.title,text:`Check out this recipe on Every Chef: ${recipe.title}`,url:shareUrl}).catch(()=>{});}
+          if(!shareUrl||!navigator.share)return;
+          navigator.share({title:recipe.title,text:`Check out this recipe on Every Chef: ${recipe.title}`,url:shareUrl}).catch(()=>{});
         };
         return(
           <div className="share-overlay" onClick={()=>setShowShare(false)}>
@@ -2599,14 +2666,22 @@ export default function App(){
               <div className="share-sheet-title">Share Recipe</div>
               <div className="share-sheet-dish">{recipe.title}</div>
               <div className="share-url-row">
-                <div className="share-url-text">{shareUrl}</div>
-                <button id="share-copy-btn" className="share-copy-btn" onClick={doCopy}>Copy</button>
+                <div className="share-url-text" style={{color:shareLoading?"#B8B0A8":"#151210"}}>{displayUrl}</div>
+                <button id="share-copy-btn" className="share-copy-btn" onClick={doCopy} disabled={!shareUrl||shareLoading}>
+                  {shareLoading?"…":"Copy"}
+                </button>
               </div>
-              <div className="share-qr">
-                <img src={qrSrc} alt="QR code"/>
-                <div className="share-qr-label">Scan to open</div>
-              </div>
-              {typeof navigator!=="undefined"&&"share" in navigator&&(
+              {qrSrc?(
+                <div className="share-qr">
+                  <img src={qrSrc} alt="QR code"/>
+                  <div className="share-qr-label">Scan to open</div>
+                </div>
+              ):(
+                <div style={{height:180,display:"flex",alignItems:"center",justifyContent:"center",color:"#B8B0A8",fontSize:13}}>
+                  Generating QR code…
+                </div>
+              )}
+              {typeof navigator!=="undefined"&&"share" in navigator&&shareUrl&&(
                 <button className="share-native-btn" onClick={doNativeShare}>
                   {Ic.share(16)} Share via…
                 </button>
