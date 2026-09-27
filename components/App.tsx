@@ -1055,6 +1055,7 @@ export default function App(){
   const [scanMsg,setScanMsg]     = useState("");
   const [ready,setReady]         = useState(false);
   const [cloudSynced,setCloudSynced] = useState(false); // true only after the cloud copy has been read
+  const [justAdded,setJustAdded]     = useState<any>(null); // most recent scanned/imported recipe, so "View" can open it directly
   const [urlInput,setUrlInput]   = useState("");
   const [urlStatus,setUrlStatus] = useState("idle"); // idle|loading|done|error
   const [urlMsg,setUrlMsg]       = useState("");
@@ -1381,7 +1382,7 @@ export default function App(){
         {type:"text",text:buildScanPrompt()},
       ]}]);
       const r={...parsed,id:Date.now(),_dish:parsed.title||"Scanned Recipe",_scanned:true};
-      setSaved(l=>[r,...l]);setScanStatus("done");setScanMsg(`"${r.title}" saved!`);
+      setSaved(l=>[r,...l]);setJustAdded(r);setScanStatus("done");setScanMsg(`"${r.title}" saved!`);
       setScanPreview(null);if(fileRef.current)fileRef.current.value="";
     }catch(e:any){setScanStatus("error");setScanMsg(e.message||String(e));}
   };
@@ -1414,7 +1415,7 @@ export default function App(){
       const jsonLd=parseJsonLd(html,url);
       if(jsonLd){
         const r={...jsonLd,id:Date.now(),_imported:true};
-        setSaved(l=>[r,...l]);
+        setSaved(l=>[r,...l]);setJustAdded(r);
         setUrlStatus("done");setUrlMsg(`"${r.title}" saved to your collection!`);
         setUrlInput("");
         return;
@@ -1432,7 +1433,7 @@ export default function App(){
         {type:"text",text:buildUrlPrompt()+"\n\nPage content:\n"+text.slice(0,12000)},
       ]}]);
       const r={...parsed,id:Date.now(),_dish:parsed.title||"Imported Recipe",_imported:true,_sourceUrl:url};
-      setSaved(l=>[r,...l]);
+      setSaved(l=>[r,...l]);setJustAdded(r);
       setUrlStatus("done");setUrlMsg(`"${r.title}" saved to your collection!`);
       setUrlInput("");
     }catch(e:any){
@@ -1751,7 +1752,7 @@ export default function App(){
                 )}
                 {scanStatus==="done"&&scanMsg&&(
                   <div className="scan-success">✓ {scanMsg}{" "}
-                    <button onClick={()=>setTab("saved")} style={{background:"none",border:"none",cursor:"pointer",color:"#4a6040",textDecoration:"underline",fontSize:13}}>View →</button>
+                    <button onClick={()=>{if(justAdded){setRecipe(justAdded);setServings(null);setStatus("done");setTab("search");}else setTab("saved");}} style={{background:"none",border:"none",cursor:"pointer",color:"#4a6040",textDecoration:"underline",fontSize:13}}>View recipe →</button>
                   </div>
                 )}
                 {scanStatus==="error"&&<div className="import-status-err">{scanMsg}</div>}
@@ -1775,7 +1776,7 @@ export default function App(){
                   </div>
                   {urlStatus==="done"&&urlMsg&&(
                     <div className="import-status-ok">✓ {urlMsg}{" "}
-                      <button onClick={()=>setTab("saved")} style={{background:"none",border:"none",cursor:"pointer",color:"#1E3A2F",textDecoration:"underline",fontSize:12,fontFamily:"'Outfit',sans-serif"}}>View →</button>
+                      <button onClick={()=>{if(justAdded){setRecipe(justAdded);setServings(null);setStatus("done");setTab("search");}else setTab("saved");}} style={{background:"none",border:"none",cursor:"pointer",color:"#1E3A2F",textDecoration:"underline",fontSize:12,fontFamily:"'Outfit',sans-serif"}}>View recipe →</button>
                     </div>
                   )}
                   {urlStatus==="error"&&<div className="import-status-err">{urlMsg}</div>}
