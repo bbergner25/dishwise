@@ -872,6 +872,12 @@ function scaleAmt(str: string,ratio: number): string{
   // group 1 swallows the space before the unit, so put it back
   return formatNum(n*ratio)+(rest&&!/^[\s,.;)\-–]/.test(rest)?" ":"")+rest;
 }
+// Mixed numbers like "1 1/2 lbs": widen the gap between the whole number and the fraction
+function renderAmount(s: string){
+  const m=s.match(/^(\d+) (\d+\/\d+)(.*)$/);
+  if(!m) return s;
+  return <>{m[1]}<span style={{marginLeft:"0.34em"}}>{m[2]}</span>{m[3]}</>;
+}
 function consolidate(plan: Record<string,any>){
   const map: Record<string,{name:string;entries:{recipe:string;amount:string}[]}> = {};
   for(const k of DAY_KEYS){
@@ -1925,7 +1931,7 @@ export default function App(){
                     <li key={ii} className="ing-item" style={{fontSize:ingFontSize}}>
                       <span className="ing-dot"/>
                       <span className="ing-text">
-                        <span className="ing-amount">{normalizeAmount(scaleAmt(ing.amount,ratio))}</span>{" "}
+                        <span className="ing-amount">{renderAmount(normalizeAmount(scaleAmt(ing.amount,ratio)))}</span>{" "}
                         <span className="ing-name">{ing.name}</span>
                       </span>
                       {retailer&&(
