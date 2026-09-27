@@ -841,10 +841,14 @@ function wmUrl(item: string){ return `https://www.walmart.com/search?q=${encodeU
 function tgUrl(item: string){ return `https://www.target.com/s?searchTerm=${encodeURIComponent(item)}`; }
 
 /* ── UTILS ── */
+const UNI_FRAC: Record<string,string> = {"½":"1/2","¼":"1/4","¾":"3/4","⅓":"1/3","⅔":"2/3","⅛":"1/8","⅜":"3/8","⅝":"5/8","⅞":"7/8","⅕":"1/5","⅖":"2/5","⅗":"3/5","⅘":"4/5","⅙":"1/6","⅚":"5/6"};
 function normalizeAmount(s: string): string {
   if(!s) return s;
-  // Insert space between number/fraction and following letter: "1medium" → "1 medium"
-  return s.replace(/(\d)(\/\d+)?([a-zA-Z])/g, '$1$2 $3');
+  // "½" -> "1/2", "1½" -> "1 1/2" (plain fractions stay legible at any weight/size)
+  let t=s.replace(/(\d)?([½¼¾⅓⅔⅛⅜⅝⅞⅕⅖⅗⅘⅙⅚])/g,(_m:string,d:string|undefined,f:string)=>(d?d+" ":"")+UNI_FRAC[f]);
+  // always a space between a number/fraction and the unit: "1/2tsp" -> "1/2 tsp", "1medium" -> "1 medium"
+  t=t.replace(/(\d)([a-zA-Z])/g,"$1 $2");
+  return t.replace(/\s{2,}/g," ").trim();
 }
 function parseNum(s: string): number|null{
   const t=s.trim();
@@ -854,16 +858,19 @@ function parseNum(s: string): number|null{
 }
 function formatNum(n: number): string{
   const w=Math.floor(n),r=n-w;
-  const fs:Array<[number,string]>=[[.125,"⅛"],[.25,"¼"],[.333,"⅓"],[.375,"⅜"],[.5,"½"],[.625,"⅝"],[.667,"⅔"],[.75,"¾"],[.875,"⅞"]];
+  const fs:Array<[number,string]>=[[.125,"1/8"],[.25,"1/4"],[.333,"1/3"],[.375,"3/8"],[.5,"1/2"],[.625,"5/8"],[.667,"2/3"],[.75,"3/4"],[.875,"7/8"]];
   for(const[v,sym]of fs)if(Math.abs(r-v)<.06)return w>0?`${w} ${sym}`:sym;
   if(r<.05||r>.95)return String(Math.round(n));
   return n.toFixed(1).replace(/\.0$/,"");
 }
 function scaleAmt(str: string,ratio: number): string{
   if(!str)return str;
-  const m=str.match(/^([\d\s\/\.]+)(.*)/);if(!m)return str;
-  const n=parseNum(m[1]);if(n===null)return str;
-  return formatNum(n*ratio)+m[2];
+  const src=normalizeAmount(str);
+  const m=src.match(/^([\d\s\/\.]+)(.*)/);if(!m)return src;
+  const n=parseNum(m[1]);if(n===null)return src;
+  const rest=m[2];
+  // group 1 swallows the space before the unit, so put it back
+  return formatNum(n*ratio)+(rest&&!/^[\s,.;)\-–]/.test(rest)?" ":"")+rest;
 }
 function consolidate(plan: Record<string,any>){
   const map: Record<string,{name:string;entries:{recipe:string;amount:string}[]}> = {};
