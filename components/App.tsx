@@ -334,9 +334,9 @@ const CSS = `
   .loading-icon:nth-child(4){animation-delay:6s;}
   @keyframes iconFade{
     0%{opacity:0;transform:scale(.88);}
-    8%{opacity:1;transform:scale(1);}
-    22%{opacity:1;transform:scale(1);}
-    30%{opacity:0;transform:scale(.88);}
+    6%{opacity:1;transform:scale(1);}
+    19%{opacity:1;transform:scale(1);}
+    25%{opacity:0;transform:scale(.88);}
     100%{opacity:0;transform:scale(.88);}
   }
   .spinner{width:36px;height:36px;border:2.5px solid #EDE8E0;border-top-color:#F4A021;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 20px;}
@@ -1054,6 +1054,7 @@ export default function App(){
   const [scanStatus,setScanStatus] = useState("idle");
   const [scanMsg,setScanMsg]     = useState("");
   const [ready,setReady]         = useState(false);
+  const [cloudSynced,setCloudSynced] = useState(false); // true only after the cloud copy has been read
   const [urlInput,setUrlInput]   = useState("");
   const [urlStatus,setUrlStatus] = useState("idle"); // idle|loading|done|error
   const [urlMsg,setUrlMsg]       = useState("");
@@ -1121,32 +1122,40 @@ export default function App(){
     }).catch(()=>{});
   },[]);
 
-  /* cloud sync — load on sign-in */
+  /* cloud sync — load on sign-in, then (and only then) allow pushing.
+     Pushing before the cloud copy has been read would overwrite it with this
+     device's (possibly empty) local list. */
   useEffect(()=>{
-    if(!isLoaded||!user)return;
+    if(!isLoaded||!user||!ready)return;
+    setCloudSynced(false);
+    let cancelled=false;
     (async()=>{
       try{
         const res=await fetch("/api/recipes");
-        if(!res.ok)return;
+        if(!res.ok)return; // stay un-synced: never overwrite the cloud copy after a failed read
         const data=await res.json();
         const cloud:any[]=data.recipes||[];
-        if(!cloud.length)return;
-        setSaved(local=>{
-          const merged=[...local];
-          for(const r of cloud){if(!merged.some(x=>x.id===r.id))merged.push(r);}
-          return merged;
-        });
+        if(cancelled)return;
+        if(cloud.length){
+          setSaved(local=>{
+            const merged=[...local];
+            for(const r of cloud){if(!merged.some(x=>x.id===r.id))merged.push(r);}
+            return merged;
+          });
+        }
+        setCloudSynced(true);
       }catch{}
     })();
+    return()=>{cancelled=true;};
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[isLoaded,user?.id]);
+  },[isLoaded,user?.id,ready]);
 
-  /* cloud sync — push on save change */
+  /* cloud sync — push on save change (only after the initial cloud read) */
   useEffect(()=>{
-    if(!ready||!user)return;
+    if(!ready||!user||!cloudSynced)return;
     fetch("/api/recipes",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({recipes:saved})}).catch(()=>{});
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[saved,ready,user?.id]);
+  },[saved,ready,user?.id,cloudSynced]);
 
   /* scroll-hide bottom nav */
   useEffect(()=>{
@@ -1471,9 +1480,15 @@ export default function App(){
           <div className="error-box" style={{margin:"20px auto 0",maxWidth:560}}>
             <h3>We couldn't build that recipe</h3>
             <p style={{fontSize:13,color:"#7A6E6A",marginTop:6,lineHeight:1.5}}>
-              {/timed? ?out|timeout|504/i.test(errorMsg)?"That one took too long to generate. Give it another try.":"Something went wrong on our end. Please try again."}
+              {/credit balance|billing|insufficient|overloaded|429|529/i.test(errorMsg)
+                ?"We can't generate brand-new recipes right now. Recipes in Community and Saved still work — please check back soon."
+                :/timed? ?out|timeout|504/i.test(errorMsg)
+                  ?"That one took too long to generate. Give it another try."
+                  :"Something went wrong on our end. Please try again."}
             </p>
-            <p style={{fontSize:11,fontFamily:"monospace",background:"#f5f5f5",padding:"8px 12px",borderRadius:6,marginTop:8,textAlign:"left",wordBreak:"break-all",color:"#555"}}>{errorMsg}</p>
+            {!/credit balance|billing/i.test(errorMsg)&&(
+              <p style={{fontSize:11,fontFamily:"monospace",background:"#f5f5f5",padding:"8px 12px",borderRadius:6,marginTop:8,textAlign:"left",wordBreak:"break-all",color:"#555"}}>{errorMsg}</p>
+            )}
             <button className="back-btn" onClick={()=>doSearch()}>Try again</button>
             <button className="back-btn" style={{marginLeft:8}} onClick={()=>setStatus("idle")}>Dismiss</button>
           </div>
