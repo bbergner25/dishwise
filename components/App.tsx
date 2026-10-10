@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { suggestSides, rankSides, SideDish } from "../lib/sides";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { CARD_POOL, SUGGESTIONS, type CardDef } from "../lib/dishes";
 import { buildPrompt } from "../lib/prompts";
@@ -234,6 +235,18 @@ const CSS = `
   .trending-scroll::-webkit-scrollbar{display:none;}
   .trending-card{flex-shrink:0;width:150px;display:flex;flex-direction:column;justify-content:space-between;background:#fff;border:1.5px solid #EDE8E0;border-radius:14px;padding:10px 14px;cursor:pointer;transition:all .15s;}
   .trending-card:hover{border-color:#E8431A;box-shadow:0 4px 12px rgba(232,67,26,.1);}
+  .side-panel{max-width:960px;margin:0 auto;padding:18px 24px 4px;}
+  .side-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .side-panel-title{font-family:'Fraunces',serif;font-weight:700;font-size:15px;color:#151210;}
+  .side-panel-close{background:none;border:none;font-size:20px;line-height:1;color:#B8B0A8;cursor:pointer;padding:0 4px;}
+  .side-panel-close:hover{color:#151210;}
+  .side-panel-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;}
+  .side-card{flex:1 1 0;min-width:170px;max-width:260px;background:#fff;border:1.5px solid #EDE8E0;border-radius:14px;padding:12px 14px;cursor:pointer;transition:all .15s;}
+  .side-card:hover{border-color:#1E3A2F;box-shadow:0 4px 12px rgba(30,58,47,.08);}
+  .side-card-title{font-family:'Fraunces',serif;font-weight:700;font-size:13.5px;color:#151210;margin-bottom:3px;}
+  .side-card-tagline{font-size:12px;color:#7A6E6A;line-height:1.4;}
+  .side-panel-more{display:block;margin:10px auto 0;background:none;border:none;color:#1E3A2F;text-decoration:underline;font-size:12.5px;cursor:pointer;font-family:'Outfit',sans-serif;}
+  .side-panel-more:hover{color:#E8431A;}
   .trending-card-title{font-family:'Fraunces',serif;font-size:13px;font-weight:700;color:#151210;line-height:1.2;text-wrap:balance;overflow-wrap:break-word;}
   .trending-card-badge{font-size:9px;color:#E8431A;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:3px;}
   .search-wrap{max-width:560px;margin:0 auto;}
@@ -1069,6 +1082,8 @@ export default function App(){
   const [ready,setReady]         = useState(false);
   const [cloudSynced,setCloudSynced] = useState(false); // true only after the cloud copy has been read
   const [justAdded,setJustAdded]     = useState<any>(null); // most recent scanned/imported recipe, so "View" can open it directly
+  const [showSidePanel,setShowSidePanel] = useState(false); // "Pair it with a side" panel on the recipe page
+  const [sidePage,setSidePage]       = useState(0); // which batch of 3 sides "Show more" has paged to
   const [urlInput,setUrlInput]   = useState("");
   const [urlStatus,setUrlStatus] = useState("idle"); // idle|loading|done|error
   const [urlMsg,setUrlMsg]       = useState("");
@@ -1885,6 +1900,7 @@ export default function App(){
               }finally{setShareLoading(false);}
             }}>{Ic.share(15)}</button>
             <button className="icon-btn" title="Add photo" onClick={()=>photoInputRef.current?.click()}>{Ic.camera(15)}</button>
+            <button className="icon-btn" title="Pair it with a side" onClick={()=>setShowSidePanel(v=>{if(!v)setSidePage(0);return !v;})}>{Ic.leaf(15)}</button>
             <button className="icon-btn" title="Edit recipe" onClick={openEdit}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
@@ -1913,6 +1929,32 @@ export default function App(){
             </div>
           </div>
         </div>
+
+        {showSidePanel&&(()=>{
+          const ranked=rankSides(recipe);
+          const perPage=3;
+          const sides=ranked.slice(sidePage*perPage,sidePage*perPage+perPage);
+          const hasMore=(sidePage+1)*perPage<ranked.length;
+          return(
+            <div className="side-panel">
+              <div className="side-panel-head">
+                <div className="side-panel-title">Pair it with a side</div>
+                <button className="side-panel-close" onClick={()=>setShowSidePanel(false)}>×</button>
+              </div>
+              <div className="side-panel-row">
+                {sides.map((s:SideDish,i:number)=>(
+                  <div key={i} className="side-card" onClick={()=>{setShowSidePanel(false);setQuery(s.title);doSearch(s.title);}}>
+                    <div className="side-card-title">{s.title}</div>
+                    <div className="side-card-tagline">{s.tagline}</div>
+                  </div>
+                ))}
+              </div>
+              {hasMore&&(
+                <button className="side-panel-more" onClick={()=>setSidePage(p=>p+1)}>Show more sides</button>
+              )}
+            </div>
+          );
+        })()}
 
         <div className="recipe-body">
         <div className="two-col">
