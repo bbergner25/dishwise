@@ -2270,10 +2270,15 @@ export default function App(){
 
               {trendingDishes.length>0&&(
                 <section className="ck-section">
-                  <h2 className="ck-section-label">Trending this week</h2>
+                  <h2 className="ck-section-label">Trending now</h2>
                   <div className="ck-trending">
-                    {trendingDishes.map((dish,i)=>(
-                      <button key={i} className="ck-trend-card" onClick={()=>{setQuery(dish);doSearch(dish);}}>
+                    {(()=>{
+                      // lead with a different dish each day; the list itself refreshes twice a month
+                      const n=trendingDishes.length;
+                      const off=Math.floor(Date.now()/86400000)%n;
+                      return [...trendingDishes.slice(off),...trendingDishes.slice(0,off)];
+                    })().map((dish,i)=>(
+                      <button key={dish} className="ck-trend-card" onClick={()=>{setQuery(dish);doSearch(dish);}}>
                         <span className="ck-trend-title">{dish}</span>
                         <span className="ck-trend-tag">Trending</span>
                       </button>
