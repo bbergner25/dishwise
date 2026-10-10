@@ -1154,6 +1154,7 @@ export default function App(){
   const [justAdded,setJustAdded]     = useState<any>(null); // most recent scanned/imported recipe, so "View" can open it directly
   const [showSidePanel,setShowSidePanel] = useState(false); // "Pair it with a side" panel on the recipe page
   const [returnTab,setReturnTab]     = useState<string|null>(null); // tab to return to when leaving a recipe opened from Saved/Community/Week/Family
+  const [returnDayKey,setReturnDayKey] = useState<string|null>(null); // which day's sides to sync pairedSides back into, when returnTab is "week"
   const [pairedSides,setPairedSides] = useState<{title:string;status:string;recipe:any}[]>([]); // every side dish paired alongside the main dish (loading|done|error)
   const [activePane,setActivePane]   = useState(0); // 0 = main dish, 1..N = pairedSides[n-1]
   const swipeStartX = useRef<number|null>(null);
@@ -1391,7 +1392,7 @@ export default function App(){
   const doSearch=async(dish?: string)=>{
     const q=(dish||query).trim();if(!q)return;
     setStatus("loading");setRecipe(null);setServings(null);setErrorMsg("");
-    setReturnTab(null);setPairedSides([]);setActivePane(0);
+    setReturnTab(null);setPairedSides([]);setActivePane(0);setReturnDayKey(null);
     try{
       const canCache=diets.length===0&&!seasonal;
       let parsed:any=null;
@@ -1475,7 +1476,7 @@ export default function App(){
       return cur;
     });
   };
-  const closePairedSide=()=>{setPairedSides([]);setActivePane(0);};
+  const closePairedSide=()=>{setPairedSides([]);setActivePane(0);setReturnDayKey(null);};
 
   /* week plan — sides paired to a specific day's main dish */
   const addPlanSide=async(dayKey: string, sideTitle: string, recipeOverride?: any)=>{
@@ -1546,7 +1547,7 @@ export default function App(){
 
   const openCommunityRecipe=(r:any)=>{
     const full={...r,id:Date.now(),_dish:r.title,_ts:Date.now(),_fromCache:true};
-    setReturnTab("community");setPairedSides([]);setActivePane(0);setRecipe(full);setServings(null);setStatus("done");setTab("search");
+    setReturnTab("community");setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(full);setServings(null);setStatus("done");setTab("search");
   };
 
   function communityCategory(title:string):string{
@@ -1562,7 +1563,7 @@ export default function App(){
   const pickInspiredRecipe=async(suggestion: any)=>{
     setTab("search");setQuery(suggestion.title);
     setStatus("loading");setRecipe(null);setServings(null);setErrorMsg("");
-    setReturnTab(null);setPairedSides([]);setActivePane(0);
+    setReturnTab(null);setPairedSides([]);setActivePane(0);setReturnDayKey(null);
     try{
       const parsed=await callAPI([{role:"user",content:buildPrompt(suggestion.title,diets,seasonal,location)}]);
       const r={...parsed,id:Date.now(),_dish:suggestion.title,_ts:Date.now()};
@@ -1641,7 +1642,7 @@ export default function App(){
         if(data&&data.found&&data.recipe){
           const r={...data.recipe,id:Date.now(),_dish:data.recipe.title||slug,_ts:Date.now(),_fromCache:true};
           setShowQrScanner(false);setQrStatus("idle");
-          setReturnTab(null);setPairedSides([]);setActivePane(0);
+          setReturnTab(null);setPairedSides([]);setActivePane(0);setReturnDayKey(null);
           setRecipe(r);setServings(null);setStatus("done");setTab("search");
           window.scrollTo({top:0,behavior:"smooth"});
           return;
@@ -2058,7 +2059,7 @@ export default function App(){
                 )}
                 {scanStatus==="done"&&scanMsg&&(
                   <div className="scan-success">✓ {scanMsg}{" "}
-                    <button onClick={()=>{if(justAdded){setReturnTab(null);setPairedSides([]);setActivePane(0);setRecipe(justAdded);setServings(null);setStatus("done");setTab("search");}else setTab("saved");}} style={{background:"none",border:"none",cursor:"pointer",color:"#4a6040",textDecoration:"underline",fontSize:13}}>View recipe →</button>
+                    <button onClick={()=>{if(justAdded){setReturnTab(null);setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(justAdded);setServings(null);setStatus("done");setTab("search");}else setTab("saved");}} style={{background:"none",border:"none",cursor:"pointer",color:"#4a6040",textDecoration:"underline",fontSize:13}}>View recipe →</button>
                   </div>
                 )}
                 {scanStatus==="error"&&<div className="import-status-err">{scanMsg}</div>}
@@ -2082,7 +2083,7 @@ export default function App(){
                   </div>
                   {urlStatus==="done"&&urlMsg&&(
                     <div className="import-status-ok">✓ {urlMsg}{" "}
-                      <button onClick={()=>{if(justAdded){setReturnTab(null);setPairedSides([]);setActivePane(0);setRecipe(justAdded);setServings(null);setStatus("done");setTab("search");}else setTab("saved");}} style={{background:"none",border:"none",cursor:"pointer",color:"#1E3A2F",textDecoration:"underline",fontSize:12,fontFamily:"'Outfit',sans-serif"}}>View recipe →</button>
+                      <button onClick={()=>{if(justAdded){setReturnTab(null);setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(justAdded);setServings(null);setStatus("done");setTab("search");}else setTab("saved");}} style={{background:"none",border:"none",cursor:"pointer",color:"#1E3A2F",textDecoration:"underline",fontSize:12,fontFamily:"'Outfit',sans-serif"}}>View recipe →</button>
                     </div>
                   )}
                   {urlStatus==="error"&&<div className="import-status-err">{urlMsg}</div>}
@@ -2257,7 +2258,8 @@ export default function App(){
       <div className="recipe-page">
         <button className="recipe-top-back" onClick={()=>{
           const dest=returnTab;
-          setReturnTab(null);setStatus("idle");setRecipe(null);setQuery("");closePairedSide();
+          if(returnDayKey)setPlanSides(p=>({...p,[returnDayKey]:pairedSides}));
+          setReturnTab(null);setReturnDayKey(null);setStatus("idle");setRecipe(null);setQuery("");closePairedSide();
           if(dest)setTab(dest);
         }}>
           {Ic.arrowLeft(14)} {returnTab==="saved"?"Back to Saved":returnTab==="community"?"Back to Community":returnTab==="week"?"Back to This Week":returnTab==="family"?"Back to Family":"Back to search"}
@@ -2578,7 +2580,7 @@ export default function App(){
             </div>
           </div>
           <button className="back-btn" style={{display:"flex",alignItems:"center",gap:6}} onClick={()=>setActivePane(0)}>{Ic.arrowLeft(14)} Back to main dish</button>
-          <button className="side-pane-fullpage" onClick={()=>{setReturnTab(null);setRecipe(r);setServings(null);setStatus("done");closePairedSide();}}>Open as its own recipe (edit, share, print) →</button>
+          <button className="side-pane-fullpage" onClick={()=>{setReturnTab(null);setReturnDayKey(null);setRecipe(r);setServings(null);setStatus("done");closePairedSide();}}>Open as its own recipe (edit, share, print) →</button>
         </div>
       </div>
     );
@@ -2740,7 +2742,7 @@ export default function App(){
                   const sv=isSaved(r);
                   return(
                     <div key={r.id} className="history-item">
-                      <div className="history-item-main" onClick={()=>{setReturnTab("saved");setPairedSides([]);setActivePane(0);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
+                      <div className="history-item-main" onClick={()=>{setReturnTab("saved");setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
                         <div className="history-item-title">{r.title}</div>
                         <div className="history-item-meta">
                           <span>{r.prep_time} prep</span>
@@ -2783,7 +2785,7 @@ export default function App(){
                       const rating=ratings[r.id]||0;
                       const isConfirming=confirmRemove===r.id;
                       return(
-                        <div key={r.id} className="recipe-card" onClick={()=>{setReturnTab("saved");setPairedSides([]);setActivePane(0);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
+                        <div key={r.id} className="recipe-card" onClick={()=>{setReturnTab("saved");setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
                           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                             <div className="card-tag">{r._scanned?"Scanned":r._imported?"Imported":isSharedOnly?"Shared":r.seasonal_note?"Seasonal":"Saved"}</div>
                             {!isSharedOnly&&(
@@ -2879,7 +2881,7 @@ export default function App(){
                       )}
                       <button className="day-add-side" onClick={()=>{setAssignDay(`side_${key}`);if(communityStatus==="idle")loadCommunity();}}>+ Side</button>
                       <div className="day-actions">
-                        <button className="day-btn" onClick={()=>{setReturnTab("week");setPairedSides([]);setActivePane(0);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>View</button>
+                        <button className="day-btn" onClick={()=>{setReturnTab("week");setReturnDayKey(key);setPairedSides(planSides[key]||[]);setActivePane(0);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>View</button>
                         <button className="day-btn" onClick={()=>{setPlan(p=>{const n={...p};delete n[key];return n;});setPlanSides(p=>{const n={...p};delete n[key];return n;});}}>✕</button>
                       </div>
                     </>
@@ -2996,7 +2998,7 @@ export default function App(){
             <div className="family-shared-sub">{sharedRecipes.length} recipe{sharedRecipes.length!==1?"s":""} shared under code {familyCode}</div>
             <div className="cards-grid">
               {sharedRecipes.map((r:any)=>(
-                <div key={r.id} className="recipe-card" onClick={()=>{setReturnTab("family");setPairedSides([]);setActivePane(0);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
+                <div key={r.id} className="recipe-card" onClick={()=>{setReturnTab("family");setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
                   <div className="card-tag">Shared Recipe</div>
                   <div className="card-title">{r.title}</div>
                   <div className="card-desc">{r.tagline}</div>
