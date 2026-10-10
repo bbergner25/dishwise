@@ -1652,11 +1652,20 @@ export default function App(){
 
   /* scroll-hide bottom nav */
   useEffect(()=>{
+    // Hide on a deliberate scroll down, show on a deliberate scroll up, and always
+    // show it at the very top or bottom. The scroll position is clamped so iOS's
+    // rubber-band bounce at either end doesn't read as a direction change.
+    let travel=0; // distance moved in the current direction since it last flipped
     const onScroll=()=>{
-      const y=window.scrollY;
-      if(y>lastScrollY.current+8)setNavHidden(true);
-      else if(y<lastScrollY.current-4)setNavHidden(false);
+      const max=Math.max(0,document.documentElement.scrollHeight-window.innerHeight);
+      const y=Math.min(Math.max(window.scrollY,0),max);
+      const dy=y-lastScrollY.current;
       lastScrollY.current=y;
+      if(y<40||y>=max-48){setNavHidden(false);travel=0;return;}
+      if(dy===0)return;
+      travel=(Math.sign(dy)===Math.sign(travel))?travel+dy:dy;
+      if(travel>32)setNavHidden(true);
+      else if(travel<-24)setNavHidden(false);
     };
     window.addEventListener("scroll",onScroll,{passive:true});
     return()=>window.removeEventListener("scroll",onScroll);
