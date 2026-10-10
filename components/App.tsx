@@ -579,6 +579,12 @@ const CSS = `
   /* Category override */
   .cat-edit-btn{font-size:10px;color:#7A6E6A;background:none;border:none;cursor:pointer;text-decoration:underline;margin-left:8px;font-family:'Outfit',sans-serif;}
   .cat-select{font-size:11px;font-family:'Outfit',sans-serif;border:1.5px solid #F4A021;border-radius:6px;padding:2px 6px;color:#151210;background:#fff;cursor:pointer;outline:none;}
+  .cat-badge{display:flex;align-items:center;gap:4px;font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:#7A6E6A;background:#F0ECE6;border:none;border-radius:100px;padding:4px 10px;cursor:pointer;font-family:'Outfit',sans-serif;transition:background .12s;}
+  .cat-badge:hover{background:#E8E2D8;}
+  .cat-badge.is-side{color:#1E3A2F;background:#F0F5EE;}
+  .cat-badge.is-side:hover{background:#DCEAD4;}
+  .side-quicktag{display:block;margin-top:6px;background:none;border:none;color:#1E3A2F;font-size:11px;font-weight:600;text-decoration:underline;cursor:pointer;padding:0;font-family:'Outfit',sans-serif;}
+  .side-quicktag:hover{color:#E8431A;}
   /* Star rating */
   .star-row{display:flex;gap:2px;margin-top:5px;}
   .star{font-size:15px;cursor:pointer;color:#EDE8E0;transition:color .1s;line-height:1;background:none;border:none;padding:0;}
@@ -842,8 +848,8 @@ function guessCategory(recipe: any): string {
   if(/cake|cookie|brownie|pie|tart|crumble|pudding|mousse|cheesecake|tiramisu|panna cotta|creme brulee|crème|gelato|ice cream|sorbet|macaron|baklava|sticky rice/.test(title)) return "Desserts";
   if(/smoothie|juice|lemonade|cocktail|mocktail|sangria|margarita|daiquiri|mojito/.test(title)) return "Drinks";
   if(/hummus|guacamole|salsa|bruschetta|crostini|dip\b|baba/.test(title)) return "Snacks";
+  if(/rice|potato|fries|bread|roll|biscuit|naan|focaccia|cornbread|pizza|flatbread|stuffing|dressing\b|casserole|mashed|gratin|pilaf|coleslaw|slaw\b|green bean|brussels sprout|baked bean|mac and cheese|cheesy|dinner roll|applesauce|cranberry sauce|glazed carrot|roasted vegetable|roasted carrot|roasted broccoli|sauteed|sautéed|side dish/.test(title)) return "Sides";
   if(/tofu|tempeh|lentil|chickpea|falafel|veggie burger|black bean|cauliflower|eggplant|jackfruit/.test(title)) return "Vegetarian";
-  if(/rice|potato|fries|bread|roll|biscuit|naan|focaccia|cornbread|pizza|flatbread/.test(title)) return "Sides";
   return "Other";
 }
 
@@ -2332,10 +2338,18 @@ export default function App(){
                                   {RECIPE_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
                                 </select>
                               ):(
-                                <button className="cat-edit-btn" onClick={e=>{e.stopPropagation();setEditingCategory(r.id);}}>Change category</button>
+                                <button className={`cat-badge${cat==="Sides"?" is-side":""}`} onClick={e=>{e.stopPropagation();setEditingCategory(r.id);}}>
+                                  {cat==="Sides"&&<span style={{display:"flex"}}>{Ic.leaf(10)}</span>}
+                                  {cat}
+                                </button>
                               )
                             )}
                           </div>
+                          {!isSharedOnly&&!categoryOverrides[r.id]&&cat==="Other"&&(r._scanned||r._imported)&&(
+                            <button className="side-quicktag" onClick={e=>{e.stopPropagation();setCategoryOverrides(p=>({...p,[r.id]:"Sides"}));}}>
+                              Is this a side dish? Tag it →
+                            </button>
+                          )}
                           <div className="card-title">{r.title}</div>
                           <div className="card-desc">{r.tagline}</div>
                           <div className="card-meta"><span>{r.prep_time} prep</span><span>{r.cook_time} cook</span><span>{r.servings} srv</span></div>
