@@ -35,6 +35,8 @@ const Ic = {
   grid:(s=20)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
   lock:(s=14)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
   share:(s=14)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>,
+  cook:(s=20)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M6 13h12v4a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3z"/><path d="M4 13h16"/><path d="M9 9c0-2 2-2 2-4M13 9c0-2 2-2 2-4"/></svg>,
+  library:(s=20)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M5 4h4v16H5zM10 4h4v16h-4z"/><path d="m15.5 5 3.8-1 2.7 15.5-3.8 1z"/></svg>,
   qrscan:(s=14)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V4a1 1 0 0 1 1-1h3"/><path d="M17 3h3a1 1 0 0 1 1 1v3"/><path d="M21 17v3a1 1 0 0 1-1 1h-3"/><path d="M7 21H4a1 1 0 0 1-1-1v-3"/><rect x="7" y="7" width="4" height="4" rx="0.5"/><rect x="13" y="7" width="4" height="4" rx="0.5"/><rect x="7" y="13" width="4" height="4" rx="0.5"/><line x1="14" y1="14" x2="14" y2="14.01"/><line x1="17" y1="14" x2="17" y2="17"/><line x1="14" y1="17" x2="15.5" y2="17"/></svg>,
 };
 
@@ -821,8 +823,243 @@ const CSS = `
   .history-tab{padding:8px 20px;border:none;background:transparent;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;color:#7A6E6A;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;}
   .history-tab.active{color:#151210;border-bottom-color:#F4A021;}
 
+  /* ── RECIPE PAGE (redesign) ── */
+  .rx-shell{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px));}
+  .rx-topbar{max-width:820px;margin:0 auto;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 8px;}
+  .rx-back{height:44px;padding:0 12px;display:flex;align-items:center;gap:4px;background:none;border:none;cursor:pointer;font-family:'Outfit',sans-serif;font-size:15px;font-weight:500;color:#151210;border-radius:22px;}
+  .rx-back:hover{background:#F5EFE4;}
+  .rx-menu-wrap{position:relative;}
+  .rx-icon-btn{width:44px;height:44px;border:none;background:transparent;border-radius:22px;display:flex;align-items:center;justify-content:center;color:#151210;cursor:pointer;}
+  .rx-icon-btn:hover{background:#F5EFE4;}
+  .rx-menu-scrim{position:fixed;inset:0;z-index:140;}
+  .rx-menu{position:absolute;right:4px;top:48px;z-index:150;min-width:232px;background:#fff;border-radius:16px;padding:6px;box-shadow:0 12px 32px rgba(26,31,46,.18),0 0 0 1px rgba(26,31,46,.06);}
+  .rx-menu-item{width:100%;min-height:46px;display:flex;align-items:center;gap:12px;padding:0 14px;background:none;border:none;border-radius:10px;font-family:'Outfit',sans-serif;font-size:15px;color:#151210;cursor:pointer;text-align:left;}
+  .rx-menu-item:hover{background:#F5EFE4;}
+  .rx-menu-danger{color:#B8340F;}
+  .rx-menu-aa{font-family:'Fraunces',serif;font-weight:700;font-size:15px;width:17px;text-align:center;}
+
+  .rx-tabs{max-width:820px;margin:0 auto;display:flex;gap:6px;padding:4px 20px 2px;overflow-x:auto;scrollbar-width:none;}
+  .rx-tabs::-webkit-scrollbar{display:none;}
+  .rx-tab{flex-shrink:0;max-width:220px;height:40px;padding:0 16px;border-radius:20px;border:1px solid #E3DCD0;background:#fff;color:#4F4744;font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .15s,color .15s,border-color .15s;}
+  .rx-tab-side{color:#1E3A2F;}
+  .rx-tab.active{background:#1A1F2E;border-color:#1A1F2E;color:#FDFAF5;font-weight:600;}
+  .rx-tab-label{overflow:hidden;text-overflow:ellipsis;}
+  .rx-tab-dot{width:6px;height:6px;border-radius:3px;background:#F4A021;flex-shrink:0;animation:rxPulse 1s ease-in-out infinite;}
+  @keyframes rxPulse{0%,100%{opacity:.3}50%{opacity:1}}
+  .rx-tab-add{flex-shrink:0;height:40px;padding:0 16px;border-radius:20px;border:1.5px dashed #B8AFA3;background:transparent;color:#4F4744;font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;}
+  .rx-tab-add:hover,.rx-tab-add.open{border-style:solid;border-color:#1E3A2F;color:#1E3A2F;background:#EEF3EC;}
+  .rx-add-side{max-width:820px;padding:12px 20px 4px;}
+  .rx-add-side .side-card{display:flex;flex-direction:column;gap:3px;text-align:left;font-family:'Outfit',sans-serif;min-height:72px;}
+
+  .rx-page{padding-bottom:24px;}
+  .rx-photo{display:block;width:calc(100% - 40px);max-width:820px;height:220px;object-fit:cover;border-radius:18px;margin:14px auto 0;}
+  .rx-head{max-width:820px;margin:0 auto;padding:22px 20px 0;display:flex;flex-direction:column;gap:10px;}
+  .rx-eyebrow{font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#6E635F;}
+  .rx-title{margin:0;font-family:'Fraunces',serif;font-size:34px;line-height:1.06;font-weight:700;letter-spacing:-.6px;color:#151210;}
+  @media(min-width:768px){.rx-title{font-size:44px;}}
+  .rx-tagline{margin:0;font-size:16px;line-height:1.5;color:#4F4744;max-width:620px;}
+  .rx-seasonal{display:flex;align-items:center;gap:6px;font-size:14px;color:#1E3A2F;}
+  .rx-meta{margin-top:8px;display:flex;align-items:center;background:#fff;border-radius:16px;padding:4px;box-shadow:0 1px 3px rgba(26,31,46,.08);max-width:520px;}
+  .rx-meta-item{flex:1;padding:8px 12px;display:flex;flex-direction:column;gap:2px;min-width:0;}
+  .rx-meta-serves{flex:1.4;flex-direction:row;align-items:center;justify-content:space-between;padding:4px 4px 4px 12px;}
+  .rx-meta-label{font-size:12px;color:#6E635F;}
+  .rx-meta-value{font-size:16px;font-weight:600;color:#151210;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .rx-meta-div{width:1px;height:32px;background:#ECE6DD;flex-shrink:0;}
+  .rx-stepper{display:flex;gap:2px;}
+  .rx-stepper button{width:38px;height:44px;border:none;background:#F5EFE4;font-size:19px;color:#151210;cursor:pointer;font-family:'Outfit',sans-serif;}
+  .rx-stepper button:first-child{border-radius:10px 0 0 10px;}
+  .rx-stepper button:last-child{border-radius:0 10px 10px 0;}
+  .rx-stepper button:hover{background:#EDE3D2;}
+
+  .rx-page .recipe-body{max-width:820px;margin:0 auto;padding:28px 20px 0;}
+  .rx-page .two-col{grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:48px;}
+  @media(max-width:760px){.rx-page .two-col{grid-template-columns:1fr;gap:32px;}}
+  .rx-page .section-label{font-size:13px;letter-spacing:1.5px;color:#6E635F;font-weight:600;margin-bottom:6px;}
+  .rx-page .ing-group-label{font-size:12px;border-bottom:none;color:#1E3A2F;padding:14px 0 2px;}
+  .rx-ing{display:grid;grid-template-columns:88px minmax(0,1fr);align-items:baseline;gap:8px;padding:11px 0;border-bottom:1px solid #ECE6DD;font-size:17px;line-height:1.4;}
+  .rx-ing:last-child{border-bottom:none;}
+  .rx-ing-amt{font-weight:600;color:#151210;}
+  .rx-ing-name{color:#2A2422;}
+  .rx-ing-name .ing-shop-links{display:inline-flex;margin-left:8px;vertical-align:middle;}
+  .rx-page .step-item{gap:16px;margin-bottom:24px;}
+  .rx-page .step-num{width:30px;height:30px;font-size:14px;background:#1A1F2E;}
+  .rx-page .step-text{font-size:17px;line-height:1.6;font-weight:400;padding-top:2px;}
+
+  .rx-actionbar{position:fixed;left:0;right:0;bottom:0;z-index:90;background:rgba(253,250,245,.96);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid #ECE6DD;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));}
+  .rx-actionbar-inner{max-width:780px;margin:0 auto;display:flex;gap:10px;}
+  .rx-save{height:52px;padding:0 20px;border-radius:26px;border:1.5px solid #1A1F2E;background:#fff;color:#151210;font-family:'Outfit',sans-serif;font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0;}
+  .rx-save.saved{background:#FFF4E0;border-color:#C97A0A;color:#7A4A06;}
+  .rx-save:disabled,.rx-cook:disabled{opacity:.45;cursor:not-allowed;}
+  .rx-cook{flex:1;height:52px;border-radius:26px;border:none;background:#F4A021;color:#151210;font-family:'Outfit',sans-serif;font-size:16px;font-weight:600;cursor:pointer;transition:background .15s;}
+  .rx-cook:hover:not(:disabled){background:#E8931A;}
+
+  /* ── COOKING MODE ── */
+  .cook-overlay{position:fixed;inset:0;z-index:300;background:#FDFAF5;display:flex;flex-direction:column;color:#151210;font-family:'Outfit',sans-serif;}
+  .cook-top{display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 8px;max-width:760px;width:100%;margin:0 auto;box-sizing:border-box;}
+  .cook-close{width:44px;height:44px;border:none;background:#F5EFE4;border-radius:22px;display:flex;align-items:center;justify-content:center;color:#151210;cursor:pointer;flex-shrink:0;}
+  .cook-title{flex:1;min-width:0;font-family:'Fraunces',serif;font-weight:600;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;}
+  .cook-count{width:72px;text-align:right;font-size:14px;font-weight:600;color:#6E635F;flex-shrink:0;}
+  .cook-progress{height:4px;background:#EFE8DC;max-width:760px;width:calc(100% - 24px);margin:0 auto;border-radius:2px;overflow:hidden;flex-shrink:0;}
+  .cook-progress div{height:4px;background:#F4A021;border-radius:2px;transition:width .3s ease;}
+  .cook-timer-strip{display:flex;gap:6px;flex-wrap:wrap;max-width:760px;width:100%;margin:12px auto 0;padding:0 20px;box-sizing:border-box;}
+  .cook-timer-pill{height:36px;padding:0 14px;border-radius:18px;border:none;background:#1A1F2E;color:#FDFAF5;font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;cursor:pointer;font-variant-numeric:tabular-nums;}
+  .cook-timer-pill.done{background:#E8431A;}
+  .cook-body{flex:1;overflow-y:auto;max-width:760px;width:100%;margin:0 auto;padding:28px 24px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:20px;}
+  .cook-eyebrow{font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#6E635F;}
+  .cook-step-text{margin:0;font-size:26px;line-height:1.45;font-weight:400;color:#151210;}
+  h2.cook-step-text{font-family:'Fraunces',serif;font-weight:700;font-size:30px;line-height:1.15;}
+  @media(min-width:768px){.cook-step-text{font-size:32px;}}
+  .cook-gather{list-style:none;margin:0;padding:0;}
+  .cook-gather label{display:grid;grid-template-columns:28px 92px minmax(0,1fr);align-items:center;gap:8px;min-height:52px;border-bottom:1px solid #ECE6DD;font-size:18px;cursor:pointer;}
+  .cook-gather input{width:22px;height:22px;accent-color:#1E3A2F;margin:0;}
+  .cook-gather input:checked ~ span{color:#9A8F88;text-decoration:line-through;}
+  .cook-ing-amt{font-weight:600;}
+  .cook-ings{background:#fff;border-radius:16px;padding:14px 18px;box-shadow:0 1px 3px rgba(26,31,46,.08);}
+  .cook-ings-label{font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#1E3A2F;margin-bottom:4px;}
+  .cook-ings ul{list-style:none;margin:0;padding:0;}
+  .cook-ings li{display:grid;grid-template-columns:92px minmax(0,1fr);gap:8px;padding:8px 0;font-size:18px;border-bottom:1px solid #F1EBE2;}
+  .cook-ings li:last-child{border-bottom:none;}
+  .cook-timer-start{align-self:flex-start;height:52px;padding:0 20px;border-radius:26px;border:1.5px solid #1A1F2E;background:#fff;color:#151210;font-family:'Outfit',sans-serif;font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;cursor:pointer;}
+  .cook-timer{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#1A1F2E;color:#FDFAF5;border-radius:18px;padding:14px 14px 14px 22px;}
+  .cook-timer.done{background:#E8431A;animation:rxPulse 1.2s ease-in-out infinite;}
+  .cook-timer-time{font-size:34px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.5px;}
+  .cook-timer-btn{height:44px;padding:0 16px;border-radius:22px;border:none;background:rgba(253,250,245,.16);color:#FDFAF5;font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;cursor:pointer;}
+  .cook-nav{display:flex;gap:10px;max-width:760px;width:100%;margin:0 auto;padding:12px 16px calc(14px + env(safe-area-inset-bottom,0px));box-sizing:border-box;border-top:1px solid #ECE6DD;}
+  .cook-prev{height:56px;padding:0 24px;border-radius:28px;border:1.5px solid #1A1F2E;background:#fff;color:#151210;font-family:'Outfit',sans-serif;font-size:17px;font-weight:600;cursor:pointer;}
+  .cook-prev:disabled{opacity:.35;cursor:not-allowed;}
+  .cook-next{flex:1;height:56px;border-radius:28px;border:none;background:#F4A021;color:#151210;font-family:'Outfit',sans-serif;font-size:17px;font-weight:600;cursor:pointer;}
+
+  /* ── NAV (three tabs) ── */
+  .nav-tab .nav-badge{position:static;margin-left:2px;width:18px;height:18px;font-size:10px;color:#151210;}
+  .bottom-nav .bottom-tab{flex:1;position:relative;}
+  .bottom-tab.active .bt-label{font-weight:600;color:#151210;}
+  .bottom-tab.active::after{content:"";position:absolute;top:-10px;left:50%;width:32px;height:3px;margin-left:-16px;border-radius:0 0 3px 3px;background:#F4A021;}
+
+  /* ── COOK (home) ── */
+  .ck-page{max-width:640px;margin:0 auto;padding:24px 20px 120px;display:flex;flex-direction:column;gap:18px;}
+  .ck-title{margin:0;font-family:'Fraunces',serif;font-size:34px;line-height:1.08;font-weight:700;letter-spacing:-.6px;color:#151210;}
+  @media(min-width:768px){.ck-title{font-size:44px;}.ck-page{padding-top:40px;}}
+  .ck-search{display:flex;align-items:center;gap:8px;height:58px;padding:0 7px 0 18px;background:#fff;border:1.5px solid #1A1F2E;border-radius:16px;box-shadow:0 2px 0 #1A1F2E;}
+  .ck-search:focus-within{box-shadow:0 2px 0 #1A1F2E,0 0 0 4px rgba(244,160,33,.25);}
+  .ck-search-icon{display:flex;color:#151210;}
+  .ck-search-input{flex:1;min-width:0;border:none;outline:none;background:transparent;font-family:'Outfit',sans-serif;font-size:17px;color:#151210;}
+  .ck-search-input::placeholder{color:#8A7F79;}
+  .ck-search-scan{width:44px;height:44px;border:none;border-radius:12px;background:#F5EFE4;color:#151210;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .ck-search-go{height:44px;padding:0 18px;border:none;border-radius:12px;background:#F4A021;color:#151210;font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;cursor:pointer;}
+  .ck-chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .ck-chip{height:38px;padding:0 15px;border-radius:19px;border:1px solid #E3DCD0;background:#fff;color:#151210;font-family:'Outfit',sans-serif;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex-shrink:0;}
+  .ck-chip:hover{border-color:#B8AFA3;}
+  .ck-chip.on{border-color:#1E3A2F;background:#EEF3EC;color:#1E3A2F;font-weight:500;}
+  .ck-chip.on-dark{border-color:#1A1F2E;background:#1A1F2E;color:#FDFAF5;font-weight:600;}
+  .ck-chip-season{color:#1E3A2F;}
+  .ck-location{display:flex;gap:8px;flex-wrap:wrap;margin-top:-6px;}
+  .ck-location-input{flex:1;min-width:180px;height:44px;padding:0 14px;border:1px solid #E3DCD0;border-radius:12px;font-family:'Outfit',sans-serif;font-size:15px;background:#fff;outline:none;}
+  .ck-location-btn{height:44px;padding:0 14px;border:1px solid #E3DCD0;border-radius:12px;background:#fff;font-family:'Outfit',sans-serif;font-size:14px;color:#1E3A2F;display:flex;align-items:center;gap:6px;cursor:pointer;}
+  .ck-inspire{display:flex;align-items:center;gap:14px;padding:16px 16px 16px 20px;margin-top:6px;background:#1A1F2E;border:none;border-radius:18px;text-align:left;cursor:pointer;width:100%;}
+  .ck-inspire-text{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0;}
+  .ck-inspire-title{font-family:'Fraunces',serif;font-size:19px;font-weight:600;color:#FDFAF5;}
+  .ck-inspire-sub{font-family:'Outfit',sans-serif;font-size:14px;color:#C9C3BA;}
+  .ck-inspire-cta{flex-shrink:0;height:44px;padding:0 16px;border-radius:22px;background:#F4A021;color:#151210;font-family:'Outfit',sans-serif;font-weight:600;font-size:14px;display:flex;align-items:center;}
+  .ck-textlink{align-self:flex-start;background:none;border:none;padding:6px 0;font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;color:#1E3A2F;cursor:pointer;text-decoration:underline;text-underline-offset:3px;}
+  .ck-textlink:hover{color:#151210;}
+  .ck-inline-link{background:none;border:none;cursor:pointer;color:#1E3A2F;text-decoration:underline;font-size:13px;font-family:'Outfit',sans-serif;padding:0;}
+  .ck-section{display:flex;flex-direction:column;gap:10px;margin-top:10px;}
+  .ck-section-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
+  .ck-section-head .ck-textlink{padding:0;}
+  .ck-section-label{margin:0;font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#6E635F;}
+  .ck-trending{display:flex;gap:10px;overflow-x:auto;margin:0 -20px;padding:2px 20px 6px;scrollbar-width:none;}
+  .ck-trending::-webkit-scrollbar{display:none;}
+  .ck-trend-card{flex:0 0 156px;height:108px;padding:14px;background:#fff;border:none;border-radius:16px;box-shadow:0 1px 3px rgba(26,31,46,.08);display:flex;flex-direction:column;justify-content:space-between;text-align:left;cursor:pointer;}
+  .ck-trend-card:hover{box-shadow:0 4px 14px rgba(26,31,46,.12);}
+  .ck-trend-title{font-family:'Fraunces',serif;font-size:17px;font-weight:600;line-height:1.2;color:#151210;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+  .ck-trend-tag{font-family:'Outfit',sans-serif;font-size:12px;color:#B8340F;font-weight:500;}
+  .ck-rows{display:flex;flex-direction:column;}
+  .ck-row{display:flex;align-items:center;gap:14px;min-height:60px;padding:8px 0;background:none;border:none;border-bottom:1px solid #ECE6DD;text-align:left;cursor:pointer;width:100%;color:#151210;}
+  .ck-row:last-child{border-bottom:none;}
+  .ck-row-icon{display:flex;color:#1E3A2F;flex-shrink:0;}
+  .ck-row-text{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0;}
+  .ck-row-title{font-family:'Outfit',sans-serif;font-size:16px;}
+  .ck-row-sub{font-family:'Outfit',sans-serif;font-size:13px;color:#6E635F;}
+  .ck-row-chev{font-size:22px;color:#8A7F79;transition:transform .15s;line-height:1;}
+  .ck-row-panel{padding:4px 0 14px;border-bottom:1px solid #ECE6DD;}
+  .ck-mode-back{align-self:flex-start;margin:-12px 0 -6px -12px;}
+
+  /* ── GENERATING ── */
+  .gen-page{padding-bottom:120px;}
+  .gen-body{max-width:820px;margin:0 auto;padding:22px 20px 0;display:flex;flex-direction:column;gap:10px;}
+  .gen-skel{height:14px;border-radius:7px;background:linear-gradient(90deg,#EFE8DC 25%,#F7F2EA 50%,#EFE8DC 75%);background-size:200% 100%;animation:genShimmer 1.4s linear infinite;}
+  @keyframes genShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+  .gen-card{margin:14px 0 10px;padding:16px 18px;background:#1A1F2E;border-radius:18px;display:flex;flex-direction:column;gap:10px;max-width:520px;}
+  .gen-card-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
+  .gen-card-title{font-family:'Fraunces',serif;font-size:18px;font-weight:600;color:#FDFAF5;}
+  .gen-card-time{font-size:13px;color:#C9C3BA;}
+  .gen-bar{height:6px;border-radius:3px;background:rgba(253,250,245,.15);overflow:hidden;}
+  .gen-bar div{height:6px;border-radius:3px;background:#F4A021;transition:width .5s ease;}
+  .gen-steps{list-style:none;margin:2px 0 0;padding:0;display:flex;flex-direction:column;gap:6px;}
+  .gen-steps li{display:flex;align-items:center;gap:8px;font-size:14px;color:#8F8A85;}
+  .gen-steps li.done{color:#C9C3BA;}
+  .gen-steps li.now{color:#FDFAF5;font-weight:500;}
+  .gen-step-mark{width:16px;height:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .gen-dot{width:8px;height:8px;border-radius:4px;background:#F4A021;animation:rxPulse 1s ease-in-out infinite;}
+  .gen-label{font-size:13px;letter-spacing:1.5px;color:#6E635F;font-weight:600;margin:10px 0 0;}
+  .gen-row{display:grid;grid-template-columns:88px 1fr;align-items:center;min-height:46px;border-bottom:1px solid #ECE6DD;}
+  .gen-note{margin:14px 0 0;font-size:14px;line-height:1.5;color:#6E635F;}
+
+  /* ── PLAN ── */
+  .pl-page{max-width:720px;margin:0 auto;padding:24px 20px 120px;}
+  .pl-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:12px;}
+  .pl-range{font-size:14px;color:#6E635F;margin-bottom:2px;}
+  .pl-groceries{height:44px;padding:0 16px;border-radius:22px;border:none;background:#1A1F2E;color:#FDFAF5;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0;}
+  .pl-groceries svg{color:#F4A021;}
+  .pl-hint{font-size:15px;color:#4F4744;margin:0 0 6px;}
+  .pl-days{list-style:none;margin:0;padding:0;}
+  .pl-day{display:grid;grid-template-columns:52px minmax(0,1fr);gap:12px;padding:14px 0;border-bottom:1px solid #ECE6DD;}
+  .pl-date{display:flex;flex-direction:column;align-items:center;padding-top:2px;}
+  .pl-dow{font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#6E635F;}
+  .pl-dnum{font-family:'Fraunces',serif;font-size:22px;font-weight:600;color:#151210;}
+  .pl-day.today .pl-dnum{width:36px;height:36px;border-radius:18px;background:#F4A021;display:flex;align-items:center;justify-content:center;font-size:19px;margin-top:2px;}
+  .pl-meal{display:flex;flex-direction:column;gap:6px;min-width:0;}
+  .pl-meal-top{display:flex;align-items:flex-start;gap:8px;}
+  .pl-meal-title{flex:1;min-width:0;background:none;border:none;padding:6px 0 0;text-align:left;font-family:'Fraunces',serif;font-size:19px;font-weight:600;line-height:1.25;color:#151210;cursor:pointer;}
+  .pl-meal-title:hover{text-decoration:underline;text-underline-offset:3px;}
+  .pl-remove{width:40px;height:40px;flex-shrink:0;border:none;background:none;border-radius:20px;color:#8A7F79;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .pl-remove:hover{background:#F5EFE4;color:#151210;}
+  .pl-meal-meta{font-size:14px;color:#6E635F;margin-top:-4px;}
+  .pl-sides{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+  .pl-side{height:34px;padding:0 4px 0 12px;border-radius:17px;background:#EEF3EC;color:#1E3A2F;font-size:14px;display:inline-flex;align-items:center;gap:6px;max-width:100%;}
+  .pl-side.loading{background:#F5F2ED;color:#8A7F79;}
+  .pl-side.error{background:#FFF0ED;color:#B8340F;}
+  .pl-side-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pl-side-x{width:28px;height:28px;border:none;background:none;border-radius:14px;color:inherit;opacity:.65;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .pl-side-x:hover{opacity:1;background:rgba(30,58,47,.1);}
+  .pl-add-side{height:34px;padding:0 10px;border:none;background:none;color:#1E3A2F;font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;cursor:pointer;}
+  .pl-add-meal{height:48px;border-radius:14px;border:1.5px dashed #CFC6B8;background:transparent;color:#4F4744;font-family:'Outfit',sans-serif;font-size:15px;font-weight:500;text-align:left;padding:0 16px;cursor:pointer;}
+  .pl-add-meal:hover{border-color:#1E3A2F;color:#1E3A2F;background:#EEF3EC;}
+  .pl-page .consol-section{scroll-margin-top:16px;}
+
+  /* ── LIBRARY ── */
+  .lib-page{max-width:960px;margin:0 auto;padding:24px 20px 120px;}
+  .lib-search{display:flex;align-items:center;gap:10px;height:48px;padding:0 16px;background:#fff;border:1px solid #E3DCD0;border-radius:14px;margin-bottom:12px;}
+  .lib-search input{flex:1;min-width:0;border:none;outline:none;background:transparent;font-family:'Outfit',sans-serif;font-size:16px;color:#151210;}
+  .lib-filters{display:flex;gap:6px;overflow-x:auto;margin:0 -20px 18px;padding:0 20px;scrollbar-width:none;}
+  .lib-filters::-webkit-scrollbar{display:none;}
+  .lib-page .saved-category-label{font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#6E635F;}
+  .lib-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+  @media(min-width:700px){.lib-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;}}
+  .lib-grid .recipe-card{border:none;border-radius:16px;box-shadow:0 1px 3px rgba(26,31,46,.08);padding:14px;}
+  .lib-grid .recipe-card:hover{box-shadow:0 4px 14px rgba(26,31,46,.12);transform:none;}
+  .lib-grid .card-title{font-size:17px;line-height:1.2;font-weight:600;margin-top:6px;}
+  .lib-grid .card-desc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  @media(max-width:520px){
+    .lib-grid .card-desc,.lib-grid .star-row,.lib-grid .card-tag{display:none;}
+    .lib-grid .card-meta span:nth-child(n+2){display:none;}
+    .lib-grid .card-actions{flex-wrap:wrap;}
+  }
+  .lib-page .family-wrap{padding:0;max-width:none;}
+
   @media print{
     .nav,.bottom-nav,.recipe-banner-actions,.scaler,.shop-btns,.back-btn,.recipe-top-back,
+    .rx-topbar,.rx-tabs,.rx-actionbar,.rx-add-side,.cook-overlay,.rx-stepper,
     .dish-switcher,.add-side-panel,.dish-swipe-hint,
     .source-links,.card-actions,.grocery-section,.scan-divider,.scan-area{display:none !important;}
     body{background:#fff;padding-bottom:0;}
@@ -953,6 +1190,59 @@ function renderAmount(s: string){
   if(!m) return s;
   return <>{m[1]}<span style={{marginLeft:"0.34em"}}>{m[2]}</span>{m[3]}</>;
 }
+/* ── Cooking mode helpers ── */
+// Finds the first duration in a step ("simmer for 10 minutes", "bake 1 hour") and returns seconds.
+// Ignores the "/2" half of fractions like "1 1/2 hours" by skipping matches preceded by "/".
+function stepTimerSeconds(step: string): number|null{
+  const re=/(\d+(?:\.\d+)?)(?:\s*(?:-|–|to)\s*\d+(?:\.\d+)?)?\s*(hours?|hrs?|minutes?|mins?|seconds?|secs?)\b/gi;
+  let m: RegExpExecArray|null;
+  while((m=re.exec(step))){
+    if(m.index>0&&step[m.index-1]==="/")continue;
+    const n=parseFloat(m[1]);
+    const unit=m[2].toLowerCase();
+    const mult=unit.startsWith("h")?3600:unit.startsWith("m")?60:1;
+    const secs=Math.round(n*mult);
+    if(secs>=10&&secs<=12*3600)return secs;
+  }
+  return null;
+}
+function fmtClock(total: number): string{
+  const h=Math.floor(total/3600),m=Math.floor((total%3600)/60),s=total%60;
+  const ss=String(s).padStart(2,"0");
+  return h>0?`${h}:${String(m).padStart(2,"0")}:${ss}`:`${m}:${ss}`;
+}
+function fmtDuration(total: number): string{
+  const h=Math.floor(total/3600),m=Math.floor((total%3600)/60),s=total%60;
+  if(h>0)return m>0?`${h} hr ${m} min`:`${h} hr`;
+  if(m>0)return s>0?`${m} min ${s} sec`:`${m} min`;
+  return `${s} sec`;
+}
+const COOK_STOP=new Set(["fresh","freshly","chopped","minced","large","small","medium","ground","dried","whole","sliced","diced","finely","roughly","thinly","divided","optional","plus","more","for","serving","taste","and","the","cup","cups","extra","virgin","unsalted","salted","kosher","cracked","boneless","skinless","about","into","pieces","peeled","packed","light","dark","room","temperature","melted","softened","cold","warm","hot","trimmed","halved","cut","inch","lbs","tsp","tbsp","can","cans","bunch","head","cloves","clove","sprigs","pinch","dash","each","from","with","juiced","zested"]);
+function ingKeywords(name: string): string[]{
+  const base=(name||"").toLowerCase().split(/[,(]/)[0];
+  return base.split(/[^a-z]+/).filter(w=>w.length>=3&&!COOK_STOP.has(w)).map(w=>w.replace(/(?:es|s)$/,"")).filter(w=>w.length>=3);
+}
+// Ingredients whose key words appear in the step text (word-start match, so "oil" doesn't match "boil").
+function ingredientsForStep(step: string, ings: any[]): any[]{
+  const t=(step||"").toLowerCase();
+  return ings.filter(i=>ingKeywords(i.name).some(k=>new RegExp(`\\b${k}`).test(t)));
+}
+function playChime(ctx: any){
+  try{
+    if(!ctx)return;
+    if(ctx.state==="suspended")ctx.resume();
+    [0,0.35,0.7].forEach(t=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.type="sine";o.frequency.value=880;
+      g.gain.setValueAtTime(0.0001,ctx.currentTime+t);
+      g.gain.exponentialRampToValueAtTime(0.3,ctx.currentTime+t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+t+0.3);
+      o.connect(g);g.connect(ctx.destination);
+      o.start(ctx.currentTime+t);o.stop(ctx.currentTime+t+0.32);
+    });
+  }catch{}
+}
+
 function consolidate(plan: Record<string,any>, planSides?: Record<string,{title:string;status:string;recipe:any}[]>){
   const map: Record<string,{name:string;entries:{recipe:string;amount:string}[]}> = {};
   for(const k of DAY_KEYS){
@@ -1162,6 +1452,21 @@ export default function App(){
   const [showAddSide,setShowAddSide] = useState(false);      // "Add another side" popover
   const [addSideMode,setAddSideMode] = useState<"suggest"|"search">("suggest");
   const [addSideQuery,setAddSideQuery] = useState("");
+  const [libFilter,setLibFilter]   = useState<"all"|"mine"|"family"|"sides"|"recent">("all"); // Library filter chip
+  const [showScanMenu,setShowScanMenu] = useState(false); // scan menu on the Cook search bar
+  const [showUrlRow,setShowUrlRow]   = useState(false);   // "Paste a link" row expanded
+  const [loadingDish,setLoadingDish] = useState("");      // dish name shown while a recipe generates
+  const [genStart,setGenStart]       = useState(0);       // when generation started, for timed progress
+  const [,setGenTick]                = useState(0);
+  const searchSeq = useRef(0);                           // bumps on each search/cancel so stale results are ignored
+  const [showRecipeMenu,setShowRecipeMenu] = useState(false); // the ⋯ menu on the recipe page
+  const [shareTarget,setShareTarget] = useState<any>(null);     // the recipe the share sheet is for (main dish or a side)
+  const [cookRecipe,setCookRecipe]   = useState<any>(null);     // recipe open in cooking mode
+  const [cookStep,setCookStep]       = useState(0);             // 0 = gather ingredients, 1..N = steps
+  const [cookTimers,setCookTimers]   = useState<Record<number,{end:number;dur:number;done?:boolean}>>({});
+  const [,setCookTick]               = useState(0);             // forces a re-render each second while a timer runs
+  const cookSwipeX = useRef<number|null>(null);
+  const audioCtxRef = useRef<any>(null);
   const [urlInput,setUrlInput]   = useState("");
   const [urlStatus,setUrlStatus] = useState("idle"); // idle|loading|done|error
   const [urlMsg,setUrlMsg]       = useState("");
@@ -1211,6 +1516,58 @@ export default function App(){
       if(qrStreamRef.current)qrStreamRef.current.getTracks().forEach(t=>t.stop());
     };
   },[]);
+
+  /* cooking mode: keep the screen awake and lock page scroll while open */
+  useEffect(()=>{
+    if(!cookRecipe)return;
+    let lock:any=null; let active=true;
+    const request=async()=>{
+      try{ const wl=(navigator as any).wakeLock; if(wl&&active){ lock=await wl.request("screen"); } }catch{}
+    };
+    request();
+    const onVis=()=>{ if(document.visibilityState==="visible")request(); };
+    document.addEventListener("visibilitychange",onVis);
+    const prevOverflow=document.body.style.overflow;
+    document.body.style.overflow="hidden";
+    return()=>{
+      active=false;
+      document.removeEventListener("visibilitychange",onVis);
+      document.body.style.overflow=prevOverflow;
+      try{ lock&&lock.release(); }catch{}
+    };
+  },[cookRecipe]);
+
+  /* cooking mode: tick running timers; chime + vibrate when one finishes */
+  useEffect(()=>{
+    if(!Object.values(cookTimers).some(t=>!t.done))return;
+    const id=setInterval(()=>{
+      const now=Date.now();
+      let finished=false;
+      const next:Record<number,{end:number;dur:number;done?:boolean}>={};
+      for(const [k,t] of Object.entries(cookTimers)){
+        if(!t.done&&now>=t.end){ next[Number(k)]={...t,done:true}; finished=true; }
+        else next[Number(k)]=t;
+      }
+      if(finished){
+        setCookTimers(next);
+        try{ navigator.vibrate&&navigator.vibrate([300,150,300]); }catch{}
+        playChime(audioCtxRef.current);
+      }else setCookTick(x=>x+1);
+    },1000);
+    return()=>clearInterval(id);
+  },[cookTimers]);
+
+  /* old tab names land in Library with the matching filter */
+  useEffect(()=>{
+    if(tab==="saved"){setLibFilter("mine");setTab("library");}
+    else if(tab==="family"){setLibFilter("family");setTab("library");}
+  },[tab]);
+  /* re-render the generating screen while a recipe is loading */
+  useEffect(()=>{
+    if(status!=="loading")return;
+    const id=setInterval(()=>setGenTick(x=>x+1),500);
+    return()=>clearInterval(id);
+  },[status]);
 
   /* storage load */
   useEffect(()=>{
@@ -1391,7 +1748,9 @@ export default function App(){
   /* search */
   const doSearch=async(dish?: string)=>{
     const q=(dish||query).trim();if(!q)return;
-    setStatus("loading");setRecipe(null);setServings(null);setErrorMsg("");
+    const mySeq=++searchSeq.current;
+    setLoadingDish(q);setGenStart(Date.now());setShowScanMenu(false);
+    setStatus("loading");setRecipe(null);setServings(null);setErrorMsg("");window.scrollTo({top:0});
     setReturnTab(null);setPairedSides([]);setActivePane(0);setReturnDayKey(null);
     try{
       const canCache=diets.length===0&&!seasonal;
@@ -1412,10 +1771,17 @@ export default function App(){
         parsed=await callAPI([{role:"user",content:buildPrompt(q,diets,seasonal,location)}]);
       }
 
+      if(mySeq!==searchSeq.current)return; // cancelled or superseded
       const r={...parsed,id:Date.now(),_dish:q,_ts:Date.now(),_fromCache:fromCache};
       setRecipe(r);setStatus("done");
       setHistory(h=>[r,...h.filter((x:any)=>x.id!==r.id)].slice(0,30));
-    }catch(e:any){setErrorMsg(e.message||String(e));setStatus("error");window.scrollTo({top:0,behavior:"smooth"});}
+    }catch(e:any){if(mySeq!==searchSeq.current)return;setErrorMsg(e.message||String(e));setStatus("error");window.scrollTo({top:0,behavior:"smooth"});}
+  };
+  const cancelSearch=()=>{searchSeq.current++;setStatus("idle");};
+  // Leave an open recipe (e.g. from the nav), keeping any side edits made from a Plan day.
+  const leaveRecipe=()=>{
+    if(returnDayKey)setPlanSides(p=>({...p,[returnDayKey]:pairedSides}));
+    setReturnTab(null);setStatus("idle");setRecipe(null);setQuery("");closePairedSide();setShowRecipeMenu(false);setShowAddSide(false);
   };
 
   // Adds a side dish alongside the main dish. If it's already paired, just switches to it.
@@ -1477,6 +1843,36 @@ export default function App(){
     });
   };
   const closePairedSide=()=>{setPairedSides([]);setActivePane(0);setReturnDayKey(null);};
+
+  /* share — works for the main dish or a paired side */
+  const shareRecipe=async(r:any)=>{
+    setShareTarget(r);setShowShare(true);setShareUrl(null);setShareLoading(true);
+    try{
+      const {_scanned,_imported,_fromCache,_ts,id,_sourceUrl,...shareable}=r as any;
+      const res=await fetch("/api/share",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({recipe:shareable})});
+      const data=await res.json();
+      setShareUrl(data.url||null);
+    }catch{
+      const slug=(r.title||"recipe").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+      setShareUrl(`https://everychef.app/r/${slug}`);
+    }finally{setShareLoading(false);}
+  };
+
+  /* cooking mode */
+  const openCookMode=(r:any)=>{setCookRecipe(r);setCookStep(0);setCookTimers({});setShowRecipeMenu(false);};
+  const closeCookMode=()=>{setCookRecipe(null);setCookTimers({});};
+  const startCookTimer=(step:number,secs:number)=>{
+    // Create/resume audio on this tap so the chime is allowed to play later (iOS needs a user gesture).
+    try{
+      if(!audioCtxRef.current){
+        const AC=(window as any).AudioContext||(window as any).webkitAudioContext;
+        if(AC)audioCtxRef.current=new AC();
+      }
+      audioCtxRef.current?.resume?.();
+    }catch{}
+    setCookTimers(t=>({...t,[step]:{end:Date.now()+secs*1000,dur:secs}}));
+  };
+  const clearCookTimer=(step:number)=>setCookTimers(t=>{const n={...t};delete n[step];return n;});
 
   /* week plan — sides paired to a specific day's main dish */
   const addPlanSide=async(dayKey: string, sideTitle: string, recipeOverride?: any)=>{
@@ -1562,14 +1958,17 @@ export default function App(){
 
   const pickInspiredRecipe=async(suggestion: any)=>{
     setTab("search");setQuery(suggestion.title);
+    const mySeq=++searchSeq.current;
+    setLoadingDish(suggestion.title);setGenStart(Date.now());window.scrollTo({top:0});
     setStatus("loading");setRecipe(null);setServings(null);setErrorMsg("");
     setReturnTab(null);setPairedSides([]);setActivePane(0);setReturnDayKey(null);
     try{
       const parsed=await callAPI([{role:"user",content:buildPrompt(suggestion.title,diets,seasonal,location)}]);
+      if(mySeq!==searchSeq.current)return;
       const r={...parsed,id:Date.now(),_dish:suggestion.title,_ts:Date.now()};
       setRecipe(r);setStatus("done");
       setHistory(h=>[r,...h.filter((x:any)=>x.id!==r.id)].slice(0,30));
-    }catch(e:any){setErrorMsg(e.message||String(e));setStatus("error");}
+    }catch(e:any){if(mySeq!==searchSeq.current)return;setErrorMsg(e.message||String(e));setStatus("error");}
   };
 
   /* scan */
@@ -1798,66 +2197,153 @@ export default function App(){
             <button className="back-btn" style={{marginLeft:8}} onClick={()=>setStatus("idle")}>Dismiss</button>
           </div>
         )}
-        {status!=="done"&&(
-          <div>
-          {/* ── Hero ── */}
-          <div className="hero">
-            {/* Content */}
-            <div className="hero-content">
-              <div className="hero-eyebrow">
-                <span className="hero-eyebrow-pre">Welcome to</span>
-                <div className="hero-eyebrow-name">
-                  <span className="wm-upright">every</span>
-                  <span className="wm-italic">chef</span>
-                </div>
-                <span className="hero-eyebrow-sub">The original recipe synthesizer</span>
-              </div>
-              <h1 className="hero-title">What would you<br/><em>like to cook?</em></h1>
-              <div className="hero-rule-wrap"><div className="hero-rule"/><div className="hero-diamond"/><div className="hero-rule"/></div>
-              <p className="hero-sub">The <strong>best recipes on the internet</strong>, combined, refined, just for you.</p>
+        {status==="loading"&&GeneratingView()}
+        {status!=="done"&&status!=="loading"&&(
+          <div className="ck-page">
+          {homeMode==="search"&&(
+            <>
+              <h1 className="ck-title">What are we<br/>cooking tonight?</h1>
 
-              <div className="home-mode-toggle">
-                <div className="home-mode-slider" style={{
-                  transform:`translateX(${homeMode==="search"?"0":homeMode==="inspire"?"calc(100% + 2px)":"calc(200% + 4px)"})`
-                }}/>
-                <button className={`home-mode-btn${homeMode==="search"?" active":""}`} onClick={()=>setHomeMode("search")}>{Ic.search(14)} Search</button>
-                <button className={`home-mode-btn${homeMode==="inspire"?" active":""}`} onClick={()=>setHomeMode("inspire")}>{Ic.inspire(14)} Inspire Me</button>
-                <button className={`home-mode-btn${homeMode==="tryme"?" active":""}`} onClick={()=>setHomeMode("tryme")}>{Ic.refresh(14)} Try Me</button>
+              <div className="ck-search">
+                <span className="ck-search-icon" aria-hidden="true">{Ic.search(20)}</span>
+                <input ref={inputRef} className="ck-search-input" placeholder="Search any dish" aria-label="Search any dish"
+                  value={query} onChange={e=>setQuery(e.target.value)}
+                  onKeyDown={e=>e.key==="Enter"&&doSearch()}/>
+                {query.trim()?(
+                  <button className="ck-search-go" onClick={()=>doSearch()}>Find</button>
+                ):(
+                  <div className="rx-menu-wrap">
+                    <button className="ck-search-scan" aria-label="Scan a recipe card or QR code" aria-expanded={showScanMenu} onClick={()=>setShowScanMenu(v=>!v)}>
+                      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M4 8V5a1 1 0 0 1 1-1h3"/><path d="M16 4h3a1 1 0 0 1 1 1v3"/><path d="M20 16v3a1 1 0 0 1-1 1h-3"/><path d="M8 20H5a1 1 0 0 1-1-1v-3"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                    {showScanMenu&&(
+                      <>
+                        <div className="rx-menu-scrim" onClick={()=>setShowScanMenu(false)}/>
+                        <div className="rx-menu" role="menu">
+                          <button role="menuitem" className="rx-menu-item" onClick={()=>{setShowScanMenu(false);fileRef.current?.click();}}>{Ic.camera(17)} Photograph a recipe card</button>
+                          <button role="menuitem" className="rx-menu-item" onClick={()=>{setShowScanMenu(false);openQrScanner();}}>{Ic.qrscan(17)} Scan an Every Chef QR code</button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
-              <p className="hero-mode-desc">
-                {homeMode==="search"?"Type a dish name and we'll build the perfect recipe.":homeMode==="inspire"?"Answer a few questions and we'll pick something for you.":"Flip through dishes until one catches your eye."}
-              </p>
 
-              {homeMode==="search"&&(
-              <div className="search-wrap">
-                <div className="search-bar">
-                  <input ref={inputRef} className="search-input" placeholder="e.g. Miso Glazed Salmon, Birria Tacos…"
-                    value={query} onChange={e=>setQuery(e.target.value)}
-                    onKeyDown={e=>e.key==="Enter"&&doSearch()} disabled={status==="loading"}/>
-                  <button className="search-btn" onClick={()=>doSearch()} disabled={status==="loading"||!query.trim()}>
-                    {status==="loading"?"Searching…":"Find Recipe →"}
-                  </button>
-                </div>
-                <div className="filter-label">Dietary Filters</div>
-                <div className="diet-filters">
-                  {DIETS.map(d=>(
-                    <button key={d} className={`diet-chip${diets.includes(d)?" on":""}`} onClick={()=>toggleDiet(d)}>{d}</button>
-                  ))}
-                </div>
-                <div className="seasonal-row">
-                  <button className={`seasonal-chip${seasonal?" on":""}`} onClick={()=>setSeasonal(v=>!v)}>
-                    <span style={{display:"flex",alignItems:"center"}}>{Ic.leaf(14)}</span>{" "}{seasonal?"In Season — On":"In Season"}
-                  </button>
-                  {seasonal&&(
-                    <div className="location-wrap">
-                      <input className="location-input" placeholder="City, State…" value={location} onChange={e=>setLocation(e.target.value)}/>
-                      <button className="location-detect" onClick={detectLocation} disabled={detecting} style={{display:"flex",alignItems:"center",gap:4}}>{detecting?"…":<>{Ic.pin(12)} Detect</>}</button>
-                    </div>
-                  )}
-                </div>
+              <div className="ck-chips" role="group" aria-label="Dietary filters">
+                {DIETS.map(d=>(
+                  <button key={d} aria-pressed={diets.includes(d)} className={`ck-chip${diets.includes(d)?" on":""}`} onClick={()=>toggleDiet(d)}>{d}</button>
+                ))}
+                <button aria-pressed={seasonal} className={`ck-chip ck-chip-season${seasonal?" on":""}`} onClick={()=>setSeasonal(v=>!v)}>
+                  <span style={{display:"flex"}}>{Ic.leaf(13)}</span> In season
+                </button>
               </div>
+              {seasonal&&(
+                <div className="ck-location">
+                  <input className="ck-location-input" placeholder="Your city, for what's in season" aria-label="Your city" value={location} onChange={e=>setLocation(e.target.value)}/>
+                  <button className="ck-location-btn" onClick={detectLocation} disabled={detecting}>{detecting?"Finding…":<>{Ic.pin(14)} Use my location</>}</button>
+                </div>
               )}
 
+              <button className="ck-inspire" onClick={()=>{setHomeMode("inspire");window.scrollTo({top:0});}}>
+                <span className="ck-inspire-text">
+                  <span className="ck-inspire-title">Not sure what to make?</span>
+                  <span className="ck-inspire-sub">Tell us your time and mood. We'll pick three.</span>
+                </span>
+                <span className="ck-inspire-cta">Inspire me</span>
+              </button>
+              <button className="ck-textlink" onClick={()=>{setHomeMode("tryme");window.scrollTo({top:0});}}>Or flip through ideas →</button>
+
+              {trendingDishes.length>0&&(
+                <section className="ck-section">
+                  <div className="ck-section-head">
+                    <h2 className="ck-section-label">Trending this week</h2>
+                    <button className="ck-textlink" onClick={()=>setTab("community")}>Browse community</button>
+                  </div>
+                  <div className="ck-trending">
+                    {trendingDishes.map((dish,i)=>(
+                      <button key={i} className="ck-trend-card" onClick={()=>{setQuery(dish);doSearch(dish);}}>
+                        <span className="ck-trend-title">{dish}</span>
+                        <span className="ck-trend-tag">Trending</span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+              {trendingDishes.length===0&&(
+                <div className="ck-section">
+                  <button className="ck-textlink" onClick={()=>setTab("community")}>Browse community recipes →</button>
+                </div>
+              )}
+
+              <section className="ck-section">
+                <h2 className="ck-section-label">Bring a recipe in</h2>
+                <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={onFileChange}/>
+                <div className="ck-rows">
+                  <button className="ck-row" onClick={()=>fileRef.current?.click()}>
+                    <span className="ck-row-icon" aria-hidden="true">{Ic.camera(22)}</span>
+                    <span className="ck-row-text"><span className="ck-row-title">Photograph a recipe card</span><span className="ck-row-sub">Grandma's card or a magazine page</span></span>
+                    <span className="ck-row-chev" aria-hidden="true">›</span>
+                  </button>
+                  {scanPreview&&(
+                    <div className="ck-row-panel">
+                      <img src={scanPreview} className="scan-preview" alt="Recipe card to digitize"/>
+                      <div className="scan-actions">
+                        <button className="scan-go-btn" onClick={doScan} disabled={scanStatus==="scanning"}>{scanStatus==="scanning"?"Reading…":"Digitize recipe"}</button>
+                        <button className="scan-clear-btn" onClick={clearScan}>Clear</button>
+                      </div>
+                    </div>
+                  )}
+                  {scanStatus==="done"&&scanMsg&&(
+                    <div className="ck-row-panel scan-success">✓ {scanMsg}{" "}
+                      <button className="ck-inline-link" onClick={()=>{if(justAdded){setReturnTab(null);setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(justAdded);setServings(null);setStatus("done");setTab("search");}else setTab("library");}}>View recipe →</button>
+                    </div>
+                  )}
+                  {scanStatus==="error"&&<div className="ck-row-panel import-status-err">{scanMsg}</div>}
+
+                  <button className="ck-row" aria-expanded={showUrlRow} onClick={()=>setShowUrlRow(v=>!v)}>
+                    <span className="ck-row-icon" aria-hidden="true">{Ic.link(22)}</span>
+                    <span className="ck-row-text"><span className="ck-row-title">Paste a link</span><span className="ck-row-sub">We strip the ads and the life story</span></span>
+                    <span className="ck-row-chev" aria-hidden="true" style={{transform:showUrlRow?"rotate(90deg)":"none"}}>›</span>
+                  </button>
+                  {(showUrlRow||urlStatus!=="idle")&&(
+                    <div className="ck-row-panel">
+                      <div className="import-url-row">
+                        <input className="import-url-input" placeholder="https://www.seriouseats.com/recipe/…" aria-label="Recipe link"
+                          value={urlInput} onChange={e=>setUrlInput(e.target.value)}
+                          onKeyDown={e=>e.key==="Enter"&&doFetchUrl()}
+                          disabled={urlStatus==="loading"}/>
+                        <button className="import-url-btn" onClick={doFetchUrl} disabled={urlStatus==="loading"||!urlInput.trim()}>
+                          {urlStatus==="loading"?"…":"Import"}
+                        </button>
+                      </div>
+                      {urlStatus==="done"&&urlMsg&&(
+                        <div className="import-status-ok">✓ {urlMsg}{" "}
+                          <button className="ck-inline-link" onClick={()=>{if(justAdded){setReturnTab(null);setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(justAdded);setServings(null);setStatus("done");setTab("search");}else setTab("library");}}>View recipe →</button>
+                        </div>
+                      )}
+                      {urlStatus==="error"&&<div className="import-status-err">{urlMsg}</div>}
+                    </div>
+                  )}
+
+                  <button className="ck-row" onClick={openQrScanner}>
+                    <span className="ck-row-icon" aria-hidden="true">{Ic.qrscan(22)}</span>
+                    <span className="ck-row-text"><span className="ck-row-title">Scan an Every Chef QR code</span><span className="ck-row-sub">Opens a shared recipe right here</span></span>
+                    <span className="ck-row-chev" aria-hidden="true">›</span>
+                  </button>
+                </div>
+              </section>
+            </>
+          )}
+
+          {homeMode!=="search"&&(
+            <>
+              <button className="rx-back ck-mode-back" onClick={()=>setHomeMode("search")}>
+                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+                Cook
+              </button>
+              <h1 className="ck-title">{homeMode==="inspire"?"Inspire me":"Flip through ideas"}</h1>
+            </>
+          )}
               {homeMode==="tryme"&&(
               <div style={{width:"100%",maxWidth:960,margin:"0 auto"}}>
                 <div className="mosaic-header" style={{marginBottom:12}}>
@@ -1999,133 +2485,9 @@ export default function App(){
                 )}
               </div>
               )}
-            </div>
-          </div>
-
-          {/* ── Trending strip ── */}
-          {trendingDishes.length>0&&(
-            <div className="trending-strip">
-              <div className="trending-label">
-                <span>🔥</span> Trending right now
-              </div>
-              <div className="trending-scroll">
-                {trendingDishes.map((dish,i)=>(
-                  <div key={i} className="trending-card" onClick={()=>{setQuery(dish);doSearch(dish);}}>
-                    <div className="trending-card-title">{dish}</div>
-                    <div className="trending-card-badge">Trending</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ── Mosaic suggestion cards ── */}
-          {/* Scan + URL — scan first, then URL, extra bottom padding for mobile nav */}
-          {/* ── Import pair ── */}
-          <div style={{maxWidth:860,margin:"32px auto 0",padding:"0 20px"}}>
-            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
-              <div style={{flex:1,height:1,background:"#EDE8E0"}}/>
-              <span style={{fontSize:10,letterSpacing:"2px",textTransform:"uppercase",color:"#7A6E6A",whiteSpace:"nowrap"}}>More ways to cook</span>
-              <div style={{flex:1,height:1,background:"#EDE8E0"}}/>
-            </div>
-            <div className="import-pair">
-
-              {/* Scan card */}
-              <div className="import-card">
-                <div className="import-card-eyebrow">Scan</div>
-                <div className="import-card-icon">{Ic.camera(20)}</div>
-                {!scanPreview?(
-                  <>
-                    <div className="import-card-title">Snap it.<br/><em>We'll read it.</em></div>
-                    <div className="import-card-desc">Got a recipe card from grandma? A torn page from a magazine? Photograph it and we'll digitize it instantly.</div>
-                    <div className="import-card-action" style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center"}}>
-                      <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={onFileChange}/>
-                      <button className="import-scan-btn" onClick={()=>fileRef.current?.click()}>
-                        {Ic.camera(14)} Choose photo
-                      </button>
-                      <button className="import-scan-btn import-scan-btn-ghost" onClick={openQrScanner}>
-                        {Ic.qrscan(14)} Scan QR code
-                      </button>
-                    </div>
-                  </>
-                ):(
-                  <>
-                    <img src={scanPreview} className="scan-preview" alt="Recipe preview"/>
-                    <div className="scan-actions">
-                      <button className="scan-go-btn" onClick={doScan} disabled={scanStatus==="scanning"}>{scanStatus==="scanning"?"Reading…":"Digitize recipe"}</button>
-                      <button className="scan-clear-btn" onClick={clearScan}>Clear</button>
-                    </div>
-                  </>
-                )}
-                {scanStatus==="done"&&scanMsg&&(
-                  <div className="scan-success">✓ {scanMsg}{" "}
-                    <button onClick={()=>{if(justAdded){setReturnTab(null);setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(justAdded);setServings(null);setStatus("done");setTab("search");}else setTab("saved");}} style={{background:"none",border:"none",cursor:"pointer",color:"#4a6040",textDecoration:"underline",fontSize:13}}>View recipe →</button>
-                  </div>
-                )}
-                {scanStatus==="error"&&<div className="import-status-err">{scanMsg}</div>}
-              </div>
-
-              {/* URL card */}
-              <div className="import-card">
-                <div className="import-card-eyebrow">Import</div>
-                <div className="import-card-icon">{Ic.link(20)}</div>
-                <div className="import-card-title">Paste a link.<br/><em>We'll kill the noise.</em></div>
-                <div className="import-card-desc">Drop in any recipe URL — we strip the ads, the life story, and the pop-ups. Just the recipe. Works great on Serious Eats, Simply Recipes, Epicurious, Food52, and most open sites.</div>
-                <div className="import-card-action">
-                  <div className="import-url-row">
-                    <input className="import-url-input" placeholder="https://www.seriouseats.com/recipe/…"
-                      value={urlInput} onChange={e=>setUrlInput(e.target.value)}
-                      onKeyDown={e=>e.key==="Enter"&&doFetchUrl()}
-                      disabled={urlStatus==="loading"}/>
-                    <button className="import-url-btn" onClick={doFetchUrl} disabled={urlStatus==="loading"||!urlInput.trim()}>
-                      {urlStatus==="loading"?"…":"Import"}
-                    </button>
-                  </div>
-                  {urlStatus==="done"&&urlMsg&&(
-                    <div className="import-status-ok">✓ {urlMsg}{" "}
-                      <button onClick={()=>{if(justAdded){setReturnTab(null);setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(justAdded);setServings(null);setStatus("done");setTab("search");}else setTab("saved");}} style={{background:"none",border:"none",cursor:"pointer",color:"#1E3A2F",textDecoration:"underline",fontSize:12,fontFamily:"'Outfit',sans-serif"}}>View recipe →</button>
-                    </div>
-                  )}
-                  {urlStatus==="error"&&<div className="import-status-err">{urlMsg}</div>}
-                </div>
-              </div>
-
-            </div>
-          </div>
-          <div style={{height:100}}/>
           </div>
         )}
-        {status==="loading"&&(
-          <div className="loading-overlay">
-            <div className="loading-card">
-              <div className="loading-icon-wrap">
-                <div className="loading-icon"><img src="/flame_icon.png" alt=""/></div>
-                <div className="loading-icon"><img src="/whisk_icon.png" alt=""/></div>
-                <div className="loading-icon"><img src="/spoon_icon.png" alt=""/></div>
-                <div className="loading-icon"><img src="/stopwatch_icon.png" alt=""/></div>
-              </div>
-              <div style={{position:"relative",height:"28px",marginBottom:"6px"}}>
-                {[
-                  seasonal?"Finding what's in season…":"Firing up the burners…",
-                  "Whisking through the archives…",
-                  "Stirring in the best techniques…",
-                  "Almost ready to plate…",
-                ].map((line,i)=>(
-                  <div key={i} style={{
-                    position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",
-                    fontFamily:"'Fraunces',serif",fontSize:"18px",fontStyle:"italic",color:"#151210",
-                    opacity:0,
-                    animation:`iconFade 8s ease-in-out infinite`,
-                    animationDelay:`${i*2}s`,
-                    whiteSpace:"nowrap",
-                  }}>{line}</div>
-                ))}
-              </div>
-              <div className="loading-sub">Synthesizing techniques from top sources</div>
-            </div>
-          </div>
-        )}
-        {status==="done"&&recipe&&(pairedSides.length>0?(()=>{
+        {status==="done"&&recipe&&(()=>{
           const paneCount=pairedSides.length+1;
           const paneWidthPct=100/paneCount;
           const savedTitles=new Set(saved.map((s:any)=>(s.title||"").toLowerCase()));
@@ -2143,44 +2505,114 @@ export default function App(){
             if(seen.has(t))return false;
             seen.add(t);return true;
           }).slice(0,12):[];
+          const activeSide=activePane>0?pairedSides[activePane-1]:null;
+          const activeRecipe=activePane===0?recipe:(activeSide&&activeSide.status==="done"?activeSide.recipe:null);
+          const asv=activeRecipe?isSaved(activeRecipe):false;
+          const backLabel=returnTab==="library"?"Library":returnTab==="saved"?"Saved":returnTab==="community"?"Community":returnTab==="week"?"This week":returnTab==="family"?"Family":"Search";
+          const goBack=()=>{
+            const dest=returnTab;
+            if(returnDayKey)setPlanSides(p=>({...p,[returnDayKey]:pairedSides}));
+            setReturnTab(null);setReturnDayKey(null);setStatus("idle");setRecipe(null);setQuery("");
+            closePairedSide();setShowRecipeMenu(false);setShowAddSide(false);
+            if(dest)setTab(dest);
+          };
+          const toggleAddSide=()=>{
+            setShowAddSide(v=>!v);setAddSideMode("suggest");setAddSideQuery("");
+            if(communityStatus==="idle")loadCommunity();
+          };
           return(
-          <div className="dish-swipe-outer">
-            <div className="dish-switcher">
-              <button className={`dish-switch-btn${activePane===0?" active":""}`} onClick={()=>setActivePane(0)}>{recipe.title}</button>
+          <div className="rx-shell">
+            <div className="rx-topbar">
+              <button className="rx-back" onClick={goBack}>
+                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+                {backLabel}
+              </button>
+              <div className="rx-menu-wrap">
+                <button className="rx-icon-btn" aria-label="More options" aria-expanded={showRecipeMenu} onClick={()=>setShowRecipeMenu(v=>!v)}>
+                  <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+                </button>
+                {showRecipeMenu&&(
+                  <>
+                    <div className="rx-menu-scrim" onClick={()=>setShowRecipeMenu(false)}/>
+                    <div className="rx-menu" role="menu">
+                      {activeRecipe&&(
+                        <button role="menuitem" className="rx-menu-item" onClick={()=>{setShowRecipeMenu(false);shareRecipe(activeRecipe);}}>{Ic.share(17)} Share</button>
+                      )}
+                      {activePane===0?(
+                        <>
+                          <button role="menuitem" className="rx-menu-item" onClick={()=>{setShowRecipeMenu(false);setTimeout(()=>window.print(),60);}}>{Ic.printer(17)} Print</button>
+                          <button role="menuitem" className="rx-menu-item" onClick={()=>{setShowRecipeMenu(false);photoInputRef.current?.click();}}>{Ic.camera(17)} Add a photo</button>
+                          <button role="menuitem" className="rx-menu-item" onClick={()=>{setShowRecipeMenu(false);setEditRecipe(JSON.parse(JSON.stringify(recipe)));setShowEditPanel(true);}}>
+                            <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            Edit recipe
+                          </button>
+                          {!recipe._scanned&&!recipe._imported&&(
+                            <button role="menuitem" className="rx-menu-item" onClick={()=>{setShowRecipeMenu(false);setTimeout(()=>document.getElementById("rx-remix")?.scrollIntoView({behavior:"smooth",block:"start"}),60);}}>{Ic.refresh(17)} Remix</button>
+                          )}
+                          <button role="menuitem" className="rx-menu-item" onClick={()=>setIngTextSize(s=>s==="normal"?"large":s==="large"?"xl":"normal")}>
+                            <span className="rx-menu-aa" aria-hidden="true">Aa</span>
+                            Text size: {ingTextSize==="normal"?"Regular":ingTextSize==="large"?"Large":"Extra large"}
+                          </button>
+                        </>
+                      ):(
+                        <>
+                          {activeRecipe&&(
+                            <button role="menuitem" className="rx-menu-item" onClick={()=>{setShowRecipeMenu(false);setReturnTab(null);setReturnDayKey(null);setRecipe(activeRecipe);setServings(null);setStatus("done");closePairedSide();window.scrollTo({top:0});}}>
+                              {Ic.arrowLeft(17)} Open as its own recipe
+                            </button>
+                          )}
+                          <button role="menuitem" className="rx-menu-item rx-menu-danger" onClick={()=>{setShowRecipeMenu(false);removePairedSide(activePane-1);}}>
+                            <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+                            Remove this side
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="rx-tabs" role="tablist" aria-label="Dishes in this meal">
+              <button role="tab" aria-selected={activePane===0} className={`rx-tab${activePane===0?" active":""}`} onClick={()=>setActivePane(0)}>{recipe.title}</button>
               {pairedSides.map((p,i)=>(
-                <button key={i} className={`dish-switch-btn${activePane===i+1?" active":""}`} onClick={()=>setActivePane(i+1)}>
-                  {Ic.leaf(11)} {p.title}{p.status==="loading"?"…":p.status==="error"?" ⚠":""}
+                <button key={i} role="tab" aria-selected={activePane===i+1} className={`rx-tab rx-tab-side${activePane===i+1?" active":""}`} onClick={()=>setActivePane(i+1)}>
+                  <span style={{display:"flex",flexShrink:0}}>{Ic.leaf(13)}</span>
+                  <span className="rx-tab-label">{p.title}</span>
+                  {p.status==="loading"&&<span className="rx-tab-dot" aria-label="loading"/>}
+                  {p.status==="error"&&<span aria-label="failed to load"> !</span>}
                 </button>
               ))}
-              <button className="dish-switch-add" onClick={()=>{
-                setShowAddSide(v=>!v);setAddSideMode("suggest");setAddSideQuery("");
-                if(communityStatus==="idle")loadCommunity();
-              }} title="Add another side">+</button>
+              <button className={`rx-tab-add${showAddSide?" open":""}`} aria-expanded={showAddSide} onClick={toggleAddSide}>
+                {pairedSides.length===0?"+ Add a side":"+ Side"}
+              </button>
             </div>
+
             {showAddSide&&(
-              <div className="add-side-panel">
+              <div className="add-side-panel rx-add-side">
                 <div className="add-side-tabs">
-                  <button className={`add-side-tab${addSideMode==="suggest"?" active":""}`} onClick={()=>setAddSideMode("suggest")}>Suggestions</button>
-                  <button className={`add-side-tab${addSideMode==="search"?" active":""}`} onClick={()=>setAddSideMode("search")}>Search Saved &amp; Community</button>
+                  <button className={`add-side-tab${addSideMode==="suggest"?" active":""}`} onClick={()=>setAddSideMode("suggest")}>Suggested for this dish</button>
+                  <button className={`add-side-tab${addSideMode==="search"?" active":""}`} onClick={()=>setAddSideMode("search")}>Search your recipes</button>
                 </div>
                 {addSideMode==="suggest"?(
                   addSideSuggestions.length>0?(
                     <div className="side-panel-row">
                       {addSideSuggestions.map((s,i)=>(
-                        <div key={i} className="side-card" onClick={()=>openPairedSide(s.title)}>
-                          <div className="side-card-title">{s.title}</div>
-                          <div className="side-card-tagline">{s.tagline}</div>
-                        </div>
+                        <button key={i} className="side-card" onClick={()=>openPairedSide(s.title)}>
+                          <span className="side-card-title">{s.title}</span>
+                          <span className="side-card-tagline">{s.tagline}</span>
+                        </button>
                       ))}
                     </div>
                   ):(
-                    <div className="add-side-empty">You've already added all the suggested sides for this dish.</div>
+                    <div className="add-side-empty">You've added all the suggested sides for this dish.</div>
                   )
                 ):(
                   <>
                     <input
                       className="add-side-search-input"
-                      placeholder="Search saved & community recipes…"
+                      placeholder="Search saved & community recipes"
+                      aria-label="Search saved and community recipes"
                       value={addSideQuery}
                       onChange={e=>setAddSideQuery(e.target.value)}
                       autoFocus
@@ -2190,7 +2622,7 @@ export default function App(){
                         <div className="add-side-results">
                           {addSideResults.map((r:any,i:number)=>(
                             <button key={i} className="add-side-result" onClick={()=>openPairedSide(r.title,r)}>
-                              {savedTitles.has((r.title||"").toLowerCase())?Ic.heartFill(12):Ic.search(12)} {r.title}
+                              {savedTitles.has((r.title||"").toLowerCase())?Ic.heartFill(13):Ic.search(13)} {r.title}
                             </button>
                           ))}
                         </div>
@@ -2202,27 +2634,40 @@ export default function App(){
                 )}
               </div>
             )}
-            <div className="dish-swipe-hint">Swipe to switch between dishes</div>
-            <div
-              className="dish-swipe-track"
-              style={{width:`${paneCount*100}%`,transform:`translateX(-${activePane*paneWidthPct}%)`}}
-              onTouchStart={(e)=>{swipeStartX.current=e.touches[0].clientX;}}
-              onTouchEnd={(e)=>{
-                if(swipeStartX.current==null)return;
-                const dx=e.changedTouches[0].clientX-swipeStartX.current;
-                swipeStartX.current=null;
-                if(dx<-50)setActivePane(p=>Math.min(p+1,paneCount-1));
-                else if(dx>50)setActivePane(p=>Math.max(p-1,0));
-              }}
-            >
-              <div className="dish-swipe-pane" style={{width:`${paneWidthPct}%`}}>{RecipeView()}</div>
-              {pairedSides.map((p,i)=>(
-                <div key={i} className="dish-swipe-pane" style={{width:`${paneWidthPct}%`}}>{SidePaneView(p,i)}</div>
-              ))}
+
+            <div className="dish-swipe-outer">
+              <div
+                className="dish-swipe-track"
+                style={{width:`${paneCount*100}%`,transform:`translateX(-${activePane*paneWidthPct}%)`}}
+                onTouchStart={(e)=>{swipeStartX.current=e.touches[0].clientX;}}
+                onTouchEnd={(e)=>{
+                  if(swipeStartX.current==null)return;
+                  const dx=e.changedTouches[0].clientX-swipeStartX.current;
+                  swipeStartX.current=null;
+                  if(dx<-60)setActivePane(p=>Math.min(p+1,paneCount-1));
+                  else if(dx>60)setActivePane(p=>Math.max(p-1,0));
+                }}
+              >
+                <div className="dish-swipe-pane" style={{width:`${paneWidthPct}%`}}>{RecipeView()}</div>
+                {pairedSides.map((p,i)=>(
+                  <div key={i} className="dish-swipe-pane" style={{width:`${paneWidthPct}%`}}>{SidePaneView(p,i)}</div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rx-actionbar">
+              <div className="rx-actionbar-inner">
+                <button className={`rx-save${asv?" saved":""}`} disabled={!activeRecipe} onClick={()=>activeRecipe&&toggleSave(activeRecipe)}>
+                  {asv?Ic.heartFill(18):Ic.heart(18)} {asv?"Saved":"Save"}
+                </button>
+                <button className="rx-cook" disabled={!activeRecipe||!(activeRecipe.steps||[]).length} onClick={()=>activeRecipe&&openCookMode(activeRecipe)}>
+                  Start cooking
+                </button>
+              </div>
             </div>
           </div>
           );
-        })():RecipeView())}
+        })()}
       </>
     );
   }
@@ -2235,7 +2680,7 @@ export default function App(){
     const groups=recipe.ingredient_groups||(recipe.ingredients?[{label:"",items:recipe.ingredients}]:[]);
     const firstItem=(recipe.grocery_items||[])[0]||"";
     const photo=recipe?.id?recipePhotos[recipe.id]:null;
-    const ingFontSize=ingTextSize==="xl"?17:ingTextSize==="large"?15.5:14;
+    const ingFontSize=ingTextSize==="xl"?21:ingTextSize==="large"?19:17;
 
     const handlePhotoUpload=(e:React.ChangeEvent<HTMLInputElement>)=>{
       const file=e.target.files?.[0];
@@ -2255,117 +2700,44 @@ export default function App(){
     };
 
     return(
-      <div className="recipe-page">
-        <button className="recipe-top-back" onClick={()=>{
-          const dest=returnTab;
-          if(returnDayKey)setPlanSides(p=>({...p,[returnDayKey]:pairedSides}));
-          setReturnTab(null);setReturnDayKey(null);setStatus("idle");setRecipe(null);setQuery("");closePairedSide();
-          if(dest)setTab(dest);
-        }}>
-          {Ic.arrowLeft(14)} {returnTab==="saved"?"Back to Saved":returnTab==="community"?"Back to Community":returnTab==="week"?"Back to This Week":returnTab==="family"?"Back to Family":"Back to search"}
-        </button>
-        {/* Banner */}
-        <div className="recipe-banner" style={{position:"relative",overflow:"hidden"}}>
-          {photo&&<img src={photo} className="recipe-banner-photo" alt="dish"/>}
-          <div className="recipe-banner-actions">
-            <button className="print-btn" onClick={()=>window.print()} style={{display:"flex",alignItems:"center",gap:6}}>{Ic.printer(14)} Print</button>
-            <button className={`save-btn${sv?" saved":""}`} onClick={()=>toggleSave(recipe)} style={{display:"flex",alignItems:"center",gap:5}}>{sv?Ic.heartFill(14):Ic.heart(14)} {sv?"Saved":"Save"}</button>
-            <button className="icon-btn" title="Share recipe" onClick={async()=>{
-              setShowShare(true);setShareUrl(null);setShareLoading(true);
-              try{
-                // Strip internal flags and any large photo data before sending
-                const {_scanned,_imported,_fromCache,_ts,id,_sourceUrl,...shareableRecipe}=recipe as any;
-                const res=await fetch("/api/share",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({recipe:shareableRecipe})});
-                const data=await res.json();
-                setShareUrl(data.url||null);
-              }catch{
-                const slug=recipe.title.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
-                setShareUrl(`https://everychef.app/r/${slug}`);
-              }finally{setShareLoading(false);}
-            }}>{Ic.share(15)}</button>
-            <button className="icon-btn" title="Add photo" onClick={()=>photoInputRef.current?.click()}>{Ic.camera(15)}</button>
-            <button className="icon-btn" title="Edit recipe" onClick={openEdit}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            </button>
-            <input ref={photoInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handlePhotoUpload}/>
-          </div>
-          <div className="recipe-banner-eyebrow">{recipe._scanned?"Scanned Card":recipe._fromCache?"· Community Recipe ·":"· Every Chef ·"}</div>
-          <h2 className="recipe-banner-title">{recipe.title}</h2>
-          <p className="recipe-banner-desc">{recipe.tagline}</p>
-          {recipe.seasonal_note&&<div className="seasonal-note"><span style={{display:"flex",alignItems:"center"}}>{Ic.leaf(12)}</span> {recipe.seasonal_note}</div>}
-          <div className="recipe-banner-meta">
-            <div className="recipe-banner-meta-item">
-              <div className="recipe-banner-meta-label">Prep</div>
-              <div className="recipe-banner-meta-value">{recipe.prep_time}</div>
-            </div>
-            <div className="recipe-banner-meta-item">
-              <div className="recipe-banner-meta-label">Cook</div>
-              <div className="recipe-banner-meta-value">{recipe.cook_time}</div>
-            </div>
-            <div className="recipe-banner-meta-item">
-              <div className="scaler-label">Servings</div>
-              <div className="scaler">
-                <button className="scaler-btn" onClick={()=>setServings(Math.max(1,curS-1))}>−</button>
-                <span className="scaler-val">{curS}</span>
-                <button className="scaler-btn" onClick={()=>setServings(curS+1)}>+</button>
+      <div className="recipe-page rx-page">
+        <input ref={photoInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handlePhotoUpload}/>
+        {photo&&<img src={photo} className="rx-photo" alt={recipe.title}/>}
+        <header className="rx-head">
+          <div className="rx-eyebrow">{recipe._scanned?"Scanned recipe":recipe._imported?"Imported recipe":recipe._fromCache?"Community recipe":"Every Chef original"}</div>
+          <h1 className="rx-title">{recipe.title}</h1>
+          {recipe.tagline&&<p className="rx-tagline">{recipe.tagline}</p>}
+          {recipe.seasonal_note&&<div className="rx-seasonal"><span style={{display:"flex"}}>{Ic.leaf(13)}</span> {recipe.seasonal_note}</div>}
+          <div className="rx-meta">
+            <div className="rx-meta-item"><span className="rx-meta-label">Prep</span><span className="rx-meta-value">{recipe.prep_time}</span></div>
+            <div className="rx-meta-div"/>
+            <div className="rx-meta-item"><span className="rx-meta-label">Cook</span><span className="rx-meta-value">{recipe.cook_time}</span></div>
+            <div className="rx-meta-div"/>
+            <div className="rx-meta-item rx-meta-serves">
+              <div style={{display:"flex",flexDirection:"column",gap:2}}>
+                <span className="rx-meta-label">Serves</span>
+                <span className="rx-meta-value">{curS}</span>
+              </div>
+              <div className="rx-stepper">
+                <button aria-label="Fewer servings" onClick={()=>setServings(Math.max(1,curS-1))}>−</button>
+                <button aria-label="More servings" onClick={()=>setServings(curS+1)}>+</button>
               </div>
             </div>
           </div>
-        </div>
-
-        <div className="side-toggle-wrap">
-          <button className="side-toggle" onClick={()=>setShowSidePanel(v=>{if(!v)setSidePage(0);return !v;})}>
-            <span style={{display:"flex",alignItems:"center",gap:8}}>
-              <span style={{display:"flex"}}>{Ic.leaf(15)}</span>
-              Pair it with a side
-            </span>
-            <span className={`side-toggle-chevron${showSidePanel?" open":""}`}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-            </span>
-          </button>
-          {showSidePanel&&(()=>{
-            const ranked=rankSides(recipe);
-            const perPage=3;
-            const sides=ranked.slice(sidePage*perPage,sidePage*perPage+perPage);
-            const hasMore=(sidePage+1)*perPage<ranked.length;
-            return(
-              <div className="side-panel">
-                <div className="side-panel-row">
-                  {sides.map((s:SideDish,i:number)=>(
-                    <div key={i} className="side-card" onClick={()=>{setShowSidePanel(false);openPairedSide(s.title);}}>
-                      <div className="side-card-title">{s.title}</div>
-                      <div className="side-card-tagline">{s.tagline}</div>
-                    </div>
-                  ))}
-                </div>
-                {hasMore&&(
-                  <button className="side-panel-more" onClick={()=>setSidePage(p=>p+1)}>Show more sides</button>
-                )}
-              </div>
-            );
-          })()}
-        </div>
+        </header>
 
         <div className="recipe-body">
         <div className="two-col">
           <div>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-              <div className="section-label" style={{marginBottom:0}}>Ingredients</div>
-              <button className="text-size-btn" onClick={()=>setIngTextSize(s=>s==="normal"?"large":s==="large"?"xl":"normal")}>
-                Aa {ingTextSize==="normal"?"·":ingTextSize==="large"?"··":"···"}
-              </button>
-            </div>
+            <h2 className="section-label">Ingredients</h2>
             {groups.map((g:any,gi:number)=>(
               <div key={gi} className="ing-group">
                 {g.label&&<div className="ing-group-label">{g.label}</div>}
                 <ul className="ing-list">
                   {(g.items||[]).map((ing:any,ii:number)=>(
-                    <li key={ii} className="ing-item" style={{fontSize:ingFontSize}}>
-                      <span className="ing-dot"/>
-                      <span className="ing-text">
-                        <span className="ing-amount">{renderAmount(normalizeAmount(scaleAmt(ing.amount,ratio)))}</span>{" "}
-                        <span className="ing-name">{ing.name}</span>
-                      </span>
+                    <li key={ii} className="rx-ing" style={{fontSize:ingFontSize}}>
+                      <span className="rx-ing-amt">{renderAmount(normalizeAmount(scaleAmt(ing.amount,ratio)))}</span>
+                      <span className="rx-ing-name">{ing.name}
                       {retailer&&(
                         <span className="ing-shop-links">
                           <a href={RETAILERS.find(r=>r.id===retailer)?.url(ing.name)||"#"}
@@ -2375,6 +2747,7 @@ export default function App(){
                           </a>
                         </span>
                       )}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -2382,11 +2755,11 @@ export default function App(){
             ))}
           </div>
           <div>
-            <div className="section-label">Method</div>
+            <h2 className="section-label">Method</h2>
             <ol className="steps-list">
               {(recipe.steps||[]).map((step:string,i:number)=>(
                 <li key={i} className="step-item">
-                  <span className="step-num">{String(i+1).padStart(2,"0")}</span>
+                  <span className="step-num">{i+1}</span>
                   <span className="step-text">{step}</span>
                 </li>
               ))}
@@ -2424,7 +2797,7 @@ export default function App(){
 
         {/* Remix section — after method, before grocery */}
         {!recipe._scanned&&!recipe._imported&&(
-          <div className="remix-section" style={{margin:"28px 0 0",maxWidth:"100%"}}>
+          <div id="rx-remix" className="remix-section" style={{margin:"28px 0 0",maxWidth:"100%",scrollMarginTop:16}}>
             <div className="remix-label">Not quite right? Remix it</div>
             <div className="remix-chips">
               {REMIX_OPTIONS.map(chip=>(
@@ -2520,47 +2893,34 @@ export default function App(){
       );
     }
     const r=pane.recipe;
-    const sv=isSaved(r);
     const groups=r.ingredient_groups||(r.ingredients?[{label:"",items:r.ingredients}]:[]);
+    const ingFontSize=ingTextSize==="xl"?21:ingTextSize==="large"?19:17;
     return(
-      <div className="recipe-page side-pane-page">
-        <div className="recipe-banner" style={{position:"relative",overflow:"hidden"}}>
-          <div className="recipe-banner-actions">
-            <button className={`save-btn${sv?" saved":""}`} onClick={()=>toggleSave(r)} style={{display:"flex",alignItems:"center",gap:5}}>{sv?Ic.heartFill(14):Ic.heart(14)} {sv?"Saved":"Save"}</button>
-            <button className="save-btn" onClick={()=>removePairedSide(idx)} style={{display:"flex",alignItems:"center",gap:5}}>Remove</button>
+      <div className="recipe-page rx-page side-pane-page">
+        <header className="rx-head">
+          <div className="rx-eyebrow" style={{color:"#1E3A2F",display:"flex",alignItems:"center",gap:6}}>{Ic.leaf(13)} Side for {recipe.title}</div>
+          <h1 className="rx-title">{r.title}</h1>
+          {r.tagline&&<p className="rx-tagline">{r.tagline}</p>}
+          <div className="rx-meta">
+            <div className="rx-meta-item"><span className="rx-meta-label">Prep</span><span className="rx-meta-value">{r.prep_time}</span></div>
+            <div className="rx-meta-div"/>
+            <div className="rx-meta-item"><span className="rx-meta-label">Cook</span><span className="rx-meta-value">{r.cook_time}</span></div>
+            <div className="rx-meta-div"/>
+            <div className="rx-meta-item"><span className="rx-meta-label">Serves</span><span className="rx-meta-value">{r.servings}</span></div>
           </div>
-          <div className="recipe-banner-eyebrow">· Paired Side ·</div>
-          <h2 className="recipe-banner-title">{r.title}</h2>
-          <p className="recipe-banner-desc">{r.tagline}</p>
-          <div className="recipe-banner-meta">
-            <div className="recipe-banner-meta-item">
-              <div className="recipe-banner-meta-label">Prep</div>
-              <div className="recipe-banner-meta-value">{r.prep_time}</div>
-            </div>
-            <div className="recipe-banner-meta-item">
-              <div className="recipe-banner-meta-label">Cook</div>
-              <div className="recipe-banner-meta-value">{r.cook_time}</div>
-            </div>
-            <div className="recipe-banner-meta-item">
-              <div className="recipe-banner-meta-label">Serves</div>
-              <div className="recipe-banner-meta-value">{r.servings}</div>
-            </div>
-          </div>
-        </div>
+        </header>
         <div className="recipe-body">
           <div className="two-col">
             <div>
-              <div className="section-label">Ingredients</div>
+              <h2 className="section-label">Ingredients</h2>
               {groups.map((g:any,gi:number)=>(
                 <div key={gi} className="ing-group">
                   {g.label&&<div className="ing-group-label">{g.label}</div>}
                   <ul className="ing-list">
                     {(g.items||[]).map((ing:any,ii:number)=>(
-                      <li key={ii} className="ing-item">
-                        <span className="ing-main">
-                          <span className="ing-amount">{renderAmount(normalizeAmount(ing.amount||""))}</span>{" "}
-                          <span className="ing-name">{ing.name}</span>
-                        </span>
+                      <li key={ii} className="rx-ing" style={{fontSize:ingFontSize}}>
+                        <span className="rx-ing-amt">{renderAmount(normalizeAmount(ing.amount||""))}</span>
+                        <span className="rx-ing-name">{ing.name}</span>
                       </li>
                     ))}
                   </ul>
@@ -2568,19 +2928,17 @@ export default function App(){
               ))}
             </div>
             <div>
-              <div className="section-label">Method</div>
+              <h2 className="section-label">Method</h2>
               <ol className="steps-list">
                 {(r.steps||[]).map((step:string,i:number)=>(
                   <li key={i} className="step-item">
-                    <span className="step-num">{String(i+1).padStart(2,"0")}</span>
+                    <span className="step-num">{i+1}</span>
                     <span className="step-text">{step}</span>
                   </li>
                 ))}
               </ol>
             </div>
           </div>
-          <button className="back-btn" style={{display:"flex",alignItems:"center",gap:6}} onClick={()=>setActivePane(0)}>{Ic.arrowLeft(14)} Back to main dish</button>
-          <button className="side-pane-fullpage" onClick={()=>{setReturnTab(null);setReturnDayKey(null);setRecipe(r);setServings(null);setStatus("done");closePairedSide();}}>Open as its own recipe (edit, share, print) →</button>
         </div>
       </div>
     );
@@ -2607,6 +2965,10 @@ export default function App(){
 
     return(
       <div className="community-wrap">
+        <button className="rx-back" style={{marginLeft:-12}} onClick={()=>{setTab("search");setHomeMode("search");window.scrollTo({top:0});}}>
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+          Cook
+        </button>
         <div className="community-header">
           <h2 className="community-title"><em>Community</em> recipes</h2>
           <p className="community-sub">Real dishes, generated by everyone using Every Chef.</p>
@@ -2705,44 +3067,105 @@ export default function App(){
     return`${days}d ago`;
   }
 
-  function SavedView(){
-    const allRecipes=[...saved,...sharedRecipes.filter(r=>!saved.some(s=>s.id===r.id))];
-
-    // Filter by search
-    const filtered=savedSearch.trim()===""?allRecipes:allRecipes.filter((r:any)=>
-      (r.title||"").toLowerCase().includes(savedSearch.toLowerCase())||
-      (r.tagline||"").toLowerCase().includes(savedSearch.toLowerCase())
+  /* ── GENERATING (loading a new recipe) ── */
+  function GeneratingView(){
+    const elapsed=Math.max(0,(Date.now()-genStart)/1000);
+    const pct=Math.round(95*(1-Math.exp(-elapsed/14)));
+    const STEPS=["Comparing trusted recipes","Balancing the flavors","Writing the method","Building the grocery list"];
+    const at=elapsed<5?0:elapsed<12?1:elapsed<20?2:3;
+    return(
+      <div className="gen-page">
+        <div className="rx-topbar">
+          <button className="rx-back" onClick={cancelSearch}>
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+            Cancel
+          </button>
+        </div>
+        <div className="gen-body">
+          <h1 className="rx-title">{loadingDish||"Your recipe"}</h1>
+          <div className="gen-skel" style={{width:"86%"}}/>
+          <div className="gen-skel" style={{width:"58%"}}/>
+          <div className="gen-card" aria-live="polite">
+            <div className="gen-card-head">
+              <span className="gen-card-title">Writing your recipe</span>
+              <span className="gen-card-time">usually 15–40 sec</span>
+            </div>
+            <div className="gen-bar" role="progressbar" aria-label="Recipe progress" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}><div style={{width:`${pct}%`}}/></div>
+            <ul className="gen-steps">
+              {STEPS.map((s,i)=>(
+                <li key={i} className={i<at?"done":i===at?"now":""}>
+                  <span className="gen-step-mark" aria-hidden="true">
+                    {i<at?<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F4A021" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 5 5L20 7"/></svg>:i===at?<span className="gen-dot"/>:null}
+                  </span>
+                  {s}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <h2 className="section-label gen-label">Ingredients</h2>
+          {[70,54,78,46,62].map((w,i)=>(
+            <div key={i} className="gen-row" style={{opacity:1-i*0.15}}>
+              <div className="gen-skel" style={{width:48,margin:0}}/>
+              <div className="gen-skel" style={{width:`${w}%`,margin:0}}/>
+            </div>
+          ))}
+          <p className="gen-note">Brand-new recipes take a moment to write. Recipes someone has already made open instantly.</p>
+        </div>
+      </div>
     );
+  }
 
-    // Group by category (respect overrides)
+  /* ── LIBRARY (saved + family + recent) ── */
+  function LibraryView(){
+    const shared=sharedRecipes.filter(r=>!saved.some(s=>s.id===r.id));
+    const allRecipes=[...saved,...shared];
+    const sq=savedSearch.trim().toLowerCase();
+    const matches=(r:any)=>!sq||(r.title||"").toLowerCase().includes(sq)||(r.tagline||"").toLowerCase().includes(sq);
+    const catOf=(r:any)=>categoryOverrides[r.id]||guessCategory(r);
+    const base=libFilter==="mine"?saved:libFilter==="sides"?allRecipes.filter((r:any)=>catOf(r)==="Sides"):allRecipes;
+    const filtered=base.filter(matches);
     const grouped: Record<string,any[]>={};
     filtered.forEach((r:any)=>{
-      const cat=categoryOverrides[r.id]||guessCategory(r);
+      const cat=catOf(r);
       if(!grouped[cat])grouped[cat]=[];
       grouped[cat].push(r);
     });
     const sortedCats=RECIPE_CATEGORIES.filter(c=>grouped[c]&&grouped[c].length>0);
-
+    const historyFiltered=history.filter(matches);
+    const FILTERS:[string,string][]=[["all","All"],["mine","Mine"],["family","Family"],["sides","Sides"],["recent","Recent"]];
     return(
-      <div className="page">
-        <div className="page-title">{savedTab==="saved"?"Saved Recipes":"Recipe History"}</div>
-        <div className="page-sub">{savedTab==="saved"?`Your collection${familyCode?` + shared with code ${familyCode}`:""}.`:"Every recipe you've generated — tap to view, save to keep."}</div>
-        <div className="history-tabs">
-          <button className={`history-tab${savedTab==="saved"?" active":""}`} onClick={()=>setSavedTab("saved")}>Saved {saved.length>0?`(${saved.length})`:""}</button>
-          <button className={`history-tab${savedTab==="history"?" active":""}`} onClick={()=>setSavedTab("history")}>History {history.length>0?`(${history.length})`:""}</button>
+      <div className="lib-page">
+        <div className="pl-head">
+          <h1 className="ck-title" style={{margin:0}}>Library</h1>
+          <span className="pl-range">{allRecipes.length} recipe{allRecipes.length===1?"":"s"}</span>
+        </div>
+        {libFilter!=="family"&&(
+          <label className="lib-search">
+            <span aria-hidden="true" style={{display:"flex",color:"#6E635F"}}>{Ic.search(18)}</span>
+            <input placeholder={libFilter==="recent"?"Search recent recipes":"Search your recipes"} aria-label="Search your recipes"
+              value={savedSearch} onChange={e=>setSavedSearch(e.target.value)}/>
+          </label>
+        )}
+        <div className="lib-filters" role="tablist" aria-label="Filter recipes">
+          {FILTERS.map(([k,l])=>(
+            <button key={k} role="tab" aria-selected={libFilter===k} className={`ck-chip${libFilter===k?" on-dark":""}`} onClick={()=>setLibFilter(k as any)}>
+              {l}{k==="mine"&&saved.length?` · ${saved.length}`:""}
+            </button>
+          ))}
         </div>
 
-        {savedTab==="history"?(
+        {libFilter==="family"?FamilyView():libFilter==="recent"?(
+
           history.length===0?(
             <div className="history-empty"><h3>No history yet</h3><p>Every recipe you generate appears here automatically.</p></div>
           ):(
             <>
               <div className="history-list">
-                {history.map((r:any)=>{
+                {historyFiltered.map((r:any)=>{
                   const sv=isSaved(r);
                   return(
                     <div key={r.id} className="history-item">
-                      <div className="history-item-main" onClick={()=>{setReturnTab("saved");setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
+                      <div className="history-item-main" onClick={()=>{setReturnTab("library");setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
                         <div className="history-item-title">{r.title}</div>
                         <div className="history-item-meta">
                           <span>{r.prep_time} prep</span>
@@ -2761,31 +3184,24 @@ export default function App(){
               <button className="history-clear" onClick={()=>{if(window.confirm("Clear all history?"))setHistory([]);}}>Clear history</button>
             </>
           )
-        ):(
-        allRecipes.length===0?(
-          <div className="empty-state"><h3>Nothing saved yet</h3><p>Search for a recipe and tap Save, or scan a recipe card.</p></div>
-        ):(
-          <>
-            {/* Search bar */}
-            <div className="saved-search-wrap">
-              <span className="saved-search-icon">{Ic.search(16)}</span>
-              <input className="saved-search-input" placeholder="Search saved recipes…"
-                value={savedSearch} onChange={e=>setSavedSearch(e.target.value)}/>
-            </div>
 
-            {filtered.length===0?(
-              <div className="empty-state"><h3>No matches</h3><p>Try a different search term.</p></div>
-            ):(
-              sortedCats.map(cat=>(
-                <div key={cat} className="saved-category-section">
-                  <div className="saved-category-label">{cat}</div>
-                  <div className="cards-grid">
-                    {grouped[cat].map((r:any)=>{
+        ):(
+          allRecipes.length===0?(
+            <div className="empty-state"><h3>Nothing saved yet</h3><p>Open any recipe and tap Save, or bring one in from the Cook tab.</p></div>
+          ):filtered.length===0?(
+            <div className="empty-state">
+              {libFilter==="sides"&&!sq
+                ?<><h3>No sides yet</h3><p>Recipes tagged as sides show up here. Tap a recipe's category badge to tag it.</p></>
+                :<><h3>No matches</h3><p>Try a different search.</p></>}
+            </div>
+          ):(
+            <div className="cards-grid lib-grid">
+              {sortedCats.map(cat=>grouped[cat].map((r:any)=>{
                       const isSharedOnly=!saved.some(s=>s.id===r.id);
                       const rating=ratings[r.id]||0;
                       const isConfirming=confirmRemove===r.id;
                       return(
-                        <div key={r.id} className="recipe-card" onClick={()=>{setReturnTab("saved");setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
+                        <div key={r.id} className="recipe-card" onClick={()=>{setReturnTab("library");setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
                           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                             <div className="card-tag">{r._scanned?"Scanned":r._imported?"Imported":isSharedOnly?"Shared":r.seasonal_note?"Seasonal":"Saved"}</div>
                             {!isSharedOnly&&(
@@ -2837,64 +3253,75 @@ export default function App(){
                           </div>
                         </div>
                       );
-                    })}
-                  </div>
-                </div>
-              ))
-            )}
-          </>
-        ))}
+                    }))}
+            </div>
+          )
+        )}
       </div>
     );
   }
 
-  /* ── WEEK VIEW ── */
+  /* ── PLAN (this week) ── */
   function WeekView(){
+    const monday=(()=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d;})();
+    const dates=DAY_KEYS.map((_,i)=>{const d=new Date(monday);d.setDate(monday.getDate()+i);return d;});
+    const fmt=(d:Date)=>d.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+    const todayIdx=(new Date().getDay()+6)%7;
     return(
-      <div className="page">
-        <div className="page-title">My Week</div>
-        <div className="page-sub">Assign saved recipes to days. A combined grocery list appears below.</div>
-        <div className="week-grid">
+      <div className="pl-page">
+        <div className="pl-head">
+          <div>
+            <div className="pl-range">{fmt(dates[0])} – {fmt(dates[6])}</div>
+            <h1 className="ck-title" style={{margin:0}}>This week</h1>
+          </div>
+          {mealsPlanned>0&&(
+            <button className="pl-groceries" onClick={()=>document.getElementById("plan-groceries")?.scrollIntoView({behavior:"smooth",block:"start"})}>
+              {Ic.cart(17)} Groceries · {consolidated.length}
+            </button>
+          )}
+        </div>
+        {mealsPlanned===0&&<p className="pl-hint">Tap <strong>+ Add a meal</strong> on any day to pick from your saved recipes.</p>}
+        <ol className="pl-days">
           {DAY_KEYS.map((key,i)=>{
             const r=plan[key];
+            const sides=planSides[key]||[];
             return(
-              <div key={key} className="day-card">
-                <div className="day-head"><div className="day-name">{DAYS[i].slice(0,3)}</div></div>
-                <div className="day-body">
-                  {r?(
-                    <>
-                      <div className="day-recipe-title">{r.title}</div>
-                      <div className="day-recipe-meta">{r.cook_time}</div>
-                      {(planSides[key]||[]).length>0&&(
-                        <div className="day-sides">
-                          {(planSides[key]||[]).map((s,si)=>(
-                            <div key={si} className={`day-side-chip${s.status==="loading"?" loading":s.status==="error"?" error":""}`}>
-                              <span style={{display:"flex",flexShrink:0}}>{Ic.leaf(9)}</span>
-                              <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.title}</span>
-                              {s.status==="loading"?"…":s.status==="error"?(
-                                <span onClick={()=>retryPlanSide(key,s.title)} title="Retry">↻</span>
-                              ):null}
-                              <span className="day-side-chip-remove" onClick={()=>removePlanSide(key,s.title)}>×</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <button className="day-add-side" onClick={()=>{setAssignDay(`side_${key}`);if(communityStatus==="idle")loadCommunity();}}>+ Side</button>
-                      <div className="day-actions">
-                        <button className="day-btn" onClick={()=>{setReturnTab("week");setReturnDayKey(key);setPairedSides(planSides[key]||[]);setActivePane(0);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>View</button>
-                        <button className="day-btn" onClick={()=>{setPlan(p=>{const n={...p};delete n[key];return n;});setPlanSides(p=>{const n={...p};delete n[key];return n;});}}>✕</button>
-                      </div>
-                    </>
-                  ):(
-                    <button className="day-btn add" onClick={()=>setAssignDay(key)}>+ Add</button>
-                  )}
+              <li key={key} className={`pl-day${i===todayIdx?" today":""}`}>
+                <div className="pl-date" aria-label={`${DAYS[i]} ${fmt(dates[i])}`}>
+                  <span className="pl-dow">{DAYS[i].slice(0,3)}</span>
+                  <span className="pl-dnum">{dates[i].getDate()}</span>
                 </div>
-              </div>
+                {r?(
+                  <div className="pl-meal">
+                    <div className="pl-meal-top">
+                      <button className="pl-meal-title" onClick={()=>{setReturnTab("week");setReturnDayKey(key);setPairedSides(planSides[key]||[]);setActivePane(0);setRecipe(r);setServings(null);setStatus("done");setTab("search");window.scrollTo({top:0});}}>{r.title}</button>
+                      <button className="pl-remove" aria-label={`Remove ${r.title} from ${DAYS[i]}`} onClick={()=>{setPlan(p=>{const n={...p};delete n[key];return n;});setPlanSides(p=>{const n={...p};delete n[key];return n;});}}>
+                        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+                      </button>
+                    </div>
+                    {r.cook_time&&<div className="pl-meal-meta">{r.cook_time}</div>}
+                    <div className="pl-sides">
+                      {sides.map((s,si)=>(
+                        <span key={si} className={`pl-side${s.status==="loading"?" loading":s.status==="error"?" error":""}`}>
+                          <span style={{display:"flex",flexShrink:0}}>{Ic.leaf(12)}</span>
+                          <span className="pl-side-name">{s.title}</span>
+                          {s.status==="loading"&&<span aria-label="loading">…</span>}
+                          {s.status==="error"&&<button className="pl-side-x" aria-label={`Retry ${s.title}`} onClick={()=>retryPlanSide(key,s.title)}>↻</button>}
+                          <button className="pl-side-x" aria-label={`Remove ${s.title}`} onClick={()=>removePlanSide(key,s.title)}>×</button>
+                        </span>
+                      ))}
+                      <button className="pl-add-side" onClick={()=>{setAssignDay(`side_${key}`);if(communityStatus==="idle")loadCommunity();}}>+ Side</button>
+                    </div>
+                  </div>
+                ):(
+                  <button className="pl-add-meal" onClick={()=>setAssignDay(key)}>+ Add a meal</button>
+                )}
+              </li>
             );
           })}
-        </div>
+        </ol>
         {mealsPlanned>0&&(
-          <div className="consol-section">
+          <div className="consol-section" id="plan-groceries">
             <div className="consol-hdr">
               <div>
                 <div className="consol-title">Combined Grocery List</div>
@@ -2941,12 +3368,6 @@ export default function App(){
                 </div>
               ))}
             </div>
-          </div>
-        )}
-        {mealsPlanned===0&&(
-          <div className="empty-state" style={{marginTop:36}}>
-            <h3>Your week is open</h3>
-            <p>Save some recipes, then click <strong>+ Add</strong> on any day.</p>
           </div>
         )}
       </div>
@@ -3155,6 +3576,19 @@ export default function App(){
     );
   }
 
+  const NAV_ITEMS:{key:string;match:string[];label:string;icon:(n:number)=>any;badge:number|null}[]=[
+    {key:"search",match:["search","community"],label:"Cook",icon:(n)=>Ic.cook(n),badge:null},
+    {key:"week",match:["week"],label:"Plan",icon:(n)=>Ic.calendar(n),badge:mealsPlanned||null},
+    {key:"library",match:["library","saved","family"],label:"Library",icon:(n)=>Ic.library(n),badge:null},
+  ];
+  const goNav=(key:string)=>{
+    if(key==="search"){
+      if(tab==="search"&&status==="done")leaveRecipe();
+      setHomeMode("search");
+    }
+    setTab(key);window.scrollTo({top:0});
+  };
+
   return(
     <>
       <style>{CSS}</style>
@@ -3185,15 +3619,9 @@ export default function App(){
           <span className="nav-brand-italic">chef</span>
         </button>
         <div className="nav-tabs">
-          {([
-            {key:"search",icon:Ic.search(14),label:"Search"},
-            {key:"community",icon:Ic.grid(14),label:"Community"},
-            {key:"saved",icon:tab==="saved"?Ic.heartFill(14):Ic.heart(14),label:"Saved",badge:saved.length||null},
-            {key:"week",icon:Ic.calendar(14),label:"Week",badge:mealsPlanned||null},
-            {key:"family",icon:Ic.family(14),label:"Family",badge:familyCode?1:null},
-          ] as any[]).map(({key,icon,label,badge}:any)=>(
-            <button key={key} className={`nav-tab${tab===key?" active":""}`} onClick={()=>setTab(key)} style={{display:"flex",alignItems:"center",gap:5}}>
-              {icon}{label}{badge?<span className="nav-badge">{badge}</span>:null}
+          {NAV_ITEMS.map(n=>(
+            <button key={n.key} className={`nav-tab${n.match.includes(tab)?" active":""}`} aria-current={n.match.includes(tab)?"page":undefined} onClick={()=>goNav(n.key)} style={{display:"flex",alignItems:"center",gap:6}}>
+              {n.icon(15)}{n.label}{n.badge?<span className="nav-badge">{n.badge}</span>:null}
             </button>
           ))}
         </div>
@@ -3215,29 +3643,19 @@ export default function App(){
           ))}
         </div>
       </div>
-      <div className={`bottom-nav${navHidden?" hidden":""}`}>
-        <button className="bottom-nav-brand" onClick={()=>{setTab("search");setStatus("idle");setRecipe(null);setQuery("");}}>
-          <span className="bnb-app-icon">e</span>
-          <span className="bnb-label">Home</span>
-        </button>
-        {([
-          {key:"community",icon:Ic.grid(20),label:"Community"},
-          {key:"saved",icon:tab==="saved"?Ic.heartFill(20):Ic.heart(20),label:"Saved",badge:saved.length||null},
-          {key:"week",icon:Ic.calendar(20),label:"Week",badge:mealsPlanned||null},
-          {key:"family",icon:Ic.family(20),label:"Family",badge:familyCode?1:null},
-        ] as any[]).map(({key,icon,label,badge}:any)=>(
-          <button key={key} className={`bottom-tab${tab===key?" active":""}`} onClick={()=>setTab(key)}>
-            <span className="bt-icon">{icon}</span>
-            <span className="bt-label">{label}</span>
-            {badge?<span className="nav-badge">{badge}</span>:null}
+      <div className={`bottom-nav${navHidden||(tab==="search"&&status==="done"&&recipe)?" hidden":""}`}>
+        {NAV_ITEMS.map(n=>(
+          <button key={n.key} className={`bottom-tab${n.match.includes(tab)?" active":""}`} aria-current={n.match.includes(tab)?"page":undefined} onClick={()=>goNav(n.key)}>
+            <span className="bt-icon">{n.icon(22)}</span>
+            <span className="bt-label">{n.label}</span>
+            {n.badge?<span className="nav-badge">{n.badge}</span>:null}
           </button>
         ))}
       </div>
       {tab==="search"&&SearchView()}
       {tab==="community"&&CommunityView()}
-      {tab==="saved"&&SavedView()}
+      {(tab==="library"||tab==="saved"||tab==="family")&&LibraryView()}
       {tab==="week"&&WeekView()}
-      {tab==="family"&&FamilyView()}
       {Modal()}
       {showAccountSheet&&user&&(
         <div className="account-sheet-overlay" onClick={()=>setShowAccountSheet(false)}>
@@ -3272,8 +3690,117 @@ export default function App(){
       {showAccountDropdown&&(
         <div style={{position:"fixed",inset:0,zIndex:150}} onClick={()=>setShowAccountDropdown(false)}/>
       )}
+      {/* Cooking mode */}
+      {cookRecipe&&(()=>{
+        const r=cookRecipe;
+        const steps:string[]=r.steps||[];
+        const groups=r.ingredient_groups||(r.ingredients?[{label:"",items:r.ingredients}]:[]);
+        const allIngs:any[]=groups.flatMap((g:any)=>g.items||[]);
+        const rr=r===recipe?ratio:1;
+        const amt=(a:string)=>renderAmount(normalizeAmount(rr===1?(a||""):scaleAmt(a||"",rr)));
+        const idx=cookStep;
+        const last=steps.length;
+        const stepText=idx>0?steps[idx-1]:"";
+        const stepIngs=idx>0?ingredientsForStep(stepText,allIngs):[];
+        const secs=idx>0?stepTimerSeconds(stepText):null;
+        const timer=cookTimers[idx];
+        const now=Date.now();
+        const remaining=timer?Math.max(0,Math.ceil((timer.end-now)/1000)):0;
+        const otherTimers=Object.entries(cookTimers).filter(([k])=>Number(k)!==idx).map(([k,t])=>({step:Number(k),t,left:Math.max(0,Math.ceil((t.end-now)/1000))}));
+        const go=(n:number)=>setCookStep(Math.max(0,Math.min(last,n)));
+        return(
+          <div className="cook-overlay" role="dialog" aria-modal="true" aria-label={`Cooking ${r.title}`}
+            onTouchStart={(e)=>{cookSwipeX.current=e.touches[0].clientX;}}
+            onTouchEnd={(e)=>{
+              if(cookSwipeX.current==null)return;
+              const dx=e.changedTouches[0].clientX-cookSwipeX.current;
+              cookSwipeX.current=null;
+              if(dx<-60)go(idx+1);else if(dx>60)go(idx-1);
+            }}>
+            <div className="cook-top">
+              <button className="cook-close" aria-label="Exit cooking mode" onClick={closeCookMode}>
+                <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+              </button>
+              <div className="cook-title">{r.title}</div>
+              <div className="cook-count">{idx===0?"Get ready":`${idx} / ${last}`}</div>
+            </div>
+            <div className="cook-progress" aria-hidden="true"><div style={{width:`${last?(idx/last)*100:0}%`}}/></div>
+
+            {otherTimers.length>0&&(
+              <div className="cook-timer-strip">
+                {otherTimers.map(o=>(
+                  <button key={o.step} className={`cook-timer-pill${o.t.done?" done":""}`} onClick={()=>go(o.step)}>
+                    {o.t.done?`Step ${o.step}: time's up`:`Step ${o.step} · ${fmtClock(o.left)}`}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="cook-body">
+              {idx===0?(
+                <>
+                  <div className="cook-eyebrow">Before you start</div>
+                  <h2 className="cook-step-text">Gather your ingredients</h2>
+                  <ul className="cook-gather">
+                    {allIngs.map((ing:any,i:number)=>(
+                      <li key={i}>
+                        <label>
+                          <input type="checkbox"/>
+                          <span className="cook-ing-amt">{amt(ing.amount)}</span>
+                          <span>{ing.name}</span>
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ):(
+                <>
+                  <div className="cook-eyebrow">Step {idx}</div>
+                  <p className="cook-step-text">{stepText}</p>
+                  {secs!=null&&(
+                    !timer?(
+                      <button className="cook-timer-start" onClick={()=>startCookTimer(idx,secs)}>
+                        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
+                        Start {fmtDuration(secs)} timer
+                      </button>
+                    ):timer.done?(
+                      <div className="cook-timer done" role="status">
+                        <span className="cook-timer-time">Time's up</span>
+                        <button className="cook-timer-btn" onClick={()=>clearCookTimer(idx)}>Dismiss</button>
+                      </div>
+                    ):(
+                      <div className="cook-timer" role="timer" aria-live="off">
+                        <span className="cook-timer-time">{fmtClock(remaining)}</span>
+                        <button className="cook-timer-btn" onClick={()=>clearCookTimer(idx)}>Cancel</button>
+                      </div>
+                    )
+                  )}
+                  {stepIngs.length>0&&(
+                    <div className="cook-ings">
+                      <div className="cook-ings-label">In this step</div>
+                      <ul>
+                        {stepIngs.map((ing:any,i:number)=>(
+                          <li key={i}><span className="cook-ing-amt">{amt(ing.amount)}</span><span>{ing.name}</span></li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div className="cook-nav">
+              <button className="cook-prev" disabled={idx===0} onClick={()=>go(idx-1)}>Back</button>
+              <button className="cook-next" onClick={()=>idx>=last?closeCookMode():go(idx+1)}>
+                {idx===0?"Start cooking":idx>=last?"Done":"Next step"}
+              </button>
+            </div>
+          </div>
+        );
+      })()}
       {/* Share Sheet */}
-      {showShare&&recipe&&(()=>{
+      {showShare&&(shareTarget||recipe)&&(()=>{
+        const sr:any=shareTarget||recipe;
         const displayUrl=shareUrl||"Generating link…";
         const qrSrc=shareUrl?`https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=1A1F2E&bgcolor=FDFAF5&data=${encodeURIComponent(shareUrl)}`:null;
         const doCopy=()=>{
@@ -3285,14 +3812,14 @@ export default function App(){
         };
         const doNativeShare=()=>{
           if(!shareUrl||!navigator.share)return;
-          navigator.share({title:recipe.title,text:`Check out this recipe on Every Chef: ${recipe.title}`,url:shareUrl}).catch(()=>{});
+          navigator.share({title:sr.title,text:`Check out this recipe on Every Chef: ${sr.title}`,url:shareUrl}).catch(()=>{});
         };
         return(
           <div className="share-overlay" onClick={()=>setShowShare(false)}>
             <div className="share-sheet" onClick={e=>e.stopPropagation()}>
               <button className="share-close" onClick={()=>setShowShare(false)}>×</button>
               <div className="share-sheet-title">Share Recipe</div>
-              <div className="share-sheet-dish">{recipe.title}</div>
+              <div className="share-sheet-dish">{sr.title}</div>
               <div className="share-url-row">
                 <div className="share-url-text" style={{color:shareLoading?"#B8B0A8":"#151210"}}>{displayUrl}</div>
                 <button id="share-copy-btn" className="share-copy-btn" onClick={doCopy} disabled={!shareUrl||shareLoading}>
