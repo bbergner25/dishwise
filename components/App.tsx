@@ -1562,10 +1562,33 @@ export default function App(){
     if(qrStreamRef.current){qrStreamRef.current.getTracks().forEach(t=>t.stop());qrStreamRef.current=null;}
     setShowQrScanner(false);setQrStatus("idle");setQrErr("");
   };
-  const handleQrResult=(text: string)=>{
-    stopQrScanner();
+  const handleQrResult=async(text: string)=>{
+    // stop the camera, but keep the sheet open while we resolve the link so
+    // we can load an Every Chef recipe straight into the signed-in app
+    // instead of bouncing out to the public (signed-out-looking) share page
+    if(qrRafRef.current!=null){cancelAnimationFrame(qrRafRef.current);qrRafRef.current=null;}
+    if(qrStreamRef.current){qrStreamRef.current.getTracks().forEach(t=>t.stop());qrStreamRef.current=null;}
+    setQrStatus("loading");setQrErr("");
     try{
       const url=new URL(text, window.location.origin);
+      const isEveryChef=url.origin===window.location.origin||/(^|\.)everychef\.app$/.test(url.hostname);
+      const slugMatch=isEveryChef?url.pathname.match(/^\/r\/([^/]+)\/?$/):null;
+      if(slugMatch){
+        const slug=slugMatch[1];
+        const res=await fetch(`/api/share?slug=${encodeURIComponent(slug)}`);
+        const data=await res.json().catch(()=>({found:false}));
+        if(data&&data.found&&data.recipe){
+          const r={...data.recipe,id:Date.now(),_dish:data.recipe.title||slug,_ts:Date.now(),_fromCache:true};
+          setShowQrScanner(false);setQrStatus("idle");
+          setReturnTab(null);setPairedSides([]);setActivePane(0);
+          setRecipe(r);setServings(null);setStatus("done");setTab("search");
+          window.scrollTo({top:0,behavior:"smooth"});
+          return;
+        }
+        // not found (expired or bad code) — fall back to the public share page
+        window.location.href=url.pathname+url.search;
+        return;
+      }
       if(url.origin===window.location.origin){
         window.location.href=url.pathname+url.search;
       }else{
@@ -3171,6 +3194,11 @@ export default function App(){
                 </div>
               ):qrStatus==="starting"?(
                 <div className="qr-scan-status">Opening camera…</div>
+              ):qrStatus==="loading"?(
+                <div className="qr-scan-status" style={{flexDirection:"column",gap:10}}>
+                  <div className="spinner"/>
+                  Opening recipe…
+                </div>
               ):null}
               <video ref={qrVideoRef} playsInline muted style={{display:qrStatus==="scanning"?"block":"none"}}/>
               <canvas ref={qrCanvasRef} style={{display:"none"}}/>
