@@ -248,6 +248,20 @@ const CSS = `
   .side-card-tagline{font-size:12px;color:#7A6E6A;line-height:1.4;}
   .side-panel-more{display:block;margin:10px auto 0;background:none;border:none;color:#1E3A2F;text-decoration:underline;font-size:12.5px;cursor:pointer;font-family:'Outfit',sans-serif;}
   .side-panel-more:hover{color:#E8431A;}
+
+  /* Swipeable main-dish / paired-side pane */
+  .dish-swipe-outer{overflow:hidden;}
+  .dish-switcher{display:flex;gap:6px;max-width:960px;margin:0 auto;padding:16px 24px 0;}
+  .dish-switch-btn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:6px;font-family:'Outfit',sans-serif;font-size:12.5px;font-weight:600;padding:9px 14px;border-radius:100px;border:1.5px solid #EDE8E0;background:#fff;color:#7A6E6A;cursor:pointer;transition:all .15s;}
+  .dish-switch-btn.active{background:#1A1F2E;border-color:#1A1F2E;color:#FDFAF5;}
+  .dish-swipe-hint{text-align:center;font-size:11px;color:#B8B0A8;padding:8px 24px 0;}
+  @media(min-width:768px){.dish-swipe-hint{display:none;}}
+  .dish-swipe-track{display:flex;width:200%;transition:transform .28s cubic-bezier(.4,0,.2,1);touch-action:pan-y;}
+  .dish-swipe-pane{width:50%;flex-shrink:0;}
+  .side-pane-page{padding-bottom:40px;}
+  .side-pane-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:80px 24px;text-align:center;}
+  .side-pane-fullpage{display:block;margin:16px 0 0;background:none;border:none;color:#7A6E6A;text-decoration:underline;font-size:12.5px;cursor:pointer;font-family:'Outfit',sans-serif;}
+  .side-pane-fullpage:hover{color:#1E3A2F;}
   .trending-card-title{font-family:'Fraunces',serif;font-size:13px;font-weight:700;color:#151210;line-height:1.2;text-wrap:balance;overflow-wrap:break-word;}
   .trending-card-badge{font-size:9px;color:#E8431A;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:3px;}
   .search-wrap{max-width:560px;margin:0 auto;}
@@ -1090,6 +1104,12 @@ export default function App(){
   const [cloudSynced,setCloudSynced] = useState(false); // true only after the cloud copy has been read
   const [justAdded,setJustAdded]     = useState<any>(null); // most recent scanned/imported recipe, so "View" can open it directly
   const [showSidePanel,setShowSidePanel] = useState(false); // "Pair it with a side" panel on the recipe page
+  const [returnTab,setReturnTab]     = useState<string|null>(null); // tab to return to when leaving a recipe opened from Saved/Community/Week/Family
+  const [pairedSide,setPairedSide]         = useState<any>(null);        // the side recipe loaded alongside the main dish
+  const [pairedSideStatus,setPairedSideStatus] = useState("idle");       // idle|loading|error
+  const [pairedSideName,setPairedSideName]     = useState("");           // side title, known before the full recipe loads
+  const [showingSide,setShowingSide]       = useState(false);            // which pane is in view: main (false) or side (true)
+  const swipeStartX = useRef<number|null>(null);
   const [sidePage,setSidePage]       = useState(0); // which batch of 3 sides "Show more" has paged to
   const [urlInput,setUrlInput]   = useState("");
   const [urlStatus,setUrlStatus] = useState("idle"); // idle|loading|done|error
@@ -1307,6 +1327,7 @@ export default function App(){
   const doSearch=async(dish?: string)=>{
     const q=(dish||query).trim();if(!q)return;
     setStatus("loading");setRecipe(null);setServings(null);setErrorMsg("");
+    setReturnTab(null);setPairedSide(null);setPairedSideStatus("idle");setPairedSideName("");setShowingSide(false);
     try{
       const canCache=diets.length===0&&!seasonal;
       let parsed:any=null;
@@ -1332,6 +1353,23 @@ export default function App(){
     }catch(e:any){setErrorMsg(e.message||String(e));setStatus("error");window.scrollTo({top:0,behavior:"smooth"});}
   };
 
+  const openPairedSide=async(sideTitle: string)=>{
+    setPairedSideName(sideTitle);setPairedSide(null);setPairedSideStatus("loading");setShowingSide(true);
+    try{
+      const cacheData=await fetch(`/api/cache?q=${encodeURIComponent(sideTitle)}`).then(r=>r.json()).catch(()=>({found:false}));
+      let parsed:any; let fromCache=false;
+      if(cacheData.found&&cacheData.recipe){
+        parsed=cacheData.recipe; fromCache=true;
+      }else{
+        parsed=await callAPI([{role:"user",content:buildPrompt(sideTitle,[],false,"")}]);
+        fetch("/api/cache",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({dish:sideTitle,recipe:parsed})}).catch(()=>{});
+      }
+      const r={...parsed,id:Date.now(),_dish:sideTitle,_ts:Date.now(),_fromCache:fromCache};
+      setPairedSide(r);setPairedSideStatus("done");
+    }catch(e:any){setPairedSideStatus("error");}
+  };
+  const closePairedSide=()=>{setPairedSide(null);setPairedSideStatus("idle");setPairedSideName("");setShowingSide(false);};
+
   /* inspire */
   const doInspire=async()=>{
     if(!inspireTime||!inspireVibe||!inspireServes)return;
@@ -1355,7 +1393,7 @@ export default function App(){
 
   const openCommunityRecipe=(r:any)=>{
     const full={...r,id:Date.now(),_dish:r.title,_ts:Date.now(),_fromCache:true};
-    setRecipe(full);setServings(null);setStatus("done");setTab("search");
+    setReturnTab("community");setPairedSide(null);setPairedSideStatus("idle");setPairedSideName("");setShowingSide(false);setRecipe(full);setServings(null);setStatus("done");setTab("search");
   };
 
   function communityCategory(title:string):string{
@@ -1371,6 +1409,7 @@ export default function App(){
   const pickInspiredRecipe=async(suggestion: any)=>{
     setTab("search");setQuery(suggestion.title);
     setStatus("loading");setRecipe(null);setServings(null);setErrorMsg("");
+    setReturnTab(null);setPairedSide(null);setPairedSideStatus("idle");setPairedSideName("");setShowingSide(false);
     try{
       const parsed=await callAPI([{role:"user",content:buildPrompt(suggestion.title,diets,seasonal,location)}]);
       const r={...parsed,id:Date.now(),_dish:suggestion.title,_ts:Date.now()};
@@ -1787,7 +1826,7 @@ export default function App(){
                 )}
                 {scanStatus==="done"&&scanMsg&&(
                   <div className="scan-success">✓ {scanMsg}{" "}
-                    <button onClick={()=>{if(justAdded){setRecipe(justAdded);setServings(null);setStatus("done");setTab("search");}else setTab("saved");}} style={{background:"none",border:"none",cursor:"pointer",color:"#4a6040",textDecoration:"underline",fontSize:13}}>View recipe →</button>
+                    <button onClick={()=>{if(justAdded){setReturnTab(null);setPairedSide(null);setPairedSideStatus("idle");setPairedSideName("");setShowingSide(false);setRecipe(justAdded);setServings(null);setStatus("done");setTab("search");}else setTab("saved");}} style={{background:"none",border:"none",cursor:"pointer",color:"#4a6040",textDecoration:"underline",fontSize:13}}>View recipe →</button>
                   </div>
                 )}
                 {scanStatus==="error"&&<div className="import-status-err">{scanMsg}</div>}
@@ -1811,7 +1850,7 @@ export default function App(){
                   </div>
                   {urlStatus==="done"&&urlMsg&&(
                     <div className="import-status-ok">✓ {urlMsg}{" "}
-                      <button onClick={()=>{if(justAdded){setRecipe(justAdded);setServings(null);setStatus("done");setTab("search");}else setTab("saved");}} style={{background:"none",border:"none",cursor:"pointer",color:"#1E3A2F",textDecoration:"underline",fontSize:12,fontFamily:"'Outfit',sans-serif"}}>View recipe →</button>
+                      <button onClick={()=>{if(justAdded){setReturnTab(null);setPairedSide(null);setPairedSideStatus("idle");setPairedSideName("");setShowingSide(false);setRecipe(justAdded);setServings(null);setStatus("done");setTab("search");}else setTab("saved");}} style={{background:"none",border:"none",cursor:"pointer",color:"#1E3A2F",textDecoration:"underline",fontSize:12,fontFamily:"'Outfit',sans-serif"}}>View recipe →</button>
                     </div>
                   )}
                   {urlStatus==="error"&&<div className="import-status-err">{urlMsg}</div>}
@@ -1853,7 +1892,30 @@ export default function App(){
             </div>
           </div>
         )}
-        {status==="done"&&recipe&&RecipeView()}
+        {status==="done"&&recipe&&(pairedSide||pairedSideStatus!=="idle"?(
+          <div className="dish-swipe-outer">
+            <div className="dish-switcher">
+              <button className={`dish-switch-btn${!showingSide?" active":""}`} onClick={()=>setShowingSide(false)}>{recipe.title}</button>
+              <button className={`dish-switch-btn${showingSide?" active":""}`} onClick={()=>setShowingSide(true)}>{Ic.leaf(11)} {pairedSide?.title||pairedSideName}</button>
+            </div>
+            <div className="dish-swipe-hint">Swipe to switch between the main dish and the side</div>
+            <div
+              className="dish-swipe-track"
+              style={{transform:`translateX(${showingSide?"-50%":"0%"})`}}
+              onTouchStart={(e)=>{swipeStartX.current=e.touches[0].clientX;}}
+              onTouchEnd={(e)=>{
+                if(swipeStartX.current==null)return;
+                const dx=e.changedTouches[0].clientX-swipeStartX.current;
+                swipeStartX.current=null;
+                if(dx<-50)setShowingSide(true);
+                else if(dx>50)setShowingSide(false);
+              }}
+            >
+              <div className="dish-swipe-pane">{RecipeView()}</div>
+              <div className="dish-swipe-pane">{SidePaneView()}</div>
+            </div>
+          </div>
+        ):RecipeView())}
       </>
     );
   }
@@ -1955,7 +2017,7 @@ export default function App(){
               <div className="side-panel">
                 <div className="side-panel-row">
                   {sides.map((s:SideDish,i:number)=>(
-                    <div key={i} className="side-card" onClick={()=>{setShowSidePanel(false);setQuery(s.title);doSearch(s.title);}}>
+                    <div key={i} className="side-card" onClick={()=>{setShowSidePanel(false);openPairedSide(s.title);}}>
                       <div className="side-card-title">{s.title}</div>
                       <div className="side-card-tagline">{s.tagline}</div>
                     </div>
@@ -2121,8 +2183,93 @@ export default function App(){
             {recipe.source_note&&<div className="source-note">{recipe.source_note}</div>}
           </div>
         )}
-        <button className="back-btn" onClick={()=>{setStatus("idle");setRecipe(null);setQuery("");}} style={{display:"flex",alignItems:"center",gap:6}}>{Ic.arrowLeft(14)} Search another recipe</button>
+        <button className="back-btn" onClick={()=>{
+          const dest=returnTab;
+          setReturnTab(null);setStatus("idle");setRecipe(null);setQuery("");
+          if(dest)setTab(dest);
+        }} style={{display:"flex",alignItems:"center",gap:6}}>
+          {Ic.arrowLeft(14)} {returnTab==="saved"?"Back to Saved":returnTab==="community"?"Back to Community":returnTab==="week"?"Back to This Week":returnTab==="family"?"Back to Family":"Search another recipe"}
+        </button>
         </div>{/* recipe-body */}
+      </div>
+    );
+  }
+
+  /* ── SIDE DISH PANE (paired alongside the main recipe) ── */
+  function SidePaneView(){
+    if(pairedSideStatus==="loading"||!pairedSide){
+      return(
+        <div className="side-pane-loading">
+          <div className="spinner"/>
+          <div className="loading-text" style={{fontSize:15}}>{pairedSideStatus==="error"?"Couldn't load that side.":`Making ${pairedSideName}…`}</div>
+          {pairedSideStatus==="error"&&(
+            <button className="back-btn" onClick={()=>openPairedSide(pairedSideName)}>Try again</button>
+          )}
+        </div>
+      );
+    }
+    const r=pairedSide;
+    const sv=isSaved(r);
+    const groups=r.ingredient_groups||(r.ingredients?[{label:"",items:r.ingredients}]:[]);
+    return(
+      <div className="recipe-page side-pane-page">
+        <div className="recipe-banner" style={{position:"relative",overflow:"hidden"}}>
+          <div className="recipe-banner-actions">
+            <button className={`save-btn${sv?" saved":""}`} onClick={()=>toggleSave(r)} style={{display:"flex",alignItems:"center",gap:5}}>{sv?Ic.heartFill(14):Ic.heart(14)} {sv?"Saved":"Save"}</button>
+          </div>
+          <div className="recipe-banner-eyebrow">· Paired Side ·</div>
+          <h2 className="recipe-banner-title">{r.title}</h2>
+          <p className="recipe-banner-desc">{r.tagline}</p>
+          <div className="recipe-banner-meta">
+            <div className="recipe-banner-meta-item">
+              <div className="recipe-banner-meta-label">Prep</div>
+              <div className="recipe-banner-meta-value">{r.prep_time}</div>
+            </div>
+            <div className="recipe-banner-meta-item">
+              <div className="recipe-banner-meta-label">Cook</div>
+              <div className="recipe-banner-meta-value">{r.cook_time}</div>
+            </div>
+            <div className="recipe-banner-meta-item">
+              <div className="recipe-banner-meta-label">Serves</div>
+              <div className="recipe-banner-meta-value">{r.servings}</div>
+            </div>
+          </div>
+        </div>
+        <div className="recipe-body">
+          <div className="two-col">
+            <div>
+              <div className="section-label">Ingredients</div>
+              {groups.map((g:any,gi:number)=>(
+                <div key={gi} className="ing-group">
+                  {g.label&&<div className="ing-group-label">{g.label}</div>}
+                  <ul className="ing-list">
+                    {(g.items||[]).map((ing:any,ii:number)=>(
+                      <li key={ii} className="ing-item">
+                        <span className="ing-main">
+                          <span className="ing-amount">{renderAmount(normalizeAmount(ing.amount||""))}</span>{" "}
+                          <span className="ing-name">{ing.name}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+            <div>
+              <div className="section-label">Method</div>
+              <ol className="steps-list">
+                {(r.steps||[]).map((step:string,i:number)=>(
+                  <li key={i} className="step-item">
+                    <span className="step-num">{String(i+1).padStart(2,"0")}</span>
+                    <span className="step-text">{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </div>
+          <button className="back-btn" style={{display:"flex",alignItems:"center",gap:6}} onClick={()=>setShowingSide(false)}>{Ic.arrowLeft(14)} Back to main dish</button>
+          <button className="side-pane-fullpage" onClick={()=>{setReturnTab(null);setRecipe(r);setServings(null);setStatus("done");closePairedSide();}}>Open as its own recipe (edit, share, print) →</button>
+        </div>
       </div>
     );
   }
@@ -2283,7 +2430,7 @@ export default function App(){
                   const sv=isSaved(r);
                   return(
                     <div key={r.id} className="history-item">
-                      <div className="history-item-main" onClick={()=>{setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
+                      <div className="history-item-main" onClick={()=>{setReturnTab("saved");setPairedSide(null);setPairedSideStatus("idle");setPairedSideName("");setShowingSide(false);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
                         <div className="history-item-title">{r.title}</div>
                         <div className="history-item-meta">
                           <span>{r.prep_time} prep</span>
@@ -2326,7 +2473,7 @@ export default function App(){
                       const rating=ratings[r.id]||0;
                       const isConfirming=confirmRemove===r.id;
                       return(
-                        <div key={r.id} className="recipe-card" onClick={()=>{setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
+                        <div key={r.id} className="recipe-card" onClick={()=>{setReturnTab("saved");setPairedSide(null);setPairedSideStatus("idle");setPairedSideName("");setShowingSide(false);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
                           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                             <div className="card-tag">{r._scanned?"Scanned":r._imported?"Imported":isSharedOnly?"Shared":r.seasonal_note?"Seasonal":"Saved"}</div>
                             {!isSharedOnly&&(
@@ -2407,7 +2554,7 @@ export default function App(){
                       <div className="day-recipe-title">{r.title}</div>
                       <div className="day-recipe-meta">{r.cook_time}</div>
                       <div className="day-actions">
-                        <button className="day-btn" onClick={()=>{setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>View</button>
+                        <button className="day-btn" onClick={()=>{setReturnTab("week");setPairedSide(null);setPairedSideStatus("idle");setPairedSideName("");setShowingSide(false);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>View</button>
                         <button className="day-btn" onClick={()=>setPlan(p=>{const n={...p};delete n[key];return n;})}>✕</button>
                       </div>
                     </>
@@ -2524,7 +2671,7 @@ export default function App(){
             <div className="family-shared-sub">{sharedRecipes.length} recipe{sharedRecipes.length!==1?"s":""} shared under code {familyCode}</div>
             <div className="cards-grid">
               {sharedRecipes.map((r:any)=>(
-                <div key={r.id} className="recipe-card" onClick={()=>{setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
+                <div key={r.id} className="recipe-card" onClick={()=>{setReturnTab("family");setPairedSide(null);setPairedSideStatus("idle");setPairedSideName("");setShowingSide(false);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
                   <div className="card-tag">Shared Recipe</div>
                   <div className="card-title">{r.title}</div>
                   <div className="card-desc">{r.tagline}</div>
