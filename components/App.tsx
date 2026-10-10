@@ -4,6 +4,7 @@ import { suggestSides, rankSides, SideDish } from "../lib/sides";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { CARD_POOL, SUGGESTIONS, type CardDef } from "../lib/dishes";
 import { buildPrompt } from "../lib/prompts";
+import jsQR from "jsqr";
 
 const C = {
   cream:"#FDFAF5",parchment:"#FFF0D4",brown:"#151210",
@@ -34,6 +35,7 @@ const Ic = {
   grid:(s=20)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
   lock:(s=14)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
   share:(s=14)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>,
+  qrscan:(s=14)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V4a1 1 0 0 1 1-1h3"/><path d="M17 3h3a1 1 0 0 1 1 1v3"/><path d="M21 17v3a1 1 0 0 1-1 1h-3"/><path d="M7 21H4a1 1 0 0 1-1-1v-3"/><rect x="7" y="7" width="4" height="4" rx="0.5"/><rect x="13" y="7" width="4" height="4" rx="0.5"/><rect x="7" y="13" width="4" height="4" rx="0.5"/><line x1="14" y1="14" x2="14" y2="14.01"/><line x1="17" y1="14" x2="17" y2="17"/><line x1="14" y1="17" x2="15.5" y2="17"/></svg>,
 };
 
 const CSS = `
@@ -332,6 +334,8 @@ const CSS = `
   /* Scan specific */
   .import-scan-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;background:#151210;color:#FDFAF5;border:none;border-radius:100px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;}
   .import-scan-btn:hover{background:#1E3A2F;}
+  .import-scan-btn-ghost{background:transparent;color:#151210;border:1.5px solid #151210;}
+  .import-scan-btn-ghost:hover{background:#151210;color:#FDFAF5;}
   .scan-preview{width:100%;max-height:180px;object-fit:contain;border-radius:10px;margin-bottom:12px;border:1px solid #EDE8E0;}
   .scan-actions{display:flex;gap:8px;}
   .scan-go-btn{padding:9px 22px;background:#F4A021;color:#151210;border:none;border-radius:100px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;}
@@ -716,6 +720,20 @@ const CSS = `
   .share-qr-label{font-size:11px;color:#7A6E6A;letter-spacing:1px;text-transform:uppercase;}
   .share-native-btn{width:100%;background:#F4A021;border:none;border-radius:100px;padding:13px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;color:#151210;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
   .share-close{position:absolute;top:20px;right:20px;background:none;border:none;cursor:pointer;color:#7A6E6A;font-size:22px;line-height:1;}
+  /* ── QR scanner ── */
+  .qr-scan-overlay{position:fixed;inset:0;background:rgba(21,18,16,.5);z-index:200;display:flex;align-items:flex-end;justify-content:center;}
+  @media(min-width:640px){.qr-scan-overlay{align-items:center;}}
+  .qr-scan-sheet{background:#1A1F2E;border-radius:24px 24px 0 0;padding:28px 24px 40px;width:100%;max-width:420px;position:relative;}
+  @media(min-width:640px){.qr-scan-sheet{border-radius:24px;padding:32px;}}
+  .qr-scan-title{font-family:'Fraunces',serif;font-size:20px;font-weight:700;margin-bottom:4px;color:#FDFAF5;}
+  .qr-scan-sub{font-size:13px;color:#B8B0A8;margin-bottom:20px;}
+  .qr-scan-close{position:absolute;top:20px;right:20px;background:none;border:none;cursor:pointer;color:#B8B0A8;font-size:22px;line-height:1;}
+  .qr-scan-frame{position:relative;width:100%;aspect-ratio:1/1;background:#000;border-radius:16px;overflow:hidden;margin-bottom:16px;}
+  .qr-scan-frame video{width:100%;height:100%;object-fit:cover;}
+  .qr-scan-reticle{position:absolute;inset:14%;border:2.5px solid #F4A021;border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,.25);pointer-events:none;}
+  .qr-scan-status{display:flex;align-items:center;justify-content:center;height:100%;color:#B8B0A8;font-size:13px;text-align:center;padding:24px;}
+  .qr-scan-err{background:rgba(232,67,26,.12);border:1px solid #E8431A;border-radius:10px;padding:12px 14px;font-size:13px;color:#F4A021;margin-bottom:12px;}
+  .qr-scan-retry{width:100%;background:#F4A021;border:none;border-radius:100px;padding:12px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;color:#151210;cursor:pointer;}
 
   /* Family */
   .family-wrap{max-width:560px;margin:0 auto;padding:40px 24px 40px;}
@@ -1100,6 +1118,9 @@ export default function App(){
   const [scanMime,setScanMime]   = useState("image/jpeg");
   const [scanStatus,setScanStatus] = useState("idle");
   const [scanMsg,setScanMsg]     = useState("");
+  const [showQrScanner,setShowQrScanner] = useState(false);
+  const [qrStatus,setQrStatus]   = useState("idle"); // idle|starting|scanning|error
+  const [qrErr,setQrErr]         = useState("");
   const [ready,setReady]         = useState(false);
   const [cloudSynced,setCloudSynced] = useState(false); // true only after the cloud copy has been read
   const [justAdded,setJustAdded]     = useState<any>(null); // most recent scanned/imported recipe, so "View" can open it directly
@@ -1148,6 +1169,18 @@ export default function App(){
   const inputRef    = useRef<HTMLInputElement>(null);
   const fileRef     = useRef<HTMLInputElement>(null);
   const lastScrollY = useRef(0);
+  const qrVideoRef  = useRef<HTMLVideoElement>(null);
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
+  const qrStreamRef = useRef<MediaStream|null>(null);
+  const qrRafRef    = useRef<number|null>(null);
+
+  /* stop the camera if the component unmounts while the scanner is open */
+  useEffect(()=>{
+    return ()=>{
+      if(qrRafRef.current!=null)cancelAnimationFrame(qrRafRef.current);
+      if(qrStreamRef.current)qrStreamRef.current.getTracks().forEach(t=>t.stop());
+    };
+  },[]);
 
   /* storage load */
   useEffect(()=>{
@@ -1461,6 +1494,59 @@ export default function App(){
     }catch(e:any){setScanStatus("error");setScanMsg(e.message||String(e));}
   };
   const clearScan=()=>{setScanPreview(null);setScanStatus("idle");setScanMsg("");if(fileRef.current)fileRef.current.value="";};
+
+  /* QR scanner — lets a signed-in user scan an Every Chef share code with their
+     own camera, inside the app, instead of relying on the phone's native camera
+     app (which can open the link in a different, signed-out browser). */
+  const stopQrScanner=()=>{
+    if(qrRafRef.current!=null){cancelAnimationFrame(qrRafRef.current);qrRafRef.current=null;}
+    if(qrStreamRef.current){qrStreamRef.current.getTracks().forEach(t=>t.stop());qrStreamRef.current=null;}
+    setShowQrScanner(false);setQrStatus("idle");setQrErr("");
+  };
+  const handleQrResult=(text: string)=>{
+    stopQrScanner();
+    try{
+      const url=new URL(text, window.location.origin);
+      if(url.origin===window.location.origin){
+        window.location.href=url.pathname+url.search;
+      }else{
+        window.location.href=url.href;
+      }
+    }catch{
+      setShowQrScanner(true);setQrStatus("error");
+      setQrErr("That doesn't look like an Every Chef recipe link.");
+    }
+  };
+  const openQrScanner=async()=>{
+    setShowQrScanner(true);setQrStatus("starting");setQrErr("");
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
+      qrStreamRef.current=stream;
+      if(qrVideoRef.current){
+        qrVideoRef.current.srcObject=stream;
+        await qrVideoRef.current.play();
+      }
+      setQrStatus("scanning");
+      const tick=()=>{
+        const video=qrVideoRef.current,canvas=qrCanvasRef.current;
+        if(video&&canvas&&video.readyState===video.HAVE_ENOUGH_DATA){
+          const ctx=canvas.getContext("2d");
+          if(ctx){
+            canvas.width=video.videoWidth;canvas.height=video.videoHeight;
+            ctx.drawImage(video,0,0,canvas.width,canvas.height);
+            const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+            const code=jsQR(img.data,img.width,img.height);
+            if(code&&code.data){handleQrResult(code.data);return;}
+          }
+        }
+        qrRafRef.current=requestAnimationFrame(tick);
+      };
+      qrRafRef.current=requestAnimationFrame(tick);
+    }catch(e:any){
+      setQrStatus("error");
+      setQrErr(e&&e.name==="NotAllowedError"?"Camera access was denied. Allow camera access in your browser settings and try again.":"Couldn't access the camera on this device.");
+    }
+  };
 
   const doFetchUrl=async()=>{
     const url=urlInput.trim();
@@ -1808,10 +1894,13 @@ export default function App(){
                   <>
                     <div className="import-card-title">Snap it.<br/><em>We'll read it.</em></div>
                     <div className="import-card-desc">Got a recipe card from grandma? A torn page from a magazine? Photograph it and we'll digitize it instantly.</div>
-                    <div className="import-card-action">
+                    <div className="import-card-action" style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center"}}>
                       <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={onFileChange}/>
                       <button className="import-scan-btn" onClick={()=>fileRef.current?.click()}>
                         {Ic.camera(14)} Choose photo
+                      </button>
+                      <button className="import-scan-btn import-scan-btn-ghost" onClick={openQrScanner}>
+                        {Ic.qrscan(14)} Scan QR code
                       </button>
                     </div>
                   </>
@@ -2930,6 +3019,29 @@ export default function App(){
           </div>
         );
       })()}
+      {/* QR Scanner */}
+      {showQrScanner&&(
+        <div className="qr-scan-overlay" onClick={stopQrScanner}>
+          <div className="qr-scan-sheet" onClick={e=>e.stopPropagation()}>
+            <button className="qr-scan-close" onClick={stopQrScanner}>×</button>
+            <div className="qr-scan-title">Scan QR code</div>
+            <div className="qr-scan-sub">Point your camera at an Every Chef QR code — it'll open right here, signed in.</div>
+            <div className="qr-scan-frame">
+              {qrStatus==="error"?(
+                <div className="qr-scan-status" style={{flexDirection:"column",gap:12}}>
+                  <div>{qrErr}</div>
+                  <button className="qr-scan-retry" onClick={openQrScanner} style={{width:"auto",padding:"10px 20px"}}>Try again</button>
+                </div>
+              ):qrStatus==="starting"?(
+                <div className="qr-scan-status">Opening camera…</div>
+              ):null}
+              <video ref={qrVideoRef} playsInline muted style={{display:qrStatus==="scanning"?"block":"none"}}/>
+              <canvas ref={qrCanvasRef} style={{display:"none"}}/>
+              {qrStatus==="scanning"&&<div className="qr-scan-reticle"/>}
+            </div>
+          </div>
+        </div>
+      )}
       {/* Edit Recipe Panel */}
       {showEditPanel&&editRecipe&&(
         <div className="edit-panel-overlay" onClick={()=>setShowEditPanel(false)}>
