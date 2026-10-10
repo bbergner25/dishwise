@@ -885,6 +885,17 @@ const CSS = `
   .rx-page .step-num{width:30px;height:30px;font-size:14px;background:#1A1F2E;}
   .rx-page .step-text{font-size:17px;line-height:1.6;font-weight:400;padding-top:2px;}
 
+  .rx-shop{margin-top:6px;display:flex;flex-direction:column;gap:6px;max-width:520px;}
+  .rx-shop-label{font-size:14px;font-weight:500;color:#4F4744;}
+  .rx-shop-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+  .rx-shop-row .ck-textlink{padding:0;align-self:center;}
+  .rx-shop-select-wrap{position:relative;display:flex;align-items:center;}
+  .rx-shop-select{appearance:none;-webkit-appearance:none;height:46px;min-width:200px;padding:0 40px 0 34px;border:1px solid #E3DCD0;border-radius:14px;background:#fff;font-family:'Outfit',sans-serif;font-size:16px;color:#151210;cursor:pointer;}
+  .rx-shop-select:focus{outline:none;border-color:#1A1F2E;box-shadow:0 0 0 3px rgba(244,160,33,.25);}
+  .rx-shop-dot{position:absolute;left:14px;width:10px;height:10px;border-radius:5px;pointer-events:none;}
+  .rx-shop-chev{position:absolute;right:14px;pointer-events:none;color:#6E635F;}
+  .rx-shop-note{font-size:13px;color:#6E635F;}
+  .grocery-section{scroll-margin-top:16px;}
   .rx-actionbar{position:fixed;left:0;right:0;bottom:0;z-index:90;background:rgba(253,250,245,.96);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid #ECE6DD;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));}
   .rx-actionbar-inner{max-width:780px;margin:0 auto;display:flex;gap:10px;}
   .rx-save{height:52px;padding:0 20px;border-radius:26px;border:1.5px solid #1A1F2E;background:#fff;color:#151210;font-family:'Outfit',sans-serif;font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0;}
@@ -972,6 +983,9 @@ const CSS = `
   .ck-trend-card{flex:0 0 156px;height:108px;padding:14px;background:#fff;border:none;border-radius:16px;box-shadow:0 1px 3px rgba(26,31,46,.08);display:flex;flex-direction:column;justify-content:space-between;text-align:left;cursor:pointer;}
   .ck-trend-card:hover{box-shadow:0 4px 14px rgba(26,31,46,.12);}
   .ck-trend-title{font-family:'Fraunces',serif;font-size:17px;font-weight:600;line-height:1.2;color:#151210;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+  .ck-trend-more{background:#EEF3EC;box-shadow:none;}
+  .ck-trend-more .ck-trend-title{color:#1E3A2F;}
+  .ck-trend-more-arrow{font-size:22px;color:#1E3A2F;line-height:1;}
   .ck-trend-tag{font-family:'Outfit',sans-serif;font-size:12px;color:#B8340F;font-weight:500;}
   .ck-rows{display:flex;flex-direction:column;}
   .ck-row{display:flex;align-items:center;gap:14px;min-height:60px;padding:8px 0;background:none;border:none;border-bottom:1px solid #ECE6DD;text-align:left;cursor:pointer;width:100%;color:#151210;}
@@ -1096,6 +1110,7 @@ const RETAILERS = [
   {id:"walmart",   name:"Walmart",      color:"#0071CE", url:(q:string)=>`https://www.walmart.com/search?q=${encodeURIComponent(q)}`},
   {id:"target",    name:"Target",       color:"#CC0000", url:(q:string)=>`https://www.target.com/s?searchTerm=${encodeURIComponent(q)}`},
   {id:"kroger",    name:"Kroger",       color:"#004990", url:(q:string)=>`https://www.kroger.com/search?query=${encodeURIComponent(q)}`},
+  {id:"coborns",   name:"Coborn's",     color:"#C8102E", url:(q:string)=>`https://shop.coborns.com/store/coborns-marketplace/s?k=${encodeURIComponent(q)}`},
   {id:"instacart", name:"Instacart",    color:"#43A726", url:(q:string)=>`https://www.instacart.com/store/s?k=${encodeURIComponent(q)}`},
   {id:"amazon",    name:"Amazon Fresh", color:"#FF9900", url:(q:string)=>`https://www.amazon.com/s?k=${encodeURIComponent(q)}&i=amazonfresh`},
   {id:"wholefoods",name:"Whole Foods",  color:"#00674B", url:(q:string)=>`https://www.wholefoodsmarket.com/search?text=${encodeURIComponent(q)}`},
@@ -1590,7 +1605,7 @@ export default function App(){
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-plan",JSON.stringify(plan));}catch{};},[plan,ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-plan-sides",JSON.stringify(planSides));}catch{};},[planSides,ready]);
   useEffect(()=>{if(ready&&location)try{localStorage.setItem("dw-location",location);}catch{};},[location,ready]);
-  useEffect(()=>{if(ready&&retailer)try{localStorage.setItem("dw-retailer",retailer);}catch{};},[retailer,ready]);
+  useEffect(()=>{if(ready)try{localStorage.setItem("dw-retailer",retailer);}catch{};},[retailer,ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-ratings",JSON.stringify(ratings));}catch{};},[ratings,ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-cat-overrides",JSON.stringify(categoryOverrides));}catch{};},[categoryOverrides,ready]);
   useEffect(()=>{if(tab==="community"&&communityStatus==="idle")loadCommunity();},[tab,communityStatus]);
@@ -2255,10 +2270,7 @@ export default function App(){
 
               {trendingDishes.length>0&&(
                 <section className="ck-section">
-                  <div className="ck-section-head">
-                    <h2 className="ck-section-label">Trending this week</h2>
-                    <button className="ck-textlink" onClick={()=>setTab("community")}>Browse community</button>
-                  </div>
+                  <h2 className="ck-section-label">Trending this week</h2>
                   <div className="ck-trending">
                     {trendingDishes.map((dish,i)=>(
                       <button key={i} className="ck-trend-card" onClick={()=>{setQuery(dish);doSearch(dish);}}>
@@ -2266,6 +2278,10 @@ export default function App(){
                         <span className="ck-trend-tag">Trending</span>
                       </button>
                     ))}
+                    <button className="ck-trend-card ck-trend-more" onClick={()=>{setTab("community");window.scrollTo({top:0});}}>
+                      <span className="ck-trend-title">See all community recipes</span>
+                      <span className="ck-trend-more-arrow" aria-hidden="true">→</span>
+                    </button>
                   </div>
                 </section>
               )}
@@ -2724,6 +2740,20 @@ export default function App(){
               </div>
             </div>
           </div>
+          <div className="rx-shop">
+            <label className="rx-shop-label" htmlFor="rx-shop-select">Where are you shopping?</label>
+            <div className="rx-shop-row">
+              <div className="rx-shop-select-wrap">
+                <span className="rx-shop-dot" style={{background:RETAILERS.find(r=>r.id===retailer)?.color||"#CFC6B8"}} aria-hidden="true"/>
+                <select id="rx-shop-select" className="rx-shop-select" value={retailer} onChange={e=>setRetailer(e.target.value)}>
+                  <option value="">Choose a store</option>
+                  {RETAILERS.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
+                </select>
+                <svg className="rx-shop-chev" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </div>
+              <button className="ck-textlink" onClick={()=>document.getElementById("rx-groceries")?.scrollIntoView({behavior:"smooth",block:"start"})}>Grocery list ↓</button>
+            </div>
+          </div>
         </header>
 
         <div className="recipe-body">
@@ -2738,15 +2768,6 @@ export default function App(){
                     <li key={ii} className="rx-ing" style={{fontSize:ingFontSize}}>
                       <span className="rx-ing-amt">{renderAmount(normalizeAmount(scaleAmt(ing.amount,ratio)))}</span>
                       <span className="rx-ing-name">{ing.name}
-                      {retailer&&(
-                        <span className="ing-shop-links">
-                          <a href={RETAILERS.find(r=>r.id===retailer)?.url(ing.name)||"#"}
-                            target="_blank" rel="noopener noreferrer" className="ing-shop-link"
-                            style={{borderColor:RETAILERS.find(r=>r.id===retailer)?.color+"44",color:RETAILERS.find(r=>r.id===retailer)?.color}}>
-                            {(RETAILERS.find(r=>r.id===retailer)?.name||"").split(" ")[0]}
-                          </a>
-                        </span>
-                      )}
                       </span>
                     </li>
                   ))}
@@ -2818,27 +2839,10 @@ export default function App(){
           </div>
         )}
 
-        <div className="grocery-section">
+        <div className="grocery-section" id="rx-groceries">
           <div className="grocery-hdr">
             <h3 className="grocery-title">Grocery List</h3>
-            <div className="retailer-wrap">
-              <button className="retailer-btn" onClick={()=>setRetailerOpen(o=>!o)}>
-                {Ic.cart(13)}
-                {retailer?(RETAILERS.find(r=>r.id===retailer)?.name||"Shop"):"Shop at…"}
-                <span style={{fontSize:9,opacity:.7}}>▾</span>
-              </button>
-              {retailerOpen&&(
-                <div className="retailer-dropdown">
-                  {RETAILERS.map(r=>(
-                    <button key={r.id} className={`retailer-option${retailer===r.id?" active":""}`}
-                      onClick={()=>{setRetailer(r.id);setRetailerOpen(false);}}>
-                      <span className="retailer-option-dot" style={{background:r.color}}/>
-                      {r.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <span className="rx-shop-note">{retailer?`Each item links to ${RETAILERS.find(r=>r.id===retailer)?.name}`:"Pick a store above to get shopping links"}</span>
           </div>
           <div className="grocery-grid">
             {(recipe.grocery_items||[]).map((item:string,i:number)=>(
