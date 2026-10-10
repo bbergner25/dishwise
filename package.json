@@ -13,7 +13,7 @@
   "react-dom": "^18",
   "@clerk/nextjs": "^5.0.0",
   "@upstash/redis": "^1.28.0",
-  "@anthropic-ai/sdk": "^0.20.0"
+  "@anthropic-ai/sdk": "^0.20.0",
   "jsqr": "^1.4.0"
 },
   "devDependencies": {
