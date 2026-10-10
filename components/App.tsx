@@ -647,6 +647,14 @@ const CSS = `
   .day-body{flex:1;padding:8px 10px;display:flex;flex-direction:column;}
   .day-recipe-title{font-family:'Fraunces',serif;font-size:12px;line-height:1.3;margin-bottom:4px;}
   .day-recipe-meta{font-size:10px;color:#7A6E6A;}
+  .day-sides{display:flex;flex-direction:column;gap:2px;margin-top:5px;}
+  .day-side-chip{display:flex;align-items:center;gap:3px;font-size:9.5px;color:#1E3A2F;background:#F0F5EE;border-radius:5px;padding:2px 5px;line-height:1.4;}
+  .day-side-chip.loading{color:#B8B0A8;background:#F5F2ED;}
+  .day-side-chip.error{color:#E8431A;background:#FFF0ED;}
+  .day-side-chip-remove{margin-left:auto;cursor:pointer;opacity:.55;font-size:11px;flex-shrink:0;}
+  .day-side-chip-remove:hover{opacity:1;}
+  .day-add-side{align-self:flex-start;background:none;border:none;color:#1E3A2F;font-size:9.5px;text-decoration:underline;cursor:pointer;padding:0;margin-top:4px;font-family:'Outfit',sans-serif;}
+  .day-add-side:hover{color:#E8431A;}
   .day-actions{display:flex;gap:5px;margin-top:8px;}
   .day-btn{flex:1;padding:4px;border-radius:6px;border:1px solid #EDE8E0;background:transparent;font-size:10px;font-family:'Outfit',sans-serif;cursor:pointer;color:#7A6E6A;}
   .day-btn.add{border-style:dashed;color:#F4A021;width:100%;margin-top:auto;}
@@ -945,25 +953,29 @@ function renderAmount(s: string){
   if(!m) return s;
   return <>{m[1]}<span style={{marginLeft:"0.34em"}}>{m[2]}</span>{m[3]}</>;
 }
-function consolidate(plan: Record<string,any>){
+function consolidate(plan: Record<string,any>, planSides?: Record<string,{title:string;status:string;recipe:any}[]>){
   const map: Record<string,{name:string;entries:{recipe:string;amount:string}[]}> = {};
   for(const k of DAY_KEYS){
-    const r=plan[k];if(!r)continue;
-    // Build a lookup of ingredient name → amount from ingredient_groups
-    const amountLookup: Record<string,string> = {};
-    for(const group of(r.ingredient_groups||[])){
-      for(const item of(group.items||[])){
-        const key=(item.name||"").toLowerCase().trim();
-        if(key)amountLookup[key]=item.amount||"";
+    const dayRecipes: any[] = [];
+    if(plan[k])dayRecipes.push(plan[k]);
+    for(const s of (planSides?.[k]||[])){ if(s.recipe)dayRecipes.push(s.recipe); }
+    for(const r of dayRecipes){
+      // Build a lookup of ingredient name → amount from ingredient_groups
+      const amountLookup: Record<string,string> = {};
+      for(const group of(r.ingredient_groups||[])){
+        for(const item of(group.items||[])){
+          const key=(item.name||"").toLowerCase().trim();
+          if(key)amountLookup[key]=item.amount||"";
+        }
       }
-    }
-    for(const item of(r.grocery_items||[])){
-      const key=item.toLowerCase().trim();
-      if(!map[key])map[key]={name:item,entries:[]};
-      const alreadyAdded=map[key].entries.some(e=>e.recipe===r.title);
-      if(!alreadyAdded){
-        const amount=amountLookup[key]||"";
-        map[key].entries.push({recipe:r.title,amount});
+      for(const item of(r.grocery_items||[])){
+        const key=item.toLowerCase().trim();
+        if(!map[key])map[key]={name:item,entries:[]};
+        const alreadyAdded=map[key].entries.some(e=>e.recipe===r.title);
+        if(!alreadyAdded){
+          const amount=amountLookup[key]||"";
+          map[key].entries.push({recipe:r.title,amount});
+        }
       }
     }
   }
@@ -1127,6 +1139,7 @@ export default function App(){
   const [categoryOverrides,setCategoryOverrides] = useState<Record<number,string>>({});
   const [editingCategory,setEditingCategory] = useState<number|null>(null);
   const [plan,setPlan]           = useState<Record<string,any>>({});
+  const [planSides,setPlanSides] = useState<Record<string,{title:string;status:string;recipe:any}[]>>({}); // sides paired to each day's main dish
   const [assignDay,setAssignDay] = useState<string|null>(null);
   const [modalSearch,setModalSearch] = useState("");
   const [scanPreview,setScanPreview] = useState<string|null>(null);
@@ -1203,6 +1216,7 @@ export default function App(){
     function load(){
       try{const s=localStorage.getItem("dw-saved");if(s)setSaved(JSON.parse(s));}catch{}
       try{const m=localStorage.getItem("dw-plan");if(m)setPlan(JSON.parse(m));}catch{}
+      try{const ps=localStorage.getItem("dw-plan-sides");if(ps)setPlanSides(JSON.parse(ps));}catch{}
       try{const l=localStorage.getItem("dw-location");if(l)setLocation(l);}catch{}
       try{const fc=localStorage.getItem("dw-family-code");if(fc){setFamilyCode(fc);loadShared(fc);}}catch{}
       try{const h=localStorage.getItem("dw-history");if(h)setHistory(JSON.parse(h));}catch{}
@@ -1216,6 +1230,7 @@ export default function App(){
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-saved",JSON.stringify(saved));}catch{};},[saved,ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-history",JSON.stringify(history.slice(0,30)));}catch{};},[history,ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-plan",JSON.stringify(plan));}catch{};},[plan,ready]);
+  useEffect(()=>{if(ready)try{localStorage.setItem("dw-plan-sides",JSON.stringify(planSides));}catch{};},[planSides,ready]);
   useEffect(()=>{if(ready&&location)try{localStorage.setItem("dw-location",location);}catch{};},[location,ready]);
   useEffect(()=>{if(ready&&retailer)try{localStorage.setItem("dw-retailer",retailer);}catch{};},[retailer,ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-ratings",JSON.stringify(ratings));}catch{};},[ratings,ready]);
@@ -1461,6 +1476,52 @@ export default function App(){
     });
   };
   const closePairedSide=()=>{setPairedSides([]);setActivePane(0);};
+
+  /* week plan — sides paired to a specific day's main dish */
+  const addPlanSide=async(dayKey: string, sideTitle: string, recipeOverride?: any)=>{
+    const already=(planSides[dayKey]||[]).some(p=>p.title.toLowerCase()===sideTitle.toLowerCase());
+    if(already)return;
+    if(recipeOverride){
+      const r={...recipeOverride,id:Date.now(),_dish:sideTitle,_ts:Date.now(),_fromCache:true};
+      setPlanSides(p=>({...p,[dayKey]:[...(p[dayKey]||[]),{title:sideTitle,status:"done",recipe:r}]}));
+      return;
+    }
+    setPlanSides(p=>({...p,[dayKey]:[...(p[dayKey]||[]),{title:sideTitle,status:"loading",recipe:null}]}));
+    try{
+      const cacheData=await fetch(`/api/cache?q=${encodeURIComponent(sideTitle)}`).then(r=>r.json()).catch(()=>({found:false}));
+      let parsed:any; let fromCache=false;
+      if(cacheData.found&&cacheData.recipe){parsed=cacheData.recipe; fromCache=true;}
+      else{
+        parsed=await callAPI([{role:"user",content:buildPrompt(sideTitle,[],false,"")}]);
+        fetch("/api/cache",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({dish:sideTitle,recipe:parsed})}).catch(()=>{});
+      }
+      const r={...parsed,id:Date.now(),_dish:sideTitle,_ts:Date.now(),_fromCache:fromCache};
+      setPlanSides(p=>({...p,[dayKey]:(p[dayKey]||[]).map(x=>x.title===sideTitle?{...x,status:"done",recipe:r}:x)}));
+    }catch{
+      setPlanSides(p=>({...p,[dayKey]:(p[dayKey]||[]).map(x=>x.title===sideTitle?{...x,status:"error"}:x)}));
+    }
+  };
+  const retryPlanSide=(dayKey: string, title: string)=>{
+    setPlanSides(p=>({...p,[dayKey]:(p[dayKey]||[]).map(x=>x.title===title?{...x,status:"loading"}:x)}));
+    (async()=>{
+      try{
+        const cacheData=await fetch(`/api/cache?q=${encodeURIComponent(title)}`).then(r=>r.json()).catch(()=>({found:false}));
+        let parsed:any; let fromCache=false;
+        if(cacheData.found&&cacheData.recipe){parsed=cacheData.recipe; fromCache=true;}
+        else{
+          parsed=await callAPI([{role:"user",content:buildPrompt(title,[],false,"")}]);
+          fetch("/api/cache",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({dish:title,recipe:parsed})}).catch(()=>{});
+        }
+        const r={...parsed,id:Date.now(),_dish:title,_ts:Date.now(),_fromCache:fromCache};
+        setPlanSides(p=>({...p,[dayKey]:(p[dayKey]||[]).map(x=>x.title===title?{...x,status:"done",recipe:r}:x)}));
+      }catch{
+        setPlanSides(p=>({...p,[dayKey]:(p[dayKey]||[]).map(x=>x.title===title?{...x,status:"error"}:x)}));
+      }
+    })();
+  };
+  const removePlanSide=(dayKey: string, title: string)=>{
+    setPlanSides(p=>({...p,[dayKey]:(p[dayKey]||[]).filter(x=>x.title!==title)}));
+  };
 
   /* inspire */
   const doInspire=async()=>{
@@ -1712,7 +1773,7 @@ export default function App(){
   const baseS=recipe?(parseInt(recipe.servings)||4):4;
   const curS=servings||baseS;
   const ratio=curS/baseS;
-  const consolidated=consolidate(plan);
+  const consolidated=consolidate(plan,planSides);
   const mealsPlanned=DAY_KEYS.filter(k=>plan[k]).length;
 
   /* ── SEARCH VIEW ── */
@@ -2802,9 +2863,24 @@ export default function App(){
                     <>
                       <div className="day-recipe-title">{r.title}</div>
                       <div className="day-recipe-meta">{r.cook_time}</div>
+                      {(planSides[key]||[]).length>0&&(
+                        <div className="day-sides">
+                          {(planSides[key]||[]).map((s,si)=>(
+                            <div key={si} className={`day-side-chip${s.status==="loading"?" loading":s.status==="error"?" error":""}`}>
+                              <span style={{display:"flex",flexShrink:0}}>{Ic.leaf(9)}</span>
+                              <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.title}</span>
+                              {s.status==="loading"?"…":s.status==="error"?(
+                                <span onClick={()=>retryPlanSide(key,s.title)} title="Retry">↻</span>
+                              ):null}
+                              <span className="day-side-chip-remove" onClick={()=>removePlanSide(key,s.title)}>×</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <button className="day-add-side" onClick={()=>{setAssignDay(`side_${key}`);if(communityStatus==="idle")loadCommunity();}}>+ Side</button>
                       <div className="day-actions">
                         <button className="day-btn" onClick={()=>{setReturnTab("week");setPairedSides([]);setActivePane(0);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>View</button>
-                        <button className="day-btn" onClick={()=>setPlan(p=>{const n={...p};delete n[key];return n;})}>✕</button>
+                        <button className="day-btn" onClick={()=>{setPlan(p=>{const n={...p};delete n[key];return n;});setPlanSides(p=>{const n={...p};delete n[key];return n;});}}>✕</button>
                       </div>
                     </>
                   ):(
@@ -2941,7 +3017,9 @@ export default function App(){
   function Modal(){
     if(!assignDay)return null;
     const isRedirect=assignDay.startsWith("fromSaved_");
-    const dayKey=isRedirect?null:assignDay;
+    const isSideMode=assignDay.startsWith("side_");
+    const dayKey=isRedirect||isSideMode?null:assignDay;
+    const sideDayKey=isSideMode?assignDay.slice(5):null;
     const allRecipes=[...saved,...sharedRecipes.filter(r=>!saved.some(s=>s.id===r.id))];
 
     // Filter by search
@@ -2958,10 +3036,34 @@ export default function App(){
     });
     const sortedCats=RECIPE_CATEGORIES.filter(c=>grouped[c]&&grouped[c].length>0);
 
+    // Side-picking mode: suggest from the side library, or search Saved + Community
+    const sideMain=sideDayKey?plan[sideDayKey]:null;
+    const existingSideTitles=sideDayKey?(planSides[sideDayKey]||[]).map(s=>s.title.toLowerCase()):[];
+    const sideSuggestions=sideMain?rankSides(sideMain).filter(s=>!existingSideTitles.includes(s.title.toLowerCase())).slice(0,6):[];
+    const sidePool=(()=>{
+      if(!isSideMode)return [];
+      const pool=[...saved,...communityRecipes];
+      const seen=new Set<string>(); const out:any[]=[];
+      for(const r of pool){
+        const t=(r.title||"").toLowerCase();
+        if(!t||seen.has(t))continue;
+        seen.add(t);out.push(r);
+      }
+      return out;
+    })();
+    const sq=modalSearch.trim().toLowerCase();
+    const filteredForSide=isSideMode?sidePool.filter((r:any)=>{
+      const t=(r.title||"").toLowerCase();
+      if(!t||existingSideTitles.includes(t))return false;
+      if(sideMain&&t===(sideMain.title||"").toLowerCase())return false;
+      if(sq&&!t.includes(sq))return false;
+      return true;
+    }):[];
+
     return(
       <div className="modal-overlay" onClick={()=>{setAssignDay(null);setModalSearch("");}}>
         <div className="modal" onClick={e=>e.stopPropagation()}>
-          <div className="modal-title">{dayKey?`Add to ${DAYS[DAY_KEYS.indexOf(dayKey)]}`:"Choose a day"}</div>
+          <div className="modal-title">{isSideMode?`Add a side for ${DAYS[DAY_KEYS.indexOf(sideDayKey!)]}`:dayKey?`Add to ${DAYS[DAY_KEYS.indexOf(dayKey)]}`:"Choose a day"}</div>
           {isRedirect?(
             <div className="modal-list">
               {DAY_KEYS.map((k,i)=>{
@@ -2975,6 +3077,41 @@ export default function App(){
                 );
               })}
             </div>
+          ):isSideMode?(
+            <>
+              {sideSuggestions.length>0&&(
+                <>
+                  <div className="modal-cat-label">Suggested sides</div>
+                  <div className="modal-list" style={{marginBottom:12}}>
+                    {sideSuggestions.map((s,i)=>(
+                      <div key={i} className="modal-item" onClick={()=>{addPlanSide(sideDayKey!,s.title);setAssignDay(null);setModalSearch("");}}>
+                        <div className="modal-item-title">{s.title}</div>
+                        <div className="modal-item-meta">{s.tagline}</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+              <input
+                className="modal-search"
+                placeholder="Search Saved & Community…"
+                value={modalSearch}
+                onChange={e=>setModalSearch(e.target.value)}
+                autoFocus
+              />
+              <div className="modal-list">
+                {filteredForSide.length===0?(
+                  <p style={{color:"#7A6E6A",fontSize:13,textAlign:"center",padding:"20px 0"}}>{modalSearch?`No recipes match “${modalSearch}”`:"No matches in Saved or Community."}</p>
+                ):(
+                  filteredForSide.map((r:any,i:number)=>(
+                    <div key={i} className="modal-item" onClick={()=>{addPlanSide(sideDayKey!,r.title,r);setAssignDay(null);setModalSearch("");}}>
+                      <div className="modal-item-title">{r.title}</div>
+                      <div className="modal-item-meta">{r.prep_time} prep · {r.cook_time} cook</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
           ):(
             allRecipes.length===0?<p style={{color:"#7A6E6A",fontSize:14}}>No saved recipes yet.</p>:(
               <>
