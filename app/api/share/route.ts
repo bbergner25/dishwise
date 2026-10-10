@@ -12,6 +12,27 @@ function toSlug(title: string): string {
   return title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
+// Lets the signed-in app fetch a shared recipe by its slug and load it
+// directly into the SPA, instead of navigating out to the public /r/[slug]
+// page (which has no idea the visitor is signed in).
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const slug = searchParams.get("slug");
+    if (!slug) {
+      return NextResponse.json({ error: "Missing slug" }, { status: 400 });
+    }
+    const recipe = await redis.get<any>(`recipe-share:${slug}`);
+    if (!recipe) {
+      return NextResponse.json({ found: false }, { status: 404 });
+    }
+    return NextResponse.json({ found: true, recipe });
+  } catch (err) {
+    console.error("Share GET error:", err);
+    return NextResponse.json({ error: "Failed to load shared recipe" }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
