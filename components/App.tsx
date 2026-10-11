@@ -271,7 +271,7 @@ const CSS = `
   .add-side-result:hover{border-color:#1E3A2F;}
   .dish-swipe-hint{text-align:center;font-size:11px;color:#B8B0A8;padding:8px 24px 0;}
   @media(min-width:768px){.dish-swipe-hint{display:none;}}
-  .dish-swipe-track{display:flex;width:200%;transition:transform .28s cubic-bezier(.4,0,.2,1);touch-action:pan-y;}
+  .dish-swipe-track{display:flex;align-items:flex-start;width:200%;transition:transform .28s cubic-bezier(.4,0,.2,1);touch-action:pan-y;}
   .dish-swipe-pane{width:50%;flex-shrink:0;}
   .side-pane-page{padding-bottom:40px;}
   .side-pane-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:80px 24px;text-align:center;}
@@ -473,7 +473,7 @@ const CSS = `
   .edit-section-label{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#E8431A;margin-bottom:10px;margin-top:16px;}
   .edit-section-label:first-child{margin-top:0;}
   .edit-ing-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
-  .edit-ing-amt{width:80px;padding:8px 10px;border:1.5px solid #EDE8E0;border-radius:8px;font-family:'Outfit',sans-serif;font-size:13px;color:#151210;outline:none;flex-shrink:0;}
+  .edit-ing-amt{width:104px;padding:8px 10px;border:1.5px solid #EDE8E0;border-radius:8px;font-family:'Outfit',sans-serif;font-size:13px;color:#151210;outline:none;flex-shrink:0;}
   .edit-ing-amt:focus{border-color:#F4A021;}
   .edit-ing-name{flex:1;padding:8px 10px;border:1.5px solid #EDE8E0;border-radius:8px;font-family:'Outfit',sans-serif;font-size:13px;color:#151210;outline:none;}
   .edit-ing-name:focus{border-color:#F4A021;}
@@ -876,9 +876,9 @@ const CSS = `
   @media(max-width:760px){.rx-page .two-col{grid-template-columns:1fr;gap:32px;}}
   .rx-page .section-label{font-size:13px;letter-spacing:1.5px;color:#6E635F;font-weight:600;margin-bottom:6px;}
   .rx-page .ing-group-label{font-size:12px;border-bottom:none;color:#1E3A2F;padding:14px 0 2px;}
-  .rx-ing{display:grid;grid-template-columns:88px minmax(0,1fr);align-items:baseline;gap:8px;padding:11px 0;border-bottom:1px solid #ECE6DD;font-size:17px;line-height:1.4;}
+  .rx-ing{display:grid;grid-template-columns:112px minmax(0,1fr);align-items:baseline;gap:8px;padding:11px 0;border-bottom:1px solid #ECE6DD;font-size:17px;line-height:1.4;}
   .rx-ing:last-child{border-bottom:none;}
-  .rx-ing-amt{font-weight:600;color:#151210;}
+  .rx-ing-amt{font-weight:600;color:#151210;white-space:nowrap;}
   .rx-ing-name{color:#2A2422;}
   .rx-ing-name .ing-shop-links{display:inline-flex;margin-left:8px;vertical-align:middle;}
   .rx-page .step-item{gap:16px;margin-bottom:24px;}
@@ -896,6 +896,32 @@ const CSS = `
   .rx-shop-chev{position:absolute;right:14px;pointer-events:none;color:#6E635F;}
   .rx-shop-note{font-size:13px;color:#6E635F;}
   .grocery-section{scroll-margin-top:16px;}
+  .rx-groceries{max-width:820px;margin:8px auto 0;padding:28px 20px 0;border-top:1px solid #ECE6DD;scroll-margin-top:16px;}
+  .rx-gro-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .rx-gro-title{margin:0;font-family:'Fraunces',serif;font-size:24px;font-weight:700;color:#151210;}
+  .rx-gro-sub{font-size:14px;color:#6E635F;}
+  .rx-gro-note{margin:8px 0 0;font-size:14px;color:#4F4744;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .rx-gro-swatch{width:12px;height:12px;border-radius:3px;background:#FFF0D4;border:1px solid #F4A021;flex-shrink:0;}
+  .rx-gro-list{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:6px;}
+  .rx-gro-item{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-height:52px;padding:6px 12px;border-radius:12px;border:1px solid transparent;opacity:.5;transition:opacity .2s,background .2s,border-color .2s;}
+  .rx-gro-item.on{opacity:1;background:#FFF8EA;border-color:#F6DCA6;}
+  .rx-gro-check{flex:1;min-width:0;display:flex;align-items:center;gap:12px;cursor:pointer;min-height:40px;}
+  .rx-gro-check input{width:22px;height:22px;accent-color:#1E3A2F;margin:0;flex-shrink:0;}
+  .rx-gro-check input:checked + .rx-gro-name{text-decoration:line-through;color:#9A8F88;}
+  .rx-gro-name{font-size:17px;color:#151210;}
+  .rx-gro-dishes{display:flex;gap:4px;flex-wrap:wrap;}
+  .rx-gro-dish{font-size:12px;padding:3px 8px;border-radius:10px;background:#F1EBE2;color:#4F4744;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;}
+  .rx-gro-dish.side{background:#EEF3EC;color:#1E3A2F;}
+  .rx-gro-shop{font-size:13px;padding:6px 10px;border-radius:14px;border:1px solid #E3DCD0;color:#4F4744;text-decoration:none;background:#fff;white-space:nowrap;}
+  .rx-gro-shop:hover{border-color:#1A1F2E;color:#151210;}
+  .edit-steps-notice{background:#FFF6E6;border:1px solid #F1D9A8;border-radius:12px;padding:12px 14px;margin:0 0 12px;font-size:14px;color:#4F4744;line-height:1.5;display:flex;flex-direction:column;gap:10px;}
+  .edit-steps-notice strong{color:#151210;}
+  .edit-steps-notice-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .edit-steps-rewrite{min-height:40px;padding:0 16px;border-radius:20px;border:none;background:#1A1F2E;color:#FDFAF5;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+  .edit-steps-rewrite:disabled{opacity:.6;cursor:wait;}
+  .edit-steps-or{font-size:13px;color:#6E635F;}
+  .edit-steps-err{font-size:13px;color:#B8340F;}
+  .edit-step-row.flagged .edit-step-text{border-color:#F4A021;background:#FFFBF2;}
   .rx-actionbar{position:fixed;left:0;right:0;bottom:0;z-index:90;background:rgba(253,250,245,.96);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid #ECE6DD;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));}
   .rx-actionbar-inner{max-width:780px;margin:0 auto;display:flex;gap:10px;}
   .rx-save{height:52px;padding:0 20px;border-radius:26px;border:1.5px solid #1A1F2E;background:#fff;color:#151210;font-family:'Outfit',sans-serif;font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0;}
@@ -1269,6 +1295,55 @@ function ingredientsForStep(step: string, ings: any[]): any[]{
   const t=(step||"").toLowerCase();
   return ings.filter(i=>ingKeywords(i.name).some(k=>new RegExp(`\\b${k}`).test(t)));
 }
+/* ── Editing: keep steps and grocery list in line with the ingredient list ── */
+function flatIngs(r: any): any[]{
+  const groups=r?.ingredient_groups||(r?.ingredients?[{items:r.ingredients}]:[]);
+  return groups.flatMap((g:any)=>g.items||[]).filter((i:any)=>(i?.name||"").trim());
+}
+const normIng=(n: string)=>(n||"").toLowerCase().trim();
+// Ingredients in `before` that are gone from `after` (compared by name).
+function removedIngs(before: any, after: any): any[]{
+  const keep=new Set(flatIngs(after).map((i:any)=>normIng(i.name)));
+  return flatIngs(before).filter((i:any)=>!keep.has(normIng(i.name)));
+}
+// Words that identify a removed ingredient, minus any word a remaining ingredient also uses
+// (so removing "chicken broth" doesn't flag every step that says "chicken").
+function removedTerms(before: any, after: any): {name:string;terms:string[]}[]{
+  const kept=new Set(flatIngs(after).flatMap((i:any)=>ingKeywords(i.name)));
+  return removedIngs(before,after).map((i:any)=>({name:i.name,terms:ingKeywords(i.name).filter(k=>!kept.has(k))})).filter(x=>x.terms.length);
+}
+// Step indexes that still mention a removed ingredient.
+function stepsMentioning(steps: string[], removed: {terms:string[]}[]): number[]{
+  const terms=removed.flatMap(r=>r.terms);
+  if(!terms.length)return [];
+  return (steps||[]).map((st,i)=>terms.some(t=>new RegExp(`\\b${t}`,"i").test(st||""))?i:-1).filter(i=>i>=0);
+}
+// Rebuild grocery_items after an edit: drop items whose best-matching ingredient was removed,
+// and add ingredients that are new and not already covered.
+function syncGroceries(before: any, after: any): string[]{
+  const oldIngs=flatIngs(before), newIngs=flatIngs(after);
+  const newNames=new Set(newIngs.map((i:any)=>normIng(i.name)));
+  const pool=[...oldIngs.map((i:any)=>({name:i.name,gone:!newNames.has(normIng(i.name))})),
+              ...newIngs.map((i:any)=>({name:i.name,gone:false}))];
+  const overlap=(a:string,b:string)=>{const kb=new Set(ingKeywords(b));return ingKeywords(a).filter(k=>kb.has(k)).length;};
+  const kept=(before?.grocery_items||[]).filter((item:string)=>{
+    let best=0,gone=false;
+    for(const p of pool){
+      const o=overlap(item,p.name);
+      if(o>best||(o===best&&o>0&&!p.gone)){best=o;gone=p.gone;}
+    }
+    return !(best>0&&gone);
+  });
+  const oldNames=new Set(oldIngs.map((i:any)=>normIng(i.name)));
+  for(const ing of newIngs){
+    if(oldNames.has(normIng(ing.name)))continue;
+    if(kept.some((g:string)=>overlap(g,ing.name)>0))continue;
+    const base=(ing.name||"").split(/[,(]/)[0].trim();
+    if(base)kept.push(base);
+  }
+  return kept;
+}
+
 function playChime(ctx: any){
   try{
     if(!ctx)return;
@@ -1529,6 +1604,7 @@ export default function App(){
   const [,setGenTick]                = useState(0);
   const searchSeq = useRef(0);                           // bumps on each search/cancel so stale results are ignored
   const [showRecipeMenu,setShowRecipeMenu] = useState(false); // the ⋯ menu on the recipe page
+  const [stepRewrite,setStepRewrite] = useState<"idle"|"loading"|"error">("idle"); // edit panel: AI step rewrite
   const [shareTarget,setShareTarget] = useState<any>(null);     // the recipe the share sheet is for (main dish or a side)
   const [cookRecipe,setCookRecipe]   = useState<any>(null);     // recipe open in cooking mode
   const [cookStep,setCookStep]       = useState(0);             // 0 = gather ingredients, 1..N = steps
@@ -2186,9 +2262,13 @@ export default function App(){
     if(!url||!url.startsWith("http")){setUrlMsg("Please enter a valid URL starting with http");setUrlStatus("error");return;}
     setUrlStatus("loading");setUrlMsg("");
     try{
-      // Step 1: fetch the page HTML — try client-side first, fall back to server proxy
+      // Step 1: fetch the page HTML — try client-side first, fall back to server proxy.
+      // TikTok always goes through the server, which reads the video caption.
+      const isTikTok=(()=>{try{return /(^|\.)tiktok\.com$/.test(new URL(url).hostname);}catch{return false;}})();
       let html="";
+      let tiktok:any=null;
       try{
+        if(isTikTok)throw new Error("use server");
         const res=await fetch(url,{headers:{"Accept":"text/html","Accept-Language":"en-US,en;q=0.9"}});
         if(!res.ok)throw new Error("HTTP "+res.status);
         html=await res.text();
@@ -2200,7 +2280,24 @@ export default function App(){
         });
         const data=await res.json();
         if(data.error||!data.text)throw new Error(data.error||"Could not fetch this page.");
+        if(data.source==="tiktok")tiktok=data;
         html=data.text;
+      }
+
+      if(tiktok){
+        const parsed=await callAPI([{role:"user",content:buildUrlPrompt()+`
+
+This text is the caption of a social media cooking video, not a web page. Use only what the caption says: don't invent ingredients. If an amount isn't given, leave "amount" empty. If the caption lists ingredients but no method, write short, plain steps using only those ingredients and set "source_note" to "Steps written from the caption's ingredient list." If the caption does not contain a recipe at all, reply with only {"error":"no_recipe"}.
+
+${tiktok.text}`}]);
+        const hasIngs=(parsed?.ingredient_groups||[]).some((g:any)=>(g.items||[]).length);
+        if(parsed?.error||!parsed?.title||!hasIngs)throw new Error("This TikTok's caption doesn't include a full recipe. If the recipe is shown in the video, take a screenshot and use Photograph a recipe card.");
+        const r={...parsed,id:Date.now(),_dish:parsed.title,_imported:true,_sourceUrl:tiktok.videoUrl||url,_author:tiktok.author||"",
+          source_note:parsed.source_note||(tiktok.author?`From @${tiktok.author} on TikTok.`:"From TikTok.")};
+        setSaved(l=>[r,...l]);setJustAdded(r);
+        setUrlStatus("done");setUrlMsg(`"${r.title}" saved to your collection!`);
+        setUrlInput("");
+        return;
       }
       if(!html||html.length<200)throw new Error("This site didn't return content. It may be paywalled or require a login.");
 
@@ -2639,7 +2736,7 @@ export default function App(){
                         <>
                           <button role="menuitem" className="rx-menu-item" onClick={()=>{setShowRecipeMenu(false);setTimeout(()=>window.print(),60);}}>{Ic.printer(17)} Print</button>
                           <button role="menuitem" className="rx-menu-item" onClick={()=>{setShowRecipeMenu(false);photoInputRef.current?.click();}}>{Ic.camera(17)} Add a photo</button>
-                          <button role="menuitem" className="rx-menu-item" onClick={()=>{setShowRecipeMenu(false);setEditRecipe(JSON.parse(JSON.stringify(recipe)));setShowEditPanel(true);}}>
+                          <button role="menuitem" className="rx-menu-item" onClick={()=>{setShowRecipeMenu(false);setEditRecipe(JSON.parse(JSON.stringify(recipe)));setStepRewrite("idle");setShowEditPanel(true);}}>
                             <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                             Edit recipe
                           </button>
@@ -2745,12 +2842,62 @@ export default function App(){
                   else if(dx>60)setActivePane(p=>Math.max(p-1,0));
                 }}
               >
-                <div className="dish-swipe-pane" style={{width:`${paneWidthPct}%`}}>{RecipeView()}</div>
+                <div className="dish-swipe-pane" style={{width:`${paneWidthPct}%`,...(activePane===0?{}:{height:0,overflow:"visible"})}} aria-hidden={activePane!==0}>{RecipeView()}</div>
                 {pairedSides.map((p,i)=>(
-                  <div key={i} className="dish-swipe-pane" style={{width:`${paneWidthPct}%`}}>{SidePaneView(p,i)}</div>
+                  <div key={i} className="dish-swipe-pane" style={{width:`${paneWidthPct}%`,...(activePane===i+1?{}:{height:0,overflow:"visible"})}} aria-hidden={activePane!==i+1}>{SidePaneView(p,i)}</div>
                 ))}
               </div>
             </div>
+
+            {(()=>{
+              // One grocery list for the whole meal: the main dish plus every loaded side.
+              // It stays put while you swipe; the dish on screen has its items highlighted.
+              const dishes=[{title:recipe.title,r:recipe},...pairedSides.filter(p=>p.status==="done"&&p.recipe).map(p=>({title:p.title,r:p.recipe}))];
+              const activeTitle=activePane===0?recipe.title:pairedSides[activePane-1]?.title;
+              const gmap:Record<string,{name:string;dishes:string[]}>={};
+              for(const d of dishes){
+                for(const item of (d.r.grocery_items||[])){
+                  const k=String(item).toLowerCase().trim();
+                  if(!k)continue;
+                  if(!gmap[k])gmap[k]={name:item,dishes:[]};
+                  if(!gmap[k].dishes.includes(d.title))gmap[k].dishes.push(d.title);
+                }
+              }
+              const items=Object.entries(gmap);
+              if(!items.length)return null;
+              const store=RETAILERS.find(r=>r.id===retailer);
+              const multi=dishes.length>1;
+              const activeCount=items.filter(([,it])=>it.dishes.includes(activeTitle)).length;
+              return(
+                <section className="rx-groceries" id="rx-groceries" aria-label="Grocery list">
+                  <div className="rx-gro-head">
+                    <h2 className="rx-gro-title">Grocery list</h2>
+                    <span className="rx-gro-sub">{items.length} item{items.length===1?"":"s"}{multi?` for ${dishes.length} dishes`:""}</span>
+                  </div>
+                  {multi&&<p className="rx-gro-note"><span className="rx-gro-swatch" aria-hidden="true"/>Highlighted: the {activeCount} item{activeCount===1?"":"s"} for <strong>{activeTitle}</strong></p>}
+                  {!store&&<p className="rx-gro-note">Choose a store under the main dish's details to get shopping links.</p>}
+                  <ul className="rx-gro-list">
+                    {items.map(([k,it])=>{
+                      const on=!multi||it.dishes.includes(activeTitle);
+                      return(
+                        <li key={k} className={`rx-gro-item${on?" on":""}`}>
+                          <label className="rx-gro-check">
+                            <input type="checkbox"/>
+                            <span className="rx-gro-name">{it.name}</span>
+                          </label>
+                          {multi&&(
+                            <span className="rx-gro-dishes">
+                              {it.dishes.map(d=><span key={d} className={`rx-gro-dish${d===recipe.title?"":" side"}`}>{d===recipe.title?"Main":d}</span>)}
+                            </span>
+                          )}
+                          {store&&<a className="rx-gro-shop" href={store.url(it.name)} target="_blank" rel="noopener noreferrer" aria-label={`Find ${it.name} at ${store.name}`}>{store.name}</a>}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              );
+            })()}
 
             <div className="rx-actionbar">
               <div className="rx-actionbar-inner">
@@ -2801,7 +2948,7 @@ export default function App(){
         <input ref={photoInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handlePhotoUpload}/>
         {photo&&<img src={photo} className="rx-photo" alt={recipe.title}/>}
         <header className="rx-head">
-          <div className="rx-eyebrow">{recipe._scanned?"Scanned recipe":recipe._imported?"Imported recipe":recipe._fromCache?"Community recipe":"Every Chef original"}</div>
+          <div className="rx-eyebrow">{recipe._author?`From @${recipe._author} on TikTok`:recipe._scanned?"Scanned recipe":recipe._imported?"Imported recipe":recipe._fromCache?"Community recipe":"Every Chef original"}</div>
           <h1 className="rx-title">{recipe.title}</h1>
           {recipe.tagline&&<p className="rx-tagline">{recipe.tagline}</p>}
           {recipe.seasonal_note&&<div className="rx-seasonal"><span style={{display:"flex"}}>{Ic.leaf(13)}</span> {recipe.seasonal_note}</div>}
@@ -2919,31 +3066,6 @@ export default function App(){
             )}
           </div>
         )}
-
-        <div className="grocery-section" id="rx-groceries">
-          <div className="grocery-hdr">
-            <h3 className="grocery-title">Grocery List</h3>
-            <span className="rx-shop-note">{retailer?`Each item links to ${RETAILERS.find(r=>r.id===retailer)?.name}`:"Pick a store above to get shopping links"}</span>
-          </div>
-          <div className="grocery-grid">
-            {(recipe.grocery_items||[]).map((item:string,i:number)=>(
-              <div key={i} className="grocery-card">
-                <input type="checkbox" className="grocery-check"/>
-                <div className="grocery-item-wrap">
-                  <div className="grocery-name">{item}</div>
-                  {retailer&&(
-                    <div className="grocery-shop-links">
-                      <a href={RETAILERS.find(r=>r.id===retailer)?.url(item)||"#"}
-                        target="_blank" rel="noopener noreferrer" className="grocery-shop-link">
-                        {RETAILERS.find(r=>r.id===retailer)?.name}
-                      </a>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
 
         {sources.length>0&&(
           <div className="source-section">
@@ -4090,8 +4212,43 @@ export default function App(){
               ))}
               {/* Steps */}
               <div className="edit-section-label">Steps</div>
+              {(()=>{
+                const gone=removedTerms(recipe,editRecipe);
+                const flagged=stepsMentioning(editRecipe.steps||[],gone);
+                if(!flagged.length)return null;
+                const names=gone.filter(g=>flagged.some(i=>g.terms.some(t=>new RegExp(`\\b${t}`,"i").test(editRecipe.steps[i]||"")))).map(g=>g.name.split(/[,(]/)[0].trim());
+                const rewrite=async()=>{
+                  setStepRewrite("loading");
+                  try{
+                    const kept=flatIngs(editRecipe).map((i:any)=>`${i.amount||""} ${i.name}`.trim());
+                    const out=await callAPI([{role:"user",content:
+`You are editing a home recipe. The cook removed these ingredients: ${names.join(", ")}.
+Rewrite the method steps so they no longer use or mention the removed ingredients. Keep everything else the same: same order, same voice, same times and temperatures. Only merge or drop a step if it no longer makes sense without the removed ingredients.
+Ingredients the recipe still has: ${kept.join("; ")}
+Current steps (JSON array): ${JSON.stringify(editRecipe.steps||[])}
+Reply with only JSON in this shape: {"steps":["step one","step two"]}`}]);
+                    if(!Array.isArray(out?.steps)||!out.steps.length)throw new Error("no steps");
+                    setEditRecipe((r:any)=>({...r,steps:out.steps.map((x:any)=>String(x))}));
+                    setStepRewrite("idle");
+                  }catch{setStepRewrite("error");}
+                };
+                return(
+                  <div className="edit-steps-notice" role="status">
+                    <div>
+                      <strong>{names.join(", ")||"A removed ingredient"}</strong> {names.length===1?"is":"are"} still in step{flagged.length===1?"":"s"} {flagged.map(i=>i+1).join(", ")}.
+                    </div>
+                    <div className="edit-steps-notice-actions">
+                      <button className="edit-steps-rewrite" onClick={rewrite} disabled={stepRewrite==="loading"}>
+                        {stepRewrite==="loading"?"Rewriting…":`Rewrite ${flagged.length===1?"that step":"those steps"} without ${names.length===1?"it":"them"}`}
+                      </button>
+                      <span className="edit-steps-or">or edit the highlighted step{flagged.length===1?"":"s"} below</span>
+                    </div>
+                    {stepRewrite==="error"&&<div className="edit-steps-err">Couldn't rewrite the steps just now. Try again, or edit them by hand.</div>}
+                  </div>
+                );
+              })()}
               {(editRecipe.steps||[]).map((step:string,si:number)=>(
-                <div key={si} className="edit-step-row">
+                <div key={si} className={`edit-step-row${stepsMentioning([step],removedTerms(recipe,editRecipe)).length?" flagged":""}`}>
                   <div className="edit-step-num">{si+1}</div>
                   <textarea className="edit-step-text" value={step}
                     onChange={e=>{
@@ -4112,8 +4269,9 @@ export default function App(){
             </div>
             <div className="edit-panel-footer">
               <button className="edit-save-btn" onClick={()=>{
-                setRecipe(editRecipe);
-                if(isSaved(recipe))setSaved((l:any[])=>l.map((r:any)=>r.id===editRecipe.id?editRecipe:r));
+                const updated={...editRecipe,grocery_items:syncGroceries(recipe,editRecipe)};
+                setRecipe(updated);
+                if(isSaved(recipe))setSaved((l:any[])=>l.map((r:any)=>r.id===updated.id?updated:r));
                 setShowEditPanel(false);
               }}>Save Changes</button>
             </div>
