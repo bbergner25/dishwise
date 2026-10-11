@@ -1050,6 +1050,33 @@ const CSS = `
   .pl-add-meal{height:48px;border-radius:14px;border:1.5px dashed #CFC6B8;background:transparent;color:#4F4744;font-family:'Outfit',sans-serif;font-size:15px;font-weight:500;text-align:left;padding:0 16px;cursor:pointer;}
   .pl-add-meal:hover{border-color:#1E3A2F;color:#1E3A2F;background:#EEF3EC;}
   .pl-page .consol-section{scroll-margin-top:16px;}
+  .pl-rel{font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#6E635F;}
+  .pl-rel.today{color:#B8340F;}
+  .pl-week{list-style:none;display:flex;align-items:center;gap:10px;padding:18px 0 2px;}
+  .pl-week span{font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#6E635F;white-space:nowrap;}
+  .pl-week::after{content:"";flex:1;height:1px;background:#E3DCD0;}
+  .pl-earlier{align-self:center;display:flex;width:fit-content;align-items:center;gap:6px;height:36px;padding:0 14px;margin:0 auto 8px;border-radius:18px;border:1px solid #E3DCD0;background:#fff;font-family:'Outfit',sans-serif;font-size:13px;color:#4F4744;cursor:pointer;}
+  .pl-earlier.has-missed{border-color:#F1D9A8;background:#FFF6E6;color:#8A5A0B;font-weight:500;}
+  .pl-earlier svg{transition:transform .15s;}
+  .pl-earlier-list{border-bottom:2px solid #ECE6DD;margin-bottom:6px;}
+  .pl-day.past .pl-dow,.pl-day.past .pl-dnum{color:#9A8F88;}
+  .pl-empty-past{font-size:15px;color:#9A8F88;padding-top:8px;}
+  .pl-made-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:4px;}
+  .pl-past-title{color:#6E635F;font-size:18px;}
+  .pl-made{flex-shrink:0;height:34px;padding:0 10px;border:none;background:none;border-radius:17px;color:#1E3A2F;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;display:flex;align-items:center;gap:4px;cursor:pointer;}
+  .pl-made:hover{background:#EEF3EC;}
+  .pl-missed{display:flex;flex-direction:column;gap:8px;padding:12px 14px;background:#FFF6E6;border:1px solid #F1D9A8;border-radius:14px;}
+  .pl-missed .pl-meal-title{padding:0;}
+  .pl-missed-label{font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#8A5A0B;}
+  .pl-missed-sides{font-size:13px;color:#6E635F;margin-top:-4px;}
+  .pl-missed-move{display:flex;flex-direction:column;gap:6px;}
+  .pl-missed-move-label{font-size:13px;color:#4F4744;}
+  .pl-missed-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+  .pl-chip{height:36px;padding:0 14px;border-radius:18px;border:1px solid #E3DCD0;background:#fff;color:#151210;font-family:'Outfit',sans-serif;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;}
+  .pl-chip-primary{border-color:#1A1F2E;background:#1A1F2E;color:#FDFAF5;font-weight:600;}
+  .pl-chip-ok{border-color:#B9CFB4;color:#1E3A2F;}
+  .pl-chip-text{height:36px;padding:0 10px;border:none;background:none;color:#8A5A0B;font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;cursor:pointer;}
+  .pl-more{display:block;margin:16px auto 0;height:44px;padding:0 18px;border-radius:22px;border:1px solid #E3DCD0;background:#fff;font-family:'Outfit',sans-serif;font-size:14px;color:#1E3A2F;font-weight:500;cursor:pointer;}
 
   /* ── LIBRARY ── */
   .lib-page{max-width:960px;margin:0 auto;padding:24px 20px 120px;}
@@ -1258,9 +1285,33 @@ function playChime(ctx: any){
   }catch{}
 }
 
-function consolidate(plan: Record<string,any>, planSides?: Record<string,{title:string;status:string;recipe:any}[]>){
+/* ── Plan dates ── */
+// Plans are keyed by local date ("2026-10-12"). Older plans used weekday keys ("mon").
+const PLAN_PAST_DAYS=14;   // how far back Earlier goes; older entries are pruned
+const PLAN_MAX_AHEAD=42;   // how far ahead you can scroll
+function dateKey(d: Date): string{return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
+function addDays(d: Date, n: number): Date{const x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function startOfToday(): Date{const d=new Date();d.setHours(0,0,0,0);return d;}
+function keyToDate(k: string): Date{const [y,m,d]=k.split("-").map(Number);return new Date(y,(m||1)-1,d||1);}
+function fmtPlanDay(k: string): string{return keyToDate(k).toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"});}
+// Moves weekday-keyed entries onto their next date (today included) and drops entries older than PLAN_PAST_DAYS.
+function migratePlanKeys<T>(obj: Record<string,T>): Record<string,T>{
+  const WD=["mon","tue","wed","thu","fri","sat","sun"];
+  const today=startOfToday();
+  const todayIdx=(today.getDay()+6)%7;
+  const oldest=dateKey(addDays(today,-PLAN_PAST_DAYS));
+  const out: Record<string,T>={};
+  for(const [k,v] of Object.entries(obj||{})){
+    const wi=WD.indexOf(k);
+    if(wi!==-1){out[dateKey(addDays(today,(wi-todayIdx+7)%7))]=v;continue;}
+    if(/^\d{4}-\d{2}-\d{2}$/.test(k)&&k>=oldest)out[k]=v;
+  }
+  return out;
+}
+
+function consolidate(plan: Record<string,any>, planSides: Record<string,{title:string;status:string;recipe:any}[]>|undefined, keys: string[]){
   const map: Record<string,{name:string;entries:{recipe:string;amount:string}[]}> = {};
-  for(const k of DAY_KEYS){
+  for(const k of keys){
     const dayRecipes: any[] = [];
     if(plan[k])dayRecipes.push(plan[k]);
     for(const s of (planSides?.[k]||[])){ if(s.recipe)dayRecipes.push(s.recipe); }
@@ -1445,6 +1496,9 @@ export default function App(){
   const [editingCategory,setEditingCategory] = useState<number|null>(null);
   const [plan,setPlan]           = useState<Record<string,any>>({});
   const [planSides,setPlanSides] = useState<Record<string,{title:string;status:string;recipe:any}[]>>({}); // sides paired to each day's main dish
+  const [planMade,setPlanMade]   = useState<Record<string,boolean>>({}); // dates whose planned meal was made
+  const [showEarlier,setShowEarlier] = useState(false);  // Plan: earlier days expanded
+  const [planAhead,setPlanAhead] = useState(14);         // Plan: how many days ahead are shown
   const [assignDay,setAssignDay] = useState<string|null>(null);
   const [modalSearch,setModalSearch] = useState("");
   const [scanPreview,setScanPreview] = useState<string|null>(null);
@@ -1588,8 +1642,9 @@ export default function App(){
   useEffect(()=>{
     function load(){
       try{const s=localStorage.getItem("dw-saved");if(s)setSaved(JSON.parse(s));}catch{}
-      try{const m=localStorage.getItem("dw-plan");if(m)setPlan(JSON.parse(m));}catch{}
-      try{const ps=localStorage.getItem("dw-plan-sides");if(ps)setPlanSides(JSON.parse(ps));}catch{}
+      try{const m=localStorage.getItem("dw-plan");if(m)setPlan(migratePlanKeys(JSON.parse(m)));}catch{}
+      try{const ps=localStorage.getItem("dw-plan-sides");if(ps)setPlanSides(migratePlanKeys(JSON.parse(ps)));}catch{}
+      try{const pm=localStorage.getItem("dw-plan-made");if(pm)setPlanMade(migratePlanKeys(JSON.parse(pm)));}catch{}
       try{const l=localStorage.getItem("dw-location");if(l)setLocation(l);}catch{}
       try{const fc=localStorage.getItem("dw-family-code");if(fc){setFamilyCode(fc);loadShared(fc);}}catch{}
       try{const h=localStorage.getItem("dw-history");if(h)setHistory(JSON.parse(h));}catch{}
@@ -1604,6 +1659,7 @@ export default function App(){
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-history",JSON.stringify(history.slice(0,30)));}catch{};},[history,ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-plan",JSON.stringify(plan));}catch{};},[plan,ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-plan-sides",JSON.stringify(planSides));}catch{};},[planSides,ready]);
+  useEffect(()=>{if(ready)try{localStorage.setItem("dw-plan-made",JSON.stringify(planMade));}catch{};},[planMade,ready]);
   useEffect(()=>{if(ready&&location)try{localStorage.setItem("dw-location",location);}catch{};},[location,ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-retailer",retailer);}catch{};},[retailer,ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-ratings",JSON.stringify(ratings));}catch{};},[ratings,ready]);
@@ -1885,6 +1941,11 @@ export default function App(){
   /* cooking mode */
   const openCookMode=(r:any)=>{setCookRecipe(r);setCookStep(0);setCookTimers({});setShowRecipeMenu(false);};
   const closeCookMode=()=>{setCookRecipe(null);setCookTimers({});};
+  const finishCookMode=()=>{
+    if(returnDayKey&&cookRecipe===recipe&&returnDayKey<=dateKey(startOfToday()))
+      setPlanMade(p=>({...p,[returnDayKey]:true}));
+    closeCookMode();
+  };
   const startCookTimer=(step:number,secs:number)=>{
     // Create/resume audio on this tap so the chime is allowed to play later (iOS needs a user gesture).
     try{
@@ -1939,6 +2000,11 @@ export default function App(){
         setPlanSides(p=>({...p,[dayKey]:(p[dayKey]||[]).map(x=>x.title===title?{...x,status:"error"}:x)}));
       }
     })();
+  };
+  // Put a main dish on a date; it starts out not made.
+  const assignMain=(k: string, r: any)=>{
+    setPlan(p=>({...p,[k]:r}));
+    setPlanMade(p=>{const n={...p};delete n[k];return n;});
   };
   const removePlanSide=(dayKey: string, title: string)=>{
     setPlanSides(p=>({...p,[dayKey]:(p[dayKey]||[]).filter(x=>x.title!==title)}));
@@ -2197,8 +2263,9 @@ export default function App(){
   const baseS=recipe?(parseInt(recipe.servings)||4):4;
   const curS=servings||baseS;
   const ratio=curS/baseS;
-  const consolidated=consolidate(plan,planSides);
-  const mealsPlanned=DAY_KEYS.filter(k=>plan[k]).length;
+  const next7Keys=Array.from({length:7},(_,i)=>dateKey(addDays(startOfToday(),i)));
+  const consolidated=consolidate(plan,planSides,next7Keys);
+  const mealsPlanned=next7Keys.filter(k=>plan[k]).length;
 
   /* ── SEARCH VIEW ── */
   function SearchView(){
@@ -3279,70 +3346,148 @@ export default function App(){
     );
   }
 
-  /* ── PLAN (this week) ── */
+  /* ── PLAN (scrolling timeline: today first, earlier days on demand) ── */
   function WeekView(){
-    const monday=(()=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d;})();
-    const dates=DAY_KEYS.map((_,i)=>{const d=new Date(monday);d.setDate(monday.getDate()+i);return d;});
-    const fmt=(d:Date)=>d.toLocaleDateString("en-US",{month:"short",day:"numeric"});
-    const todayIdx=(new Date().getDay()+6)%7;
+    const today=startOfToday();
+    const todayKey=dateKey(today);
+    const tomorrowKey=dateKey(addDays(today,1));
+    const DOW=["SUN","MON","TUE","WED","THU","FRI","SAT"];
+    const fmtMD=(d:Date)=>d.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+    const shortLabel=(k:string)=>k===todayKey?"Today":k===tomorrowKey?"Tomorrow":(()=>{const d=keyToDate(k);const w=DOW[d.getDay()];return `${w[0]}${w.slice(1).toLowerCase()} ${d.getDate()}`;})();
+    // past: the last 7 days always, older days (up to PLAN_PAST_DAYS) only if something was planned
+    const earlierKeys=Array.from({length:PLAN_PAST_DAYS},(_,i)=>dateKey(addDays(today,i-PLAN_PAST_DAYS)))
+      .filter((k,i)=>i>=PLAN_PAST_DAYS-7||plan[k]);
+    const aheadKeys=Array.from({length:planAhead},(_,i)=>dateKey(addDays(today,i)));
+    const missed=earlierKeys.filter(k=>plan[k]&&!planMade[k]);
+    const moveTargets=aheadKeys.filter(k=>!plan[k]).slice(0,4);
+    const openMeal=(k:string)=>{const r=plan[k];if(!r)return;setReturnTab("week");setReturnDayKey(k);setPairedSides(planSides[k]||[]);setActivePane(0);setRecipe(r);setServings(null);setStatus("done");setTab("search");window.scrollTo({top:0});};
+    const removeMeal=(k:string)=>{
+      setPlan(p=>{const n={...p};delete n[k];return n;});
+      setPlanSides(p=>{const n={...p};delete n[k];return n;});
+      setPlanMade(p=>{const n={...p};delete n[k];return n;});
+    };
+    const moveMeal=(from:string,to:string)=>{
+      setPlan(p=>{const n={...p};n[to]=n[from];delete n[from];return n;});
+      setPlanSides(p=>{const n={...p};if(n[from])n[to]=n[from];delete n[from];return n;});
+      setPlanMade(p=>{const n={...p};delete n[from];delete n[to];return n;});
+    };
+    const markMade=(k:string,v:boolean)=>setPlanMade(p=>{const n={...p};if(v)n[k]=true;else delete n[k];return n;});
+    const weekDivider=(k:string)=>{const d=keyToDate(k);return d.getDay()===1?<li key={`w-${k}`} className="pl-week" aria-hidden="true"><span>Week of {fmtMD(d)}</span></li>:null;};
+    const row=(k:string)=>{
+      const d=keyToDate(k);
+      const past=k<todayKey, isToday=k===todayKey, isTomorrow=k===tomorrowKey;
+      const r=plan[k];
+      const sides=planSides[k]||[];
+      const made=!!planMade[k];
+      return(
+        <li key={k} className={`pl-day${isToday?" today":""}${past?" past":""}`}>
+          <div className="pl-date" aria-label={d.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}>
+            <span className="pl-dow">{DOW[d.getDay()]}</span>
+            <span className="pl-dnum">{d.getDate()}</span>
+          </div>
+          <div className="pl-meal">
+            {(isToday||isTomorrow)&&<span className={`pl-rel${isToday?" today":""}`}>{isToday?"Today":"Tomorrow"}</span>}
+            {past?(
+              r?(made?(
+                <div className="pl-made-row">
+                  <button className="pl-meal-title pl-past-title" onClick={()=>openMeal(k)}>{r.title}</button>
+                  <button className="pl-made" onClick={()=>markMade(k,false)} aria-label={`${r.title}: made. Tap to undo`}>
+                    <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 5 5L20 7"/></svg>
+                    Made it
+                  </button>
+                </div>
+              ):(
+                <div className="pl-missed">
+                  <span className="pl-missed-label">Didn't get to it?</span>
+                  <button className="pl-meal-title" onClick={()=>openMeal(k)}>{r.title}</button>
+                  {sides.length>0&&<span className="pl-missed-sides">with {sides.map(s=>s.title).join(", ")}</span>}
+                  <div className="pl-missed-actions">
+                    <button className="pl-chip pl-chip-ok" onClick={()=>markMade(k,true)}>
+                      <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 5 5L20 7"/></svg>
+                      Made it
+                    </button>
+                  </div>
+                  {moveTargets.length>0&&(
+                    <div className="pl-missed-move">
+                      <span className="pl-missed-move-label">Move to</span>
+                      <div className="pl-missed-actions">
+                        {moveTargets.map((t,ti)=>(
+                          <button key={t} className={`pl-chip${ti===0?" pl-chip-primary":""}`} onClick={()=>moveMeal(k,t)}>{shortLabel(t)}</button>
+                        ))}
+                        <button className="pl-chip-text" onClick={()=>removeMeal(k)}>Remove</button>
+                      </div>
+                    </div>
+                  )}
+                  {moveTargets.length===0&&<button className="pl-chip-text" style={{alignSelf:"flex-start"}} onClick={()=>removeMeal(k)}>Remove</button>}
+                </div>
+              )):(
+                <span className="pl-empty-past">Nothing planned</span>
+              )
+            ):r?(
+              <>
+                <div className="pl-meal-top">
+                  <button className="pl-meal-title" onClick={()=>openMeal(k)}>{r.title}</button>
+                  <button className="pl-remove" aria-label={`Remove ${r.title} from ${shortLabel(k)}`} onClick={()=>removeMeal(k)}>
+                    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+                  </button>
+                </div>
+                {r.cook_time&&<div className="pl-meal-meta">{r.cook_time}</div>}
+                <div className="pl-sides">
+                  {sides.map((s,si)=>(
+                    <span key={si} className={`pl-side${s.status==="loading"?" loading":s.status==="error"?" error":""}`}>
+                      <span style={{display:"flex",flexShrink:0}}>{Ic.leaf(12)}</span>
+                      <span className="pl-side-name">{s.title}</span>
+                      {s.status==="loading"&&<span aria-label="loading">…</span>}
+                      {s.status==="error"&&<button className="pl-side-x" aria-label={`Retry ${s.title}`} onClick={()=>retryPlanSide(k,s.title)}>↻</button>}
+                      <button className="pl-side-x" aria-label={`Remove ${s.title}`} onClick={()=>removePlanSide(k,s.title)}>×</button>
+                    </span>
+                  ))}
+                  <button className="pl-add-side" onClick={()=>{setAssignDay(`side_${k}`);if(communityStatus==="idle")loadCommunity();}}>+ Side</button>
+                </div>
+              </>
+            ):(
+              <button className="pl-add-meal" onClick={()=>setAssignDay(k)}>+ Add a meal</button>
+            )}
+          </div>
+        </li>
+      );
+    };
     return(
       <div className="pl-page">
         <div className="pl-head">
           <div>
-            <div className="pl-range">{fmt(dates[0])} – {fmt(dates[6])}</div>
-            <h1 className="ck-title" style={{margin:0}}>This week</h1>
+            <div className="pl-range">{today.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"})}</div>
+            <h1 className="ck-title" style={{margin:0}}>Plan</h1>
           </div>
           {mealsPlanned>0&&(
             <button className="pl-groceries" onClick={()=>document.getElementById("plan-groceries")?.scrollIntoView({behavior:"smooth",block:"start"})}>
-              {Ic.cart(17)} Groceries · {consolidated.length}
+              {Ic.cart(17)} Next 7 days · {consolidated.length}
             </button>
           )}
         </div>
+
+        <button className={`pl-earlier${missed.length?" has-missed":""}`} aria-expanded={showEarlier} onClick={()=>setShowEarlier(v=>!v)}>
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{transform:showEarlier?"rotate(180deg)":"none"}}><path d="m6 15 6-6 6 6"/></svg>
+          {showEarlier?"Hide earlier days":missed.length?`Earlier · ${missed.length} meal${missed.length===1?"":"s"} you didn't get to`:"Earlier days"}
+        </button>
+        {showEarlier&&(
+          <ol className="pl-days pl-earlier-list">
+            {earlierKeys.flatMap((k,i)=>[i===0?null:weekDivider(k),row(k)])}
+          </ol>
+        )}
+
         {mealsPlanned===0&&<p className="pl-hint">Tap <strong>+ Add a meal</strong> on any day to pick from your saved recipes.</p>}
         <ol className="pl-days">
-          {DAY_KEYS.map((key,i)=>{
-            const r=plan[key];
-            const sides=planSides[key]||[];
-            return(
-              <li key={key} className={`pl-day${i===todayIdx?" today":""}`}>
-                <div className="pl-date" aria-label={`${DAYS[i]} ${fmt(dates[i])}`}>
-                  <span className="pl-dow">{DAYS[i].slice(0,3)}</span>
-                  <span className="pl-dnum">{dates[i].getDate()}</span>
-                </div>
-                {r?(
-                  <div className="pl-meal">
-                    <div className="pl-meal-top">
-                      <button className="pl-meal-title" onClick={()=>{setReturnTab("week");setReturnDayKey(key);setPairedSides(planSides[key]||[]);setActivePane(0);setRecipe(r);setServings(null);setStatus("done");setTab("search");window.scrollTo({top:0});}}>{r.title}</button>
-                      <button className="pl-remove" aria-label={`Remove ${r.title} from ${DAYS[i]}`} onClick={()=>{setPlan(p=>{const n={...p};delete n[key];return n;});setPlanSides(p=>{const n={...p};delete n[key];return n;});}}>
-                        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
-                      </button>
-                    </div>
-                    {r.cook_time&&<div className="pl-meal-meta">{r.cook_time}</div>}
-                    <div className="pl-sides">
-                      {sides.map((s,si)=>(
-                        <span key={si} className={`pl-side${s.status==="loading"?" loading":s.status==="error"?" error":""}`}>
-                          <span style={{display:"flex",flexShrink:0}}>{Ic.leaf(12)}</span>
-                          <span className="pl-side-name">{s.title}</span>
-                          {s.status==="loading"&&<span aria-label="loading">…</span>}
-                          {s.status==="error"&&<button className="pl-side-x" aria-label={`Retry ${s.title}`} onClick={()=>retryPlanSide(key,s.title)}>↻</button>}
-                          <button className="pl-side-x" aria-label={`Remove ${s.title}`} onClick={()=>removePlanSide(key,s.title)}>×</button>
-                        </span>
-                      ))}
-                      <button className="pl-add-side" onClick={()=>{setAssignDay(`side_${key}`);if(communityStatus==="idle")loadCommunity();}}>+ Side</button>
-                    </div>
-                  </div>
-                ):(
-                  <button className="pl-add-meal" onClick={()=>setAssignDay(key)}>+ Add a meal</button>
-                )}
-              </li>
-            );
-          })}
+          {aheadKeys.flatMap((k,i)=>[i===0?null:weekDivider(k),row(k)])}
         </ol>
+        {planAhead<PLAN_MAX_AHEAD&&(
+          <button className="pl-more" onClick={()=>setPlanAhead(n=>Math.min(PLAN_MAX_AHEAD,n+14))}>Show 2 more weeks</button>
+        )}
         {mealsPlanned>0&&(
           <div className="consol-section" id="plan-groceries">
             <div className="consol-hdr">
               <div>
-                <div className="consol-title">Combined Grocery List</div>
+                <div className="consol-title">Groceries for the next 7 days</div>
                 <p style={{fontSize:13,color:C.muted,marginTop:4}}>{consolidated.length} items across {mealsPlanned} meal{mealsPlanned!==1?"s":""}</p>
               </div>
               <div className="shop-btns">
@@ -3504,15 +3649,15 @@ export default function App(){
     return(
       <div className="modal-overlay" onClick={()=>{setAssignDay(null);setModalSearch("");}}>
         <div className="modal" onClick={e=>e.stopPropagation()}>
-          <div className="modal-title">{isSideMode?`Add a side for ${DAYS[DAY_KEYS.indexOf(sideDayKey!)]}`:dayKey?`Add to ${DAYS[DAY_KEYS.indexOf(dayKey)]}`:"Choose a day"}</div>
+          <div className="modal-title">{isSideMode?`Add a side for ${fmtPlanDay(sideDayKey!)}`:dayKey?`Add to ${fmtPlanDay(dayKey)}`:"Choose a day"}</div>
           {isRedirect?(
             <div className="modal-list">
-              {DAY_KEYS.map((k,i)=>{
+              {Array.from({length:14},(_,i)=>dateKey(addDays(startOfToday(),i))).map((k,i)=>{
                 const rid=assignDay.replace("fromSaved_","");
                 const r=allRecipes.find(s=>String(s.id)===rid);
                 return(
-                  <div key={k} className="modal-item" onClick={()=>{if(r){setPlan(p=>({...p,[k]:r}));setAssignDay(null);setModalSearch("");}}}>
-                    <div className="modal-item-title">{DAYS[i]}</div>
+                  <div key={k} className="modal-item" onClick={()=>{if(r){assignMain(k,r);setAssignDay(null);setModalSearch("");}}}>
+                    <div className="modal-item-title">{i===0?"Today":i===1?"Tomorrow":fmtPlanDay(k)}</div>
                     {plan[k]&&<div className="modal-item-meta">Currently: {plan[k].title}</div>}
                   </div>
                 );
@@ -3570,7 +3715,7 @@ export default function App(){
                     <div key={cat}>
                       <div className="modal-cat-label">{cat}</div>
                       {grouped[cat].map((r:any)=>(
-                        <div key={r.id} className="modal-item" onClick={()=>{setPlan(p=>({...p,[dayKey!]:r}));setAssignDay(null);setModalSearch("");}}>
+                        <div key={r.id} className="modal-item" onClick={()=>{assignMain(dayKey!,r);setAssignDay(null);setModalSearch("");}}>
                           <div className="modal-item-title">{r.title}</div>
                           <div className="modal-item-meta">{r.prep_time} prep · {r.cook_time} cook</div>
                         </div>
@@ -3578,7 +3723,7 @@ export default function App(){
                     </div>
                   )):(
                     filtered.map((r:any)=>(
-                      <div key={r.id} className="modal-item" onClick={()=>{setPlan(p=>({...p,[dayKey!]:r}));setAssignDay(null);setModalSearch("");}}>
+                      <div key={r.id} className="modal-item" onClick={()=>{assignMain(dayKey!,r);setAssignDay(null);setModalSearch("");}}>
                         <div className="modal-item-title">{r.title}</div>
                         <div className="modal-item-meta">{r.prep_time} prep · {r.cook_time} cook</div>
                       </div>
@@ -3809,7 +3954,7 @@ export default function App(){
 
             <div className="cook-nav">
               <button className="cook-prev" disabled={idx===0} onClick={()=>go(idx-1)}>Back</button>
-              <button className="cook-next" onClick={()=>idx>=last?closeCookMode():go(idx+1)}>
+              <button className="cook-next" onClick={()=>idx>=last?finishCookMode():go(idx+1)}>
                 {idx===0?"Start cooking":idx>=last?"Done":"Next step"}
               </button>
             </div>
