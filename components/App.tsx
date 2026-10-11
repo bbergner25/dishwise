@@ -1344,6 +1344,19 @@ function syncGroceries(before: any, after: any): string[]{
   return kept;
 }
 
+// Ask the AI to rewrite a recipe's steps without the removed ingredients. Returns the new steps.
+async function rewriteStepsWithout(edited: any, removedNames: string[]): Promise<string[]>{
+  const kept=flatIngs(edited).map((i:any)=>`${i.amount||""} ${i.name}`.trim());
+  const out=await callAPI([{role:"user",content:
+`You are editing a home recipe. The cook removed these ingredients: ${removedNames.join(", ")}.
+Rewrite the method steps so they no longer use or mention the removed ingredients. Keep everything else the same: same order, same voice, same times and temperatures. Only merge or drop a step if it no longer makes sense without the removed ingredients. If no step uses them, return the steps unchanged.
+Ingredients the recipe still has: ${kept.join("; ")}
+Current steps (JSON array): ${JSON.stringify(edited.steps||[])}
+Reply with only JSON in this shape: {"steps":["step one","step two"]}`}]);
+  if(!Array.isArray(out?.steps)||!out.steps.length)throw new Error("no steps");
+  return out.steps.map((x:any)=>String(x));
+}
+
 function playChime(ctx: any){
   try{
     if(!ctx)return;
@@ -1605,6 +1618,7 @@ export default function App(){
   const searchSeq = useRef(0);                           // bumps on each search/cancel so stale results are ignored
   const [showRecipeMenu,setShowRecipeMenu] = useState(false); // the ⋯ menu on the recipe page
   const [stepRewrite,setStepRewrite] = useState<"idle"|"loading"|"error">("idle"); // edit panel: AI step rewrite
+  const [stepsSyncedFor,setStepsSyncedFor] = useState("");  // removal set the steps were last rewritten for
   const [shareTarget,setShareTarget] = useState<any>(null);     // the recipe the share sheet is for (main dish or a side)
   const [cookRecipe,setCookRecipe]   = useState<any>(null);     // recipe open in cooking mode
   const [cookStep,setCookStep]       = useState(0);             // 0 = gather ingredients, 1..N = steps
@@ -2736,7 +2750,7 @@ ${tiktok.text}`}]);
                         <>
                           <button role="menuitem" className="rx-menu-item" onClick={()=>{setShowRecipeMenu(false);setTimeout(()=>window.print(),60);}}>{Ic.printer(17)} Print</button>
                           <button role="menuitem" className="rx-menu-item" onClick={()=>{setShowRecipeMenu(false);photoInputRef.current?.click();}}>{Ic.camera(17)} Add a photo</button>
-                          <button role="menuitem" className="rx-menu-item" onClick={()=>{setShowRecipeMenu(false);setEditRecipe(JSON.parse(JSON.stringify(recipe)));setStepRewrite("idle");setShowEditPanel(true);}}>
+                          <button role="menuitem" className="rx-menu-item" onClick={()=>{setShowRecipeMenu(false);setEditRecipe(JSON.parse(JSON.stringify(recipe)));setStepRewrite("idle");setStepsSyncedFor("");setShowEditPanel(true);}}>
                             <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                             Edit recipe
                           </button>
@@ -4213,37 +4227,36 @@ ${tiktok.text}`}]);
               {/* Steps */}
               <div className="edit-section-label">Steps</div>
               {(()=>{
-                const gone=removedTerms(recipe,editRecipe);
-                const flagged=stepsMentioning(editRecipe.steps||[],gone);
-                if(!flagged.length)return null;
-                const names=gone.filter(g=>flagged.some(i=>g.terms.some(t=>new RegExp(`\\b${t}`,"i").test(editRecipe.steps[i]||"")))).map(g=>g.name.split(/[,(]/)[0].trim());
+                const removed=removedIngs(recipe,editRecipe);
+                if(!removed.length)return null;
+                const names=removed.map((r:any)=>(r.name||"").split(/[,(]/)[0].trim()).filter(Boolean);
+                const key=names.map(n=>n.toLowerCase()).sort().join("|");
+                const flagged=stepsMentioning(editRecipe.steps||[],removedTerms(recipe,editRecipe));
+                const synced=stepsSyncedFor===key;
                 const rewrite=async()=>{
                   setStepRewrite("loading");
                   try{
-                    const kept=flatIngs(editRecipe).map((i:any)=>`${i.amount||""} ${i.name}`.trim());
-                    const out=await callAPI([{role:"user",content:
-`You are editing a home recipe. The cook removed these ingredients: ${names.join(", ")}.
-Rewrite the method steps so they no longer use or mention the removed ingredients. Keep everything else the same: same order, same voice, same times and temperatures. Only merge or drop a step if it no longer makes sense without the removed ingredients.
-Ingredients the recipe still has: ${kept.join("; ")}
-Current steps (JSON array): ${JSON.stringify(editRecipe.steps||[])}
-Reply with only JSON in this shape: {"steps":["step one","step two"]}`}]);
-                    if(!Array.isArray(out?.steps)||!out.steps.length)throw new Error("no steps");
-                    setEditRecipe((r:any)=>({...r,steps:out.steps.map((x:any)=>String(x))}));
-                    setStepRewrite("idle");
+                    const steps=await rewriteStepsWithout(editRecipe,names);
+                    setEditRecipe((r:any)=>({...r,steps}));
+                    setStepsSyncedFor(key);setStepRewrite("idle");
                   }catch{setStepRewrite("error");}
                 };
                 return(
                   <div className="edit-steps-notice" role="status">
                     <div>
-                      <strong>{names.join(", ")||"A removed ingredient"}</strong> {names.length===1?"is":"are"} still in step{flagged.length===1?"":"s"} {flagged.map(i=>i+1).join(", ")}.
+                      {synced?<>Steps updated without <strong>{names.join(", ")}</strong>. Review them below.</>
+                        :flagged.length?<><strong>{names.join(", ")}</strong> {names.length===1?"is":"are"} still in step{flagged.length===1?"":"s"} {flagged.map(i=>i+1).join(", ")}. Saving will update {flagged.length===1?"it":"them"}.</>
+                        :<>You removed <strong>{names.join(", ")}</strong>. Saving will update the steps if any still use {names.length===1?"it":"them"}.</>}
                     </div>
-                    <div className="edit-steps-notice-actions">
-                      <button className="edit-steps-rewrite" onClick={rewrite} disabled={stepRewrite==="loading"}>
-                        {stepRewrite==="loading"?"Rewriting…":`Rewrite ${flagged.length===1?"that step":"those steps"} without ${names.length===1?"it":"them"}`}
-                      </button>
-                      <span className="edit-steps-or">or edit the highlighted step{flagged.length===1?"":"s"} below</span>
-                    </div>
-                    {stepRewrite==="error"&&<div className="edit-steps-err">Couldn't rewrite the steps just now. Try again, or edit them by hand.</div>}
+                    {!synced&&(
+                      <div className="edit-steps-notice-actions">
+                        <button className="edit-steps-rewrite" onClick={rewrite} disabled={stepRewrite==="loading"}>
+                          {stepRewrite==="loading"?"Updating steps…":"Update steps now"}
+                        </button>
+                        <span className="edit-steps-or">to review them before saving</span>
+                      </div>
+                    )}
+                    {stepRewrite==="error"&&<div className="edit-steps-err">Couldn't update the steps just now. Save again to keep your changes with the steps as they are, or edit them by hand.</div>}
                   </div>
                 );
               })()}
@@ -4268,12 +4281,26 @@ Reply with only JSON in this shape: {"steps":["step one","step two"]}`}]);
               }}>+ Add step</button>
             </div>
             <div className="edit-panel-footer">
-              <button className="edit-save-btn" onClick={()=>{
-                const updated={...editRecipe,grocery_items:syncGroceries(recipe,editRecipe)};
+              <button className="edit-save-btn" disabled={stepRewrite==="loading"} onClick={async()=>{
+                let edited=editRecipe;
+                const removed=removedIngs(recipe,editRecipe);
+                const names=removed.map((r:any)=>(r.name||"").split(/[,(]/)[0].trim()).filter(Boolean);
+                const key=names.map(n=>n.toLowerCase()).sort().join("|");
+                // Rewrite the steps on save if something was removed and they haven't been updated yet.
+                // After a failed attempt (status "error"), Save keeps the steps as they are.
+                if(names.length&&stepsSyncedFor!==key&&stepRewrite!=="error"&&(edited.steps||[]).length){
+                  setStepRewrite("loading");
+                  try{
+                    const steps=await rewriteStepsWithout(edited,names);
+                    edited={...edited,steps};
+                    setStepRewrite("idle");
+                  }catch{setStepRewrite("error");return;}
+                }
+                const updated={...edited,grocery_items:syncGroceries(recipe,edited)};
                 setRecipe(updated);
                 if(isSaved(recipe))setSaved((l:any[])=>l.map((r:any)=>r.id===updated.id?updated:r));
-                setShowEditPanel(false);
-              }}>Save Changes</button>
+                setShowEditPanel(false);setStepRewrite("idle");
+              }}>{stepRewrite==="loading"?"Updating steps…":"Save Changes"}</button>
             </div>
           </div>
         </div>
