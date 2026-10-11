@@ -790,6 +790,11 @@ const CSS = `
   /* Modal */
   .modal-overlay{position:fixed;inset:0;background:rgba(61,43,31,.45);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;}
   .modal{background:#FDFAF5;border-radius:18px;padding:26px;width:100%;max-width:480px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+  /* search-style modals sit at the top on phones so the on-screen keyboard can't cover the results */
+  @media (max-width:640px){
+    .modal-overlay.modal-top{align-items:flex-start;padding:calc(env(safe-area-inset-top,0px) + 12px) 12px 12px;}
+    .modal-overlay.modal-top .modal{max-height:calc(var(--vvh,100vh) - 24px - env(safe-area-inset-top,0px));padding:20px;}
+  }
   .modal-title{font-family:'Fraunces',serif;font-size:20px;margin-bottom:12px;flex-shrink:0;}
   .modal-search{width:100%;padding:10px 14px;border:1.5px solid #EDE8E0;border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;color:#151210;outline:none;background:#fff;margin-bottom:14px;flex-shrink:0;transition:border-color .15s;box-sizing:border-box;}
   .modal-search:focus{border-color:#F4A021;}
@@ -878,7 +883,7 @@ const CSS = `
   .rx-page .ing-group-label{font-size:12px;border-bottom:none;color:#1E3A2F;padding:14px 0 2px;}
   .rx-ing{display:grid;grid-template-columns:112px minmax(0,1fr);align-items:baseline;gap:8px;padding:11px 0;border-bottom:1px solid #ECE6DD;font-size:17px;line-height:1.4;}
   .rx-ing:last-child{border-bottom:none;}
-  .rx-ing-amt{font-weight:600;color:#151210;white-space:nowrap;}
+  .rx-ing-amt{font-weight:600;color:#151210;overflow-wrap:break-word;min-width:0;}
   .rx-ing-name{color:#2A2422;}
   .rx-ing-name .ing-shop-links{display:inline-flex;margin-left:8px;vertical-align:middle;}
   .rx-page .step-item{gap:16px;margin-bottom:24px;}
@@ -1222,6 +1227,26 @@ function tgUrl(item: string){ return `https://www.target.com/s?searchTerm=${enco
 
 /* ── UTILS ── */
 const UNI_FRAC: Record<string,string> = {"½":"1/2","¼":"1/4","¾":"3/4","⅓":"1/3","⅔":"2/3","⅛":"1/8","⅜":"3/8","⅝":"5/8","⅞":"7/8","⅕":"1/5","⅖":"2/5","⅗":"3/5","⅘":"4/5","⅙":"1/6","⅚":"5/6"};
+// Some recipes put part of the ingredient in the amount ("1 red bell pepper" | "cored and cut…").
+// Keep only the quantity, unit and size words in the amount and move the rest to the name.
+const AMT_WORDS=new Set("cup cups c tbsp tbs tbl tablespoon tablespoons tsp teaspoon teaspoons oz ounce ounces fl lb lbs pound pounds g gram grams kg ml milliliter milliliters l liter liters litre litres pinch pinches dash dashes clove cloves can cans jar jars package packages pkg pkgs bag bags box boxes stick sticks slice slices sprig sprigs bunch bunches head heads handful handfuls quart quarts qt pint pints pt gallon gallons inch inches piece pieces small medium large extra x and or to of heaping scant level about approx approximately few couple dozen".split(" "));
+function splitIng(ing: any){
+  const amount=String(ing?.amount||"").trim(), name=String(ing?.name||"").trim();
+  if(!amount||amount.length<12)return ing;
+  const toks=amount.split(/\s+/);
+  let cut=toks.length;
+  for(let i=0;i<toks.length;i++){
+    const w=toks[i].toLowerCase().replace(/[.,()]/g,"");
+    if(/^[\d\/½⅓⅔¼¾⅛⅜⅝⅞.\-–~]+$/.test(w)||AMT_WORDS.has(w)||/^\d/.test(w))continue;
+    cut=i;break;
+  }
+  if(cut===toks.length||cut===0)return ing;
+  const keep=toks.slice(0,cut).join(" ").replace(/\s+(and|or|of|to|x)$/i,"");
+  const moved=toks.slice(cut).join(" ").replace(/,$/,"");
+  const joiner=!name?"":/^[,(]/.test(name)?"":/^([a-z]+ed|cut|chopped|sliced|diced|minced|peeled|trimmed|halved|about|for|to|plus|divided|optional|at|from|cubed|grated|shredded)\b/i.test(name)?", ":" ";
+  return {...ing,amount:keep,name:moved+joiner+name};
+}
+
 function normalizeAmount(s: string): string {
   if(!s) return s;
   // "½" -> "1/2", "1½" -> "1 1/2" (plain fractions stay legible at any weight/size)
@@ -1344,17 +1369,21 @@ function syncGroceries(before: any, after: any): string[]{
   return kept;
 }
 
-// Ask the AI to rewrite a recipe's steps without the removed ingredients. Returns the new steps.
-async function rewriteStepsWithout(edited: any, removedNames: string[]): Promise<string[]>{
+// Ask the AI to rewrite a recipe's steps (and its one-line description) without the removed ingredients.
+async function rewriteStepsWithout(edited: any, removedNames: string[]): Promise<{steps:string[];tagline?:string}>{
   const kept=flatIngs(edited).map((i:any)=>`${i.amount||""} ${i.name}`.trim());
   const out=await callAPI([{role:"user",content:
 `You are editing a home recipe. The cook removed these ingredients: ${removedNames.join(", ")}.
 Rewrite the method steps so they no longer use or mention the removed ingredients. Keep everything else the same: same order, same voice, same times and temperatures. Only merge or drop a step if it no longer makes sense without the removed ingredients. If no step uses them, return the steps unchanged.
+Also rewrite the short description so it no longer mentions the removed ingredients. Keep its length, tone and wording otherwise; if it doesn't mention them, return it unchanged.
+Recipe title: ${edited.title||""}
+Current description: ${JSON.stringify(edited.tagline||"")}
 Ingredients the recipe still has: ${kept.join("; ")}
 Current steps (JSON array): ${JSON.stringify(edited.steps||[])}
-Reply with only JSON in this shape: {"steps":["step one","step two"]}`}]);
+Reply with only JSON in this shape: {"tagline":"...","steps":["step one","step two"]}`}]);
   if(!Array.isArray(out?.steps)||!out.steps.length)throw new Error("no steps");
-  return out.steps.map((x:any)=>String(x));
+  const tagline=typeof out.tagline==="string"&&out.tagline.trim()&&edited.tagline?out.tagline.trim():undefined;
+  return {steps:out.steps.map((x:any)=>String(x)),tagline};
 }
 
 function playChime(ctx: any){
@@ -1434,13 +1463,13 @@ function buildInspirePrompt(time: string,vibe: string,serves: string,diets: stri
   const d=diets.length?" Dietary restrictions: "+diets.join(", ")+".":"";
   const f=fridge?.trim()?` Try to incorporate some or all of these ingredients the user already has: ${fridge.trim()}.`:"";
   return `Suggest 3 distinct recipe ideas for someone who wants: time available: "${time}", vibe: "${vibe}", serving size: "${serves}".${d}${f}
-Reply with ONLY valid JSON, no other text:
+Each ingredient's "amount" holds only the quantity, unit and size (e.g. "1", "2 cups", "1 large"); the ingredient itself and any prep notes go in "name" (amount "1", name "red bell pepper, cored and diced"). Reply with ONLY valid JSON, no other text:
 {"suggestions":[{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"2","why":"One sentence on why this fits their request perfectly."},{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"2","why":"..."},{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"2","why":"..."}]}
 Make each suggestion meaningfully different from the others. Keep titles concise and appetizing.`;
 }
 
 function buildScanPrompt(): string{
-  return `Extract the recipe from this image. Use US imperial measurements only (cups, tbsp, tsp, oz, lbs, °F). Reply with ONLY valid JSON:
+  return `Extract the recipe from this image. Use US imperial measurements only (cups, tbsp, tsp, oz, lbs, °F). Each ingredient's "amount" holds only the quantity, unit and size (e.g. "1", "2 cups", "1 large"); the ingredient itself and any prep notes go in "name" (amount "1", name "red bell pepper, cored and diced"). Reply with ONLY valid JSON:
 {"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"4","ingredient_groups":[{"label":"","items":[{"amount":"2 tbsp","name":"olive oil"}]}],"steps":["Full step."],"grocery_items":["olive oil"],"sources":[],"source_note":"Digitized from a recipe card."}`;
 }
 
@@ -1453,7 +1482,7 @@ function buildRemixPrompt(dish: string, diets: string[], seasonal: boolean, loca
 }
 
 function buildUrlPrompt(): string{
-  return `Extract the recipe from the text content of this webpage. Ignore navigation, ads, comments, and all other non-recipe content. Use US imperial measurements only (cups, tbsp, tsp, oz, lbs, °F) — convert any metric amounts. Reply with ONLY valid JSON:
+  return `Extract the recipe from the text content of this webpage. Ignore navigation, ads, comments, and all other non-recipe content. Use US imperial measurements only (cups, tbsp, tsp, oz, lbs, °F) — convert any metric amounts. Each ingredient's "amount" holds only the quantity, unit and size (e.g. "1", "2 cups", "1 large"); the ingredient itself and any prep notes go in "name" (amount "1", name "red bell pepper, cored and diced"). Reply with ONLY valid JSON:
 {"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"4","ingredient_groups":[{"label":"","items":[{"amount":"2 tbsp","name":"olive oil"}]}],"steps":["Full detailed step."],"grocery_items":["olive oil"],"sources":[],"source_note":"Extracted from [site name]."}
 Group ingredients by component if applicable. Write full clear steps.`;
 }
@@ -1669,6 +1698,13 @@ export default function App(){
   const qrRafRef    = useRef<number|null>(null);
 
   /* stop the camera if the component unmounts while the scanner is open */
+  // Track the visible viewport height (shrinks when the phone keyboard opens) so top-anchored sheets can fit above it.
+  useEffect(()=>{
+    const vv=(window as any).visualViewport; if(!vv)return;
+    const set=()=>document.documentElement.style.setProperty("--vvh",`${Math.round(vv.height)}px`);
+    set(); vv.addEventListener("resize",set);
+    return()=>vv.removeEventListener("resize",set);
+  },[]);
   useEffect(()=>{
     return ()=>{
       if(qrRafRef.current!=null)cancelAnimationFrame(qrRafRef.current);
@@ -3008,8 +3044,8 @@ ${tiktok.text}`}]);
                 <ul className="ing-list">
                   {(g.items||[]).map((ing:any,ii:number)=>(
                     <li key={ii} className="rx-ing" style={{fontSize:ingFontSize}}>
-                      <span className="rx-ing-amt">{renderAmount(normalizeAmount(scaleAmt(ing.amount,ratio)))}</span>
-                      <span className="rx-ing-name">{ing.name}
+                      <span className="rx-ing-amt">{renderAmount(normalizeAmount(scaleAmt(splitIng(ing).amount,ratio)))}</span>
+                      <span className="rx-ing-name">{splitIng(ing).name}
                       </span>
                     </li>
                   ))}
@@ -3140,8 +3176,8 @@ ${tiktok.text}`}]);
                   <ul className="ing-list">
                     {(g.items||[]).map((ing:any,ii:number)=>(
                       <li key={ii} className="rx-ing" style={{fontSize:ingFontSize}}>
-                        <span className="rx-ing-amt">{renderAmount(normalizeAmount(ing.amount||""))}</span>
-                        <span className="rx-ing-name">{ing.name}</span>
+                        <span className="rx-ing-amt">{renderAmount(normalizeAmount(splitIng(ing).amount||""))}</span>
+                        <span className="rx-ing-name">{splitIng(ing).name}</span>
                       </li>
                     ))}
                   </ul>
@@ -3783,7 +3819,7 @@ ${tiktok.text}`}]);
     }):[];
 
     return(
-      <div className="modal-overlay" onClick={()=>{setAssignDay(null);setModalSearch("");}}>
+      <div className="modal-overlay modal-top" onClick={()=>{setAssignDay(null);setModalSearch("");}}>
         <div className="modal" onClick={e=>e.stopPropagation()}>
           <div className="modal-title">{isSideMode?`Add a side for ${fmtPlanDay(sideDayKey!)}`:dayKey?`Add to ${fmtPlanDay(dayKey)}`:"Choose a day"}</div>
           {isRedirect?(
@@ -4045,8 +4081,8 @@ ${tiktok.text}`}]);
                       <li key={i}>
                         <label>
                           <input type="checkbox"/>
-                          <span className="cook-ing-amt">{amt(ing.amount)}</span>
-                          <span>{ing.name}</span>
+                          <span className="cook-ing-amt">{amt(splitIng(ing).amount)}</span>
+                          <span>{splitIng(ing).name}</span>
                         </label>
                       </li>
                     ))}
@@ -4079,7 +4115,7 @@ ${tiktok.text}`}]);
                       <div className="cook-ings-label">In this step</div>
                       <ul>
                         {stepIngs.map((ing:any,i:number)=>(
-                          <li key={i}><span className="cook-ing-amt">{amt(ing.amount)}</span><span>{ing.name}</span></li>
+                          <li key={i}><span className="cook-ing-amt">{amt(splitIng(ing).amount)}</span><span>{splitIng(ing).name}</span></li>
                         ))}
                       </ul>
                     </div>
@@ -4236,8 +4272,8 @@ ${tiktok.text}`}]);
                 const rewrite=async()=>{
                   setStepRewrite("loading");
                   try{
-                    const steps=await rewriteStepsWithout(editRecipe,names);
-                    setEditRecipe((r:any)=>({...r,steps}));
+                    const res=await rewriteStepsWithout(editRecipe,names);
+                    setEditRecipe((r:any)=>({...r,steps:res.steps,...(res.tagline?{tagline:res.tagline}:{})}));
                     setStepsSyncedFor(key);setStepRewrite("idle");
                   }catch{setStepRewrite("error");}
                 };
@@ -4291,14 +4327,16 @@ ${tiktok.text}`}]);
                 if(names.length&&stepsSyncedFor!==key&&stepRewrite!=="error"&&(edited.steps||[]).length){
                   setStepRewrite("loading");
                   try{
-                    const steps=await rewriteStepsWithout(edited,names);
-                    edited={...edited,steps};
+                    const res=await rewriteStepsWithout(edited,names);
+                    edited={...edited,steps:res.steps,...(res.tagline?{tagline:res.tagline}:{})};
                     setStepRewrite("idle");
                   }catch{setStepRewrite("error");return;}
                 }
                 const updated={...edited,grocery_items:syncGroceries(recipe,edited)};
                 setRecipe(updated);
                 if(isSaved(recipe))setSaved((l:any[])=>l.map((r:any)=>r.id===updated.id?updated:r));
+                // keep any planned copies of this recipe in step with the edit
+                setPlan((p:any)=>{let ch=false;const n={...p};for(const k in n){const r=n[k];if(r&&((updated.id!=null&&r.id===updated.id)||(r.title===recipe.title))){n[k]=updated;ch=true;}}return ch?n:p;});
                 setShowEditPanel(false);setStepRewrite("idle");
               }}>{stepRewrite==="loading"?"Updating steps…":"Save Changes"}</button>
             </div>
