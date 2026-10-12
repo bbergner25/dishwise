@@ -881,9 +881,12 @@ const CSS = `
   @media(max-width:760px){.rx-page .two-col{grid-template-columns:1fr;gap:32px;}}
   .rx-page .section-label{font-size:13px;letter-spacing:1.5px;color:#6E635F;font-weight:600;margin-bottom:6px;}
   .rx-page .ing-group-label{font-size:12px;border-bottom:none;color:#1E3A2F;padding:14px 0 2px;}
-  .rx-ing{display:grid;grid-template-columns:112px minmax(0,1fr);align-items:baseline;gap:8px;padding:11px 0;border-bottom:1px solid #ECE6DD;font-size:17px;line-height:1.4;}
+  .rx-ing{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:baseline;padding:11px 0;border-bottom:1px solid #ECE6DD;font-size:17px;line-height:1.4;}
+  .rx-ing.no-prep{grid-template-columns:minmax(0,1fr);}
+  .rx-ing-main{color:#151210;font-weight:500;}
+  .rx-ing-prep{color:#6E635F;}
   .rx-ing:last-child{border-bottom:none;}
-  .rx-ing-amt{font-weight:600;color:#151210;overflow-wrap:break-word;min-width:0;}
+  .rx-ing-amt{font-weight:700;color:#151210;margin-right:.3em;}
   .rx-ing-name{color:#2A2422;}
   .rx-ing-name .ing-shop-links{display:inline-flex;margin-left:8px;vertical-align:middle;}
   .rx-page .step-item{gap:16px;margin-bottom:24px;}
@@ -1232,6 +1235,14 @@ const UNI_FRAC: Record<string,string> = {"½":"1/2","¼":"1/4","¾":"3/4","⅓":
 const AMT_WORDS=new Set("cup cups c tbsp tbs tbl tablespoon tablespoons tsp teaspoon teaspoons oz ounce ounces fl lb lbs pound pounds g gram grams kg ml milliliter milliliters l liter liters litre litres pinch pinches dash dashes clove cloves can cans jar jars package packages pkg pkgs bag bags box boxes stick sticks slice slices sprig sprigs bunch bunches head heads handful handfuls quart quarts qt pint pints pt gallon gallons inch inches piece pieces small medium large extra x and or to of heaping scant level about approx approximately few couple dozen".split(" "));
 function splitIng(ing: any){
   const amount=String(ing?.amount||"").trim(), name=String(ing?.name||"").trim();
+  if(amount&&/^[\d\/½⅓⅔¼¾⅛⅜⅝⅞.\-–\s]+$/.test(amount)){
+    const m=name.match(/^(cups?|tablespoons?|tbsps?|teaspoons?|tsps?|ounces?|oz|pounds?|lbs?|cloves?|cans?|sticks?|slices?|sprigs?|pinch(?:es)?|dash(?:es)?|grams?|g|ml)\b\.?\s+(?:of\s+)?/i);
+    if(m){
+      const u=m[1].toLowerCase();
+      const short=/^tablespoons?$/.test(u)?"tbsp":/^teaspoons?$/.test(u)?"tsp":/^pounds?$/.test(u)?"lbs":/^ounces?$/.test(u)?"oz":m[1];
+      return {...ing,amount:`${amount} ${short}`,name:name.slice(m[0].length)};
+    }
+  }
   if(!amount||amount.length<12)return ing;
   const toks=amount.split(/\s+/);
   let cut=toks.length;
@@ -1245,6 +1256,16 @@ function splitIng(ing: any){
   const moved=toks.slice(cut).join(" ").replace(/,$/,"");
   const joiner=!name?"":/^[,(]/.test(name)?"":/^([a-z]+ed|cut|chopped|sliced|diced|minced|peeled|trimmed|halved|about|for|to|plus|divided|optional|at|from|cubed|grated|shredded)\b/i.test(name)?", ":" ";
   return {...ing,amount:keep,name:moved+joiner+name};
+}
+
+// "red bell pepper, cored and diced" -> item "red bell pepper", prep "cored and diced"
+function ingParts(ing: any){
+  const sp=splitIng(ing); const name=String(sp.name||"");
+  let depth=0, cut=-1;
+  for(let i=0;i<name.length;i++){const c=name[i];if(c==="(")depth++;else if(c===")")depth=Math.max(0,depth-1);else if(c===","&&depth===0){cut=i;break;}}
+  const item=(cut<0?name:name.slice(0,cut)).trim();
+  const prep=(cut<0?"":name.slice(cut+1)).trim();
+  return {amount:String(sp.amount||""),item,prep};
 }
 
 function normalizeAmount(s: string): string {
@@ -3043,11 +3064,11 @@ ${tiktok.text}`}]);
                 {g.label&&<div className="ing-group-label">{g.label}</div>}
                 <ul className="ing-list">
                   {(g.items||[]).map((ing:any,ii:number)=>(
-                    <li key={ii} className="rx-ing" style={{fontSize:ingFontSize}}>
-                      <span className="rx-ing-amt">{renderAmount(normalizeAmount(scaleAmt(splitIng(ing).amount,ratio)))}</span>
-                      <span className="rx-ing-name">{splitIng(ing).name}
-                      </span>
-                    </li>
+                    (()=>{const pt=ingParts(ing);return(
+                    <li key={ii} className={`rx-ing${pt.prep?"":" no-prep"}`} style={{fontSize:ingFontSize}}>
+                      <span className="rx-ing-main">{pt.amount&&<span className="rx-ing-amt">{renderAmount(normalizeAmount(scaleAmt(pt.amount,ratio)))}</span>}{pt.item}</span>
+                      {pt.prep&&<span className="rx-ing-prep">{pt.prep}</span>}
+                    </li>);})()
                   ))}
                 </ul>
               </div>
@@ -3175,10 +3196,11 @@ ${tiktok.text}`}]);
                   {g.label&&<div className="ing-group-label">{g.label}</div>}
                   <ul className="ing-list">
                     {(g.items||[]).map((ing:any,ii:number)=>(
-                      <li key={ii} className="rx-ing" style={{fontSize:ingFontSize}}>
-                        <span className="rx-ing-amt">{renderAmount(normalizeAmount(splitIng(ing).amount||""))}</span>
-                        <span className="rx-ing-name">{splitIng(ing).name}</span>
-                      </li>
+                      (()=>{const pt=ingParts(ing);return(
+                      <li key={ii} className={`rx-ing${pt.prep?"":" no-prep"}`} style={{fontSize:ingFontSize}}>
+                        <span className="rx-ing-main">{pt.amount&&<span className="rx-ing-amt">{renderAmount(normalizeAmount(pt.amount))}</span>}{pt.item}</span>
+                        {pt.prep&&<span className="rx-ing-prep">{pt.prep}</span>}
+                      </li>);})()
                     ))}
                   </ul>
                 </div>
