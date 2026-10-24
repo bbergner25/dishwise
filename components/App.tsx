@@ -309,6 +309,23 @@ const CSS = `
 
   /* ── MOSAIC CARDS ── */
   /* ── EVERY CHEF MOSAIC CARDS ── */
+  .fl-wrap{width:100%;max-width:960px;margin:0 auto;text-align:left;padding-bottom:120px;}
+  .fl-lede{margin:6px 0 16px;font-size:16px;line-height:1.5;color:#4F4744;}
+  .fl-bar{margin:0 -20px 16px;}
+  .fl-cats{display:flex;gap:8px;overflow-x:auto;padding:0 20px 2px;scrollbar-width:none;}
+  .fl-cats::-webkit-scrollbar{display:none;}
+  @media(min-width:768px){.fl-bar{margin:0 0 18px;}.fl-cats{flex-wrap:wrap;overflow:visible;padding:0;}}
+  .fl-grid{display:grid;grid-template-columns:1fr;gap:10px;}
+  @media(min-width:640px){.fl-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}}
+  .fl-card{position:relative;display:flex;flex-direction:column;gap:4px;text-align:left;padding:16px 48px 16px 18px;background:#fff;border:1px solid #ECE6DD;border-radius:18px;cursor:pointer;font-family:'Outfit',sans-serif;transition:border-color .15s,box-shadow .15s;}
+  .fl-card:hover{border-color:#CFC6B8;box-shadow:0 4px 16px rgba(26,31,46,.08);}
+  .fl-card:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
+  .fl-card-cat{font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#8A5A0B;}
+  .fl-card-title{font-family:'Fraunces',serif;font-size:20px;font-weight:600;line-height:1.2;color:#151210;}
+  .fl-card-desc{font-size:15px;line-height:1.45;color:#4F4744;}
+  .fl-card-go{position:absolute;right:16px;top:50%;transform:translateY(-50%);color:#9A8F88;display:flex;}
+  .fl-shuffle{margin:18px auto 0;min-height:48px;padding:0 22px;border-radius:24px;border:1px solid #CFC6B8;background:#fff;color:#151210;font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;cursor:pointer;}
+  .fl-shuffle:hover{border-color:#1A1F2E;}
   .mosaic-section{padding:32px 20px 8px;max-width:960px;margin:0 auto;}
   @media(min-width:768px){.mosaic-section{padding:32px 28px 8px;}}
   .mosaic-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
@@ -2713,37 +2730,33 @@ ${tiktok.text}`}]);
             </>
           )}
               {homeMode==="tryme"&&(
-              <div style={{width:"100%",maxWidth:960,margin:"0 auto"}}>
-                <div className="mosaic-header" style={{marginBottom:12}}>
-                  <div className="mosaic-title">Or try <em>one of these</em></div>
-                  <button onClick={()=>setCardSeed(s=>s+1)} style={{background:"none",border:"1.5px solid #EDE8E0",borderRadius:"100px",padding:"5px 14px",fontFamily:"'Outfit',sans-serif",fontSize:12,fontWeight:600,color:"#7A6E6A",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
-                    {Ic.refresh(13)} Shuffle
-                  </button>
+              <div className="fl-wrap">
+                <p className="fl-lede">Tap any dish to get the full recipe.</p>
+                <div className="fl-bar">
+                  <div className="fl-cats" role="group" aria-label="Filter by category">
+                    {["All","Quick & Easy","Comfort Food","Date Night","Weekend Project","Bold & Spicy","Light & Fresh","Brunch","Crowd Pleaser","Dessert","Showstopper","Staff Pick","Seasonal"].map(cat=>(
+                      <button key={cat} className={`ck-chip${activeCardCat===cat?" on-dark":""}`} aria-pressed={activeCardCat===cat} onClick={()=>setActiveCardCat(cat)}>{cat}</button>
+                    ))}
+                  </div>
                 </div>
-                <div className="mosaic-cat-tabs">
-                  {["All","Quick & Easy","Comfort Food","Date Night","Weekend Project","Bold & Spicy","Light & Fresh","Brunch","Crowd Pleaser","Dessert","Showstopper","Staff Pick","Seasonal"].map(cat=>(
-                    <button key={cat} className={`mosaic-cat-tab${activeCardCat===cat?" active":""}`} onClick={()=>setActiveCardCat(cat)}>{cat}</button>
-                  ))}
-                </div>
-                <div className="mosaic-grid">
+                <div className="fl-grid">
                   {(()=>{
                     const pool=activeCardCat==="All"?CARD_POOL:CARD_POOL.filter(c=>c.category===activeCardCat);
                     return seededShuffle(pool,cardSeed).slice(0,8).map((card)=>(
-                      <div key={card.title+cardSeed}
-                        className="mosaic-card"
-                        onClick={()=>{setQuery(card.title);doSearch(card.title);}}>
-                        <div className="mosaic-card-header" style={{background:"#fff"}}>
-                          <div className="mosaic-card-header-title" style={{color:"#151210"}}>{card.title}</div>
-                          <div className="mosaic-card-header-desc" style={{color:"#7A6E6A"}}>{card.desc}</div>
-                        </div>
-                        <div className="mosaic-card-body">
-                          <div className="mosaic-card-category" style={{color:card.catColor}}>{card.category}</div>
-                          <span className="mosaic-card-arrow">›</span>
-                        </div>
-                      </div>
+                      <button key={card.title+cardSeed} className="fl-card" onClick={()=>{setQuery(card.title);doSearch(card.title);}}>
+                        <span className="fl-card-cat">{card.category}</span>
+                        <span className="fl-card-title">{card.title}</span>
+                        <span className="fl-card-desc">{card.desc}</span>
+                        <span className="fl-card-go" aria-hidden="true">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+                        </span>
+                      </button>
                     ));
                   })()}
                 </div>
+                <button className="fl-shuffle" onClick={()=>{setCardSeed(x=>x+1);window.scrollTo({top:0,behavior:"smooth"});}}>
+                  {Ic.refresh(17)} Shuffle for new ideas
+                </button>
               </div>
               )}
               {homeMode==="inspire"&&(
