@@ -1351,6 +1351,29 @@ const CSS = `
   .edit-ing-row{gap:6px;}
   .edit-ing-amt{width:96px;}
 
+  /* Add to plan (recipe page) */
+  .rx-actionbar-inner .rx-save{padding:0 16px;}
+  .rx-plan{height:52px;padding:0 16px;border-radius:26px;border:1.5px solid #1A1F2E;background:#fff;color:#151210;font-family:'Figtree',sans-serif;font-size:16px;font-weight:600;display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0;}
+  .rx-plan.planned{background:#FFF4E0;border-color:#C97A0A;color:#7A4A06;}
+  .rx-plan:disabled{opacity:.5;cursor:not-allowed;}
+  .rx-plan:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
+  .pp-sheet{max-height:85vh;display:flex;flex-direction:column;}
+  .pp-sheet>*:not(.pp-days){flex-shrink:0;}
+  .pp-toast-text{white-space:nowrap;}
+  .pp-days{list-style:none;margin:0 -20px;padding:0 20px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;}
+  .pp-day{width:100%;display:flex;align-items:center;gap:14px;min-height:60px;padding:10px 14px;background:#fff;border:1px solid #ECE6DD;border-radius:16px;text-align:left;cursor:pointer;font-family:'Figtree',sans-serif;color:#151210;}
+  .pp-day:hover:not(:disabled){border-color:#1A1F2E;}
+  .pp-day:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
+  .pp-day.same{background:#F5EFE4;border-color:transparent;cursor:default;}
+  .pp-date{width:40px;display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
+  .pp-dow{font-size:12px;font-weight:600;letter-spacing:1px;color:#6E635F;}
+  .pp-dnum{font-family:'Fraunces',serif;font-size:21px;font-weight:700;line-height:1.1;}
+  .pp-text{display:flex;flex-direction:column;gap:2px;min-width:0;}
+  .pp-label{font-size:16px;font-weight:600;}
+  .pp-meta{font-size:14px;color:#6E635F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .pp-toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:250;display:flex;align-items:center;gap:14px;max-width:calc(100% - 32px);padding:10px 10px 10px 18px;background:#1A1F2E;color:#FDFAF5;border-radius:26px;font-family:'Figtree',sans-serif;font-size:15px;box-shadow:0 8px 24px rgba(26,31,46,.25);}
+  .pp-toast button{min-height:40px;padding:0 14px;border:none;border-radius:20px;background:#F4A021;color:#151210;font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;}
+
 `;
 
 /* ── CONSTANTS (card pool + suggestions now live in lib/dishes.ts) ── */
@@ -1865,6 +1888,9 @@ export default function App(){
   const [showSidePanel,setShowSidePanel] = useState(false); // "Pair it with a side" panel on the recipe page
   const [returnTab,setReturnTab]     = useState<string|null>(null); // tab to return to when leaving a recipe opened from Saved/Community/Week/Family
   const [returnDayKey,setReturnDayKey] = useState<string|null>(null); // which day's sides to sync pairedSides back into, when returnTab is "week"
+  const [planPick,setPlanPick] = useState<{recipe:any;sides:any[]}|null>(null); // recipe being added to the plan from its page
+  const [planToast,setPlanToast] = useState<{day:string;title:string}|null>(null);
+  useEffect(()=>{if(!planToast)return;const id=setTimeout(()=>setPlanToast(null),5000);return()=>clearTimeout(id);},[planToast]);
   const [pairedSides,setPairedSides] = useState<{title:string;status:string;recipe:any}[]>([]); // every side dish paired alongside the main dish (loading|done|error)
   const [activePane,setActivePane]   = useState(0); // 0 = main dish, 1..N = pairedSides[n-1]
   const swipeStartX = useRef<number|null>(null);
@@ -3305,6 +3331,19 @@ ${tiktok.text}`}]);
                 <button className={`rx-save${asv?" saved":""}`} disabled={!activeRecipe} onClick={()=>activeRecipe&&toggleSave(activeRecipe)}>
                   {asv?Ic.heartFill(18):Ic.heart(18)} {asv?"Saved":"Save"}
                 </button>
+                {(()=>{
+                  const todayK=dateKey(startOfToday());
+                  const t=(activeRecipe?.title||"").toLowerCase();
+                  const planned=!!t&&Object.entries(plan).some(([k,r]:any)=>k>=todayK&&(r?.title||"").toLowerCase()===t);
+                  return(
+                    <button className={`rx-plan${planned?" planned":""}`} disabled={!activeRecipe}
+                      aria-label={planned?"Planned. Add to another day":"Add to plan"}
+                      onClick={()=>activeRecipe&&setPlanPick({recipe:activeRecipe,sides:activePane===0?pairedSides.filter(x=>x.status==="done"&&x.recipe):[]})}>
+                      {planned?<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 5 5L20 7"/></svg>:Ic.calendar(18)}
+                      {planned?"Planned":"Plan"}
+                    </button>
+                  );
+                })()}
                 <button className="rx-cook" disabled={!activeRecipe||!(activeRecipe.steps||[]).length} onClick={()=>activeRecipe&&openCookMode(activeRecipe)}>
                   Start cooking
                 </button>
@@ -4367,6 +4406,52 @@ ${tiktok.text}`}]);
       {(tab==="library"||tab==="saved"||tab==="family")&&LibraryView()}
       {tab==="week"&&WeekView()}
       {Modal()}
+      {planPick&&(()=>{
+        const r=planPick.recipe;
+        const title=(r.title||"").toLowerCase();
+        const days=Array.from({length:14},(_,i)=>dateKey(addDays(startOfToday(),i)));
+        const pick=(k:string,withSides:boolean)=>{
+          assignMain(k,r);
+          const sides=withSides?planPick.sides.map((x:any)=>({title:x.title,status:"done",recipe:x.recipe})):[];
+          setPlanSides(p=>{const n={...p};if(sides.length)n[k]=sides;else delete n[k];return n;});
+          setPlanPick(null);
+          setPlanToast({day:k,title:r.title});
+        };
+        return(
+          <div className="share-overlay" onClick={()=>setPlanPick(null)}>
+            <div className="share-sheet pp-sheet" role="dialog" aria-modal="true" aria-labelledby="pp-title" onClick={e=>e.stopPropagation()}>
+              <div className="ui-handle" aria-hidden="true"/>
+              <button className="ui-close" aria-label="Close" onClick={()=>setPlanPick(null)}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+              <h2 id="pp-title" className="share-sheet-title">Add to your plan</h2>
+              <p className="share-sheet-dish">{r.title}{planPick.sides.length>0?` with ${planPick.sides.map((x:any)=>x.title).join(", ")}`:""}</p>
+              <ul className="pp-days">
+                {days.map((k,i)=>{
+                  const cur=plan[k];
+                  const same=cur&&(cur.title||"").toLowerCase()===title;
+                  const d=keyToDate(k);
+                  return(
+                    <li key={k}>
+                      <button className={`pp-day${same?" same":""}`} disabled={same} onClick={()=>pick(k,planPick.sides.length>0)}>
+                        <span className="pp-date"><span className="pp-dow">{["SUN","MON","TUE","WED","THU","FRI","SAT"][d.getDay()]}</span><span className="pp-dnum">{d.getDate()}</span></span>
+                        <span className="pp-text">
+                          <span className="pp-label">{i===0?"Today":i===1?"Tomorrow":d.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"})}</span>
+                          <span className="pp-meta">{same?"Already planned":cur?`Replaces ${cur.title}`:"Nothing planned yet"}</span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </div>
+        );
+      })()}
+      {planToast&&(
+        <div className="pp-toast" role="status">
+          <span className="pp-toast-text">Added to {planToast.day===dateKey(startOfToday())?"today":planToast.day===dateKey(addDays(startOfToday(),1))?"tomorrow":keyToDate(planToast.day).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}</span>
+          <button onClick={()=>{setPlanToast(null);if(tab==="search"&&status==="done")leaveRecipe();setTab("week");window.scrollTo({top:0});}}>View plan</button>
+        </div>
+      )}
       {showAccountSheet&&user&&(
         <div className="account-sheet-overlay" onClick={()=>setShowAccountSheet(false)}>
           <div className="account-sheet" role="dialog" aria-modal="true" aria-label="Account" onClick={e=>e.stopPropagation()}>
