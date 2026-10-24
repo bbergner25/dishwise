@@ -285,7 +285,7 @@ const CSS = `
   .home-mode-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 10px;border-radius:100px;border:none;background:transparent;font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;color:#7A6E6A;cursor:pointer;transition:color .15s;white-space:nowrap;position:relative;z-index:1;}
   .home-mode-btn.active{color:#FDFAF5;}
   .home-mode-btn:not(.active):hover{color:#151210;}
-  .home-inspire-wrap{max-width:680px;margin:0 auto;}
+  .home-inspire-wrap{width:100%;max-width:680px;margin:0 auto;text-align:left;}
   .search-bar{display:flex;background:#fff;border:1.5px solid #EDE8E0;border-radius:14px;overflow:hidden;box-shadow:0 2px 8px rgba(21,18,16,.05);}
   .search-bar:focus-within{border-color:#1A1F2E;box-shadow:0 2px 12px rgba(21,18,16,.1);}
   .search-input{flex:1;border:none;outline:none;padding:14px 16px;font-family:'Outfit',sans-serif;font-size:14px;color:#151210;background:transparent;font-weight:400;}
@@ -668,29 +668,35 @@ const CSS = `
 
   /* Inspire */
   .inspire-wrap{max-width:680px;margin:0 auto;padding:40px 24px 40px;}
-  .inspire-title{font-family:'Fraunces',serif;font-size:clamp(26px,5vw,42px);text-align:center;margin-bottom:10px;}
-  .inspire-sub{font-size:14px;color:#7A6E6A;text-align:center;margin-bottom:32px;line-height:1.6;}
-  .inspire-section{margin-bottom:24px;}
-  .inspire-section-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#7A6E6A;margin-bottom:12px;font-weight:500;}
+  .inspire-lede{margin:6px 0 22px;font-size:16px;line-height:1.5;color:#4F4744;}
+  .inspire-section{margin:0 0 22px;border:none;padding:0;min-width:0;}
+  .inspire-section-label{display:block;padding:0;margin:0 0 10px;font-size:15px;font-weight:600;color:#151210;}
+  .inspire-optional{font-weight:400;color:#6E635F;}
   .inspire-chips{display:flex;flex-wrap:wrap;gap:8px;}
-  .inspire-chip{padding:9px 18px;border-radius:100px;border:1.5px solid #EDE8E0;background:#fff;font-family:'Outfit',sans-serif;font-size:13px;color:#7A6E6A;cursor:pointer;transition:all .15s;}
-  .inspire-chip.on{background:#151210;border-color:#151210;color:#fff;}
-  .inspire-chip:not(.on):hover{border-color:#151210;color:#151210;}
-  .inspire-go-btn{width:100%;padding:15px;background:#F4A021;color:#fff;border:none;border-radius:100px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:500;cursor:pointer;transition:background .15s;margin-top:8px;}
-  .inspire-go-btn:hover:not(:disabled){background:#D88815;}
-  .inspire-go-btn:disabled{background:#7A6E6A;cursor:not-allowed;}
-  .inspire-fridge-input{width:100%;padding:12px 16px;border:1.5px solid #EDE8E0;border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;color:#151210;outline:none;background:#fff;transition:border-color .15s;resize:none;line-height:1.5;}
-  .inspire-fridge-input:focus{border-color:#F4A021;}
-  .inspire-fridge-input::placeholder{color:#7A6E6A;}
-  .inspire-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:28px;}
-  .inspire-card{background:#fff;border:1px solid #EDE8E0;border-radius:14px;padding:20px;cursor:pointer;transition:all .15s;border-left:4px solid #F4A021;}
-  .inspire-card:hover{box-shadow:0 6px 24px rgba(61,43,31,.1);transform:translateY(-2px);}
-  .inspire-card-title{font-family:'Fraunces',serif;font-size:18px;margin-bottom:6px;}
-  .inspire-card-desc{font-size:13px;color:#7A6E6A;line-height:1.5;margin-bottom:10px;}
-  .inspire-card-meta{display:flex;gap:12px;font-size:11px;color:#7A6E6A;flex-wrap:wrap;margin-bottom:10px;}
-  .inspire-card-btn{width:100%;padding:8px;background:#151210;color:#fff;border:none;border-radius:8px;font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;}
-  .inspire-card-btn:hover{background:#2D5A42;}
-  .inspire-reset{background:none;border:none;cursor:pointer;font-family:'Outfit',sans-serif;font-size:13px;color:#F4A021;text-decoration:underline;text-underline-offset:3px;display:block;margin:24px auto 120px;}
+  .inspire-chip{min-height:44px;padding:0 16px;border-radius:22px;border:1px solid #E3DCD0;background:#fff;font-family:'Outfit',sans-serif;font-size:15px;color:#151210;cursor:pointer;transition:background .15s,border-color .15s;}
+  .inspire-chip:hover{border-color:#B8AFA3;}
+  .inspire-chip.on{background:#1A1F2E;border-color:#1A1F2E;color:#FDFAF5;font-weight:600;}
+  .inspire-chip:focus-visible,.inspire-go-btn:focus-visible,.inspire-card-btn:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
+  .inspire-fridge-input{width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid #E3DCD0;border-radius:14px;font-family:'Outfit',sans-serif;font-size:16px;color:#151210;outline:none;background:#fff;resize:none;line-height:1.45;}
+  .inspire-fridge-input:focus{border-color:#1A1F2E;box-shadow:0 0 0 3px rgba(244,160,33,.35);}
+  .inspire-fridge-input::placeholder{color:#9A8F88;}
+  .inspire-diets{margin:-8px 0 16px;font-size:14px;color:#6E635F;}
+  .inspire-go-btn{width:100%;min-height:52px;background:#F4A021;color:#151210;border:none;border-radius:26px;font-family:'Outfit',sans-serif;font-size:17px;font-weight:600;cursor:pointer;transition:background .15s;}
+  .inspire-go-btn:hover:not(:disabled){background:#E8941A;}
+  .inspire-go-btn:disabled{background:#EDE6DA;color:#9A8F88;cursor:not-allowed;}
+  .inspire-hint{margin:10px 0 0;font-size:14px;color:#6E635F;text-align:center;}
+  .inspire-error{margin:0 0 18px;padding:12px 14px;border-radius:14px;background:#FDECE6;border:1px solid #F3C3B3;color:#8A2A0E;font-size:15px;line-height:1.45;}
+  .inspire-picks{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 18px;}
+  .inspire-pick{height:30px;padding:0 12px;border-radius:15px;background:#F5EFE4;color:#4F4744;font-size:13px;display:inline-flex;align-items:center;}
+  .inspire-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}
+  .inspire-card{background:#fff;border:1px solid #ECE6DD;border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:8px;}
+  .inspire-card-title{margin:0;font-family:'Fraunces',serif;font-size:21px;font-weight:600;line-height:1.2;color:#151210;}
+  .inspire-card-desc{margin:0;font-size:15px;color:#4F4744;line-height:1.5;}
+  .inspire-card-meta{display:flex;gap:6px 14px;font-size:14px;color:#6E635F;flex-wrap:wrap;}
+  .inspire-card-why{margin:2px 0 4px;padding-left:12px;border-left:3px solid #F4A021;font-size:15px;line-height:1.45;color:#1E3A2F;}
+  .inspire-card-btn{align-self:stretch;min-height:46px;background:#1A1F2E;color:#FDFAF5;border:none;border-radius:23px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;cursor:pointer;}
+  .inspire-card-btn:hover{background:#2A3042;}
+  .inspire-again{display:flex;gap:18px;justify-content:center;margin:18px 0 120px;flex-wrap:wrap;}
   .community-wrap{max-width:960px;margin:0 auto;padding:40px 20px 120px;}
   @media(min-width:768px){.community-wrap{padding:40px 28px 120px;}}
   .community-header{text-align:center;margin-bottom:28px;}
@@ -1480,11 +1486,12 @@ function randomCode(){
   return Array.from({length:6},()=>chars[Math.floor(Math.random()*chars.length)]).join("");
 }
 
-function buildInspirePrompt(time: string,vibe: string,serves: string,diets: string[],fridge?: string): string{
+function buildInspirePrompt(time: string,vibe: string,serves: string,diets: string[],fridge?: string,exclude: string[]=[]): string{
   const d=diets.length?" Dietary restrictions: "+diets.join(", ")+".":"";
   const f=fridge?.trim()?` Try to incorporate some or all of these ingredients the user already has: ${fridge.trim()}.`:"";
-  return `Suggest 3 distinct recipe ideas for someone who wants: time available: "${time}", vibe: "${vibe}", serving size: "${serves}".${d}${f}
-Each ingredient's "amount" holds only the quantity, unit and size (e.g. "1", "2 cups", "1 large"); the ingredient itself and any prep notes go in "name" (amount "1", name "red bell pepper, cored and diced"). Reply with ONLY valid JSON, no other text:
+  const x=exclude.length?` Don't suggest any of these again: ${exclude.join("; ")}.`:"";
+  return `Suggest 3 distinct recipe ideas for someone who wants: time available: "${time}", vibe: "${vibe}", serving size: "${serves}".${d}${f}${x}
+Reply with ONLY valid JSON, no other text:
 {"suggestions":[{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"2","why":"One sentence on why this fits their request perfectly."},{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"2","why":"..."},{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"2","why":"..."}]}
 Make each suggestion meaningfully different from the others. Keep titles concise and appetizing.`;
 }
@@ -1698,6 +1705,7 @@ export default function App(){
   const [inspireServes,setInspireServes] = useState("");
   const [inspireFridge,setInspireFridge] = useState("");
   const [inspireStatus,setInspireStatus] = useState("idle");
+  const inspireStart=useRef(0);
   const [inspireSuggestions,setInspireSuggestions] = useState<any[]>([]);
 
   // Family Codes
@@ -1802,10 +1810,10 @@ export default function App(){
   },[tab]);
   /* re-render the generating screen while a recipe is loading */
   useEffect(()=>{
-    if(status!=="loading")return;
+    if(status!=="loading"&&inspireStatus!=="loading")return;
     const id=setInterval(()=>setGenTick(x=>x+1),500);
     return()=>clearInterval(id);
-  },[status]);
+  },[status,inspireStatus]);
 
   /* storage load */
   useEffect(()=>{
@@ -2253,9 +2261,11 @@ export default function App(){
   /* inspire */
   const doInspire=async()=>{
     if(!inspireTime||!inspireVibe||!inspireServes)return;
-    setInspireStatus("loading");setInspireSuggestions([]);
+    // "Show three more" passes the current ideas so the next batch is different
+    const exclude=inspireStatus==="done"?inspireSuggestions.map((x:any)=>x.title).filter(Boolean):[];
+    setInspireStatus("loading");setInspireSuggestions([]);inspireStart.current=Date.now();window.scrollTo({top:0});
     try{
-      const parsed=await callAPI([{role:"user",content:buildInspirePrompt(inspireTime,inspireVibe,inspireServes,diets,inspireFridge)}]);
+      const parsed=await callAPI([{role:"user",content:buildInspirePrompt(inspireTime,inspireVibe,inspireServes,diets,inspireFridge,exclude)}]);
       setInspireSuggestions(parsed.suggestions||[]);setInspireStatus("done");
     }catch(e:any){setInspireStatus("error");}
   };
@@ -2738,107 +2748,105 @@ ${tiktok.text}`}]);
               )}
               {homeMode==="inspire"&&(
               <div className="home-inspire-wrap">
-                {inspireStatus!=="done"&&(
+                {(inspireStatus==="idle"||inspireStatus==="error")&&(
                   <>
+                    <p className="inspire-lede">Answer three quick questions and we'll suggest three dishes.</p>
+                    {inspireStatus==="error"&&<p className="inspire-error" role="alert">We couldn't come up with ideas just now. Check your connection and try again.</p>}
+                    {([["How much time do you have?",INSPIRE_OPTIONS.time,inspireTime,setInspireTime],["What's the vibe?",INSPIRE_OPTIONS.vibe,inspireVibe,setInspireVibe],["How many are you feeding?",INSPIRE_OPTIONS.serves,inspireServes,setInspireServes]] as [string,string[],string,(v:string)=>void][]).map(([label,opts,val,set])=>(
+                      <fieldset key={label} className="inspire-section">
+                        <legend className="inspire-section-label">{label}</legend>
+                        <div className="inspire-chips">
+                          {opts.map(o=>(
+                            <button key={o} type="button" className={`inspire-chip${val===o?" on":""}`} aria-pressed={val===o} onClick={()=>set(o)}>{o}</button>
+                          ))}
+                        </div>
+                      </fieldset>
+                    ))}
                     <div className="inspire-section">
-                      <div className="inspire-section-label">How much time do you have?</div>
-                      <div className="inspire-chips">
-                        {INSPIRE_OPTIONS.time.map(o=>(
-                          <button key={o} className={`inspire-chip${inspireTime===o?" on":""}`} onClick={()=>setInspireTime(o)}>{o}</button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="inspire-section">
-                      <div className="inspire-section-label">What's the vibe?</div>
-                      <div className="inspire-chips">
-                        {INSPIRE_OPTIONS.vibe.map(o=>(
-                          <button key={o} className={`inspire-chip${inspireVibe===o?" on":""}`} onClick={()=>setInspireVibe(o)}>{o}</button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="inspire-section">
-                      <div className="inspire-section-label">How many are you feeding?</div>
-                      <div className="inspire-chips">
-                        {INSPIRE_OPTIONS.serves.map(o=>(
-                          <button key={o} className={`inspire-chip${inspireServes===o?" on":""}`} onClick={()=>setInspireServes(o)}>{o}</button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="inspire-section">
-                      <div className="inspire-section-label">Anything in the fridge to use up? <span style={{color:"#7A6E6A",fontWeight:400 as const,fontSize:11,letterSpacing:"0",textTransform:"none" as const}}>(optional)</span></div>
+                      <label htmlFor="inspire-fridge" className="inspire-section-label">Anything in the fridge to use up? <span className="inspire-optional">Optional</span></label>
                       <textarea
+                        id="inspire-fridge"
                         className="inspire-fridge-input"
                         rows={2}
-                        placeholder="e.g. chicken thighs, half a lemon, spinach…"
+                        placeholder="e.g. chicken thighs, half a lemon, spinach"
                         value={inspireFridge}
                         onChange={e=>setInspireFridge(e.target.value)}
                       />
                     </div>
-                    {diets.length>0&&(
-                      <div style={{fontSize:12,color:C.muted,marginBottom:16,textAlign:"center"}}>
-                        Using your dietary filters: {diets.join(", ")}
-                      </div>
-                    )}
-                    <button className="inspire-go-btn" onClick={doInspire} disabled={!(inspireTime&&inspireVibe&&inspireServes)||inspireStatus==="loading"}>
-                      {inspireStatus==="loading"?"Finding ideas…":"Show me ideas →"}
+                    {diets.length>0&&<p className="inspire-diets">Using your dietary filters: {diets.join(", ")}</p>}
+                    <button className="inspire-go-btn" onClick={doInspire} disabled={!(inspireTime&&inspireVibe&&inspireServes)}>
+                      {inspireStatus==="error"?"Try again":"Show me ideas"}
                     </button>
+                    {!(inspireTime&&inspireVibe&&inspireServes)&&<p className="inspire-hint">Pick a time, a vibe and how many to continue.</p>}
                   </>
                 )}
 
-                {inspireStatus==="loading"&&(
-                  <div className="loading-overlay">
-                    <div className="loading-card">
-                      <div className="loading-icon-wrap">
-                        <div className="loading-icon"><img src="/sparkle_icon.png" alt=""/></div>
-                        <div className="loading-icon"><img src="/spoon_icon.png" alt=""/></div>
-                        <div className="loading-icon"><img src="/flame_icon.png" alt=""/></div>
-                        <div className="loading-icon"><img src="/stopwatch_icon.png" alt=""/></div>
+                {inspireStatus==="loading"&&(()=>{
+                  const elapsed=Math.max(0,(Date.now()-inspireStart.current)/1000);
+                  const pct=Math.round(95*(1-Math.exp(-elapsed/6)));
+                  const STEPS=["Reading your answers","Checking what's in season","Matching ideas to your mood","Picking the best three"];
+                  const at=elapsed<2?0:elapsed<5?1:elapsed<9?2:3;
+                  return(
+                    <>
+                      <div className="inspire-picks" aria-label="Your answers">
+                        {[inspireTime,inspireVibe,inspireServes].map(x=><span key={x} className="inspire-pick">{x}</span>)}
                       </div>
-                      <div style={{position:"relative",height:"28px",marginBottom:"6px"}}>
-                        {[
-                          "Reading the room…",
-                          "Checking what's in season…",
-                          "Matching ideas to your mood…",
-                          "Almost ready to serve…",
-                        ].map((line,i)=>(
-                          <div key={i} style={{
-                            position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",
-                            fontFamily:"'Fraunces',serif",fontSize:"18px",fontStyle:"italic",color:"#151210",
-                            opacity:0,
-                            animation:`iconFade 8s ease-in-out infinite`,
-                            animationDelay:`${i*2}s`,
-                            whiteSpace:"nowrap",
-                          }}>{line}</div>
-                        ))}
+                      <div className="gen-card" aria-live="polite">
+                        <div className="gen-card-head">
+                          <span className="gen-card-title">Finding ideas</span>
+                          <span className="gen-card-time">usually 5–15 sec</span>
+                        </div>
+                        <div className="gen-bar" role="progressbar" aria-label="Progress" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}><div style={{width:`${pct}%`}}/></div>
+                        <ul className="gen-steps">
+                          {STEPS.map((st,i)=>(
+                            <li key={i} className={i<at?"done":i===at?"now":""}>
+                              <span className="gen-step-mark" aria-hidden="true">
+                                {i<at?<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F4A021" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 5 5L20 7"/></svg>:i===at?<span className="gen-dot"/>:null}
+                              </span>
+                              {st}
+                            </li>
+                          ))}
+                        </ul>
                       </div>
-                      <div className="loading-sub">Matching ideas to your mood</div>
-                    </div>
-                  </div>
-                )}
-
-                {inspireStatus==="done"&&inspireSuggestions.length>0&&(
-                  <>
-                    <div style={{textAlign:"center",marginBottom:8}}>
-                      <div style={{fontSize:11,letterSpacing:2,textTransform:"uppercase",color:C.muted,fontWeight:500}}>
-                        {inspireTime} · {inspireVibe} · {inspireServes}
-                      </div>
-                    </div>
-                    <div className="inspire-results">
-                      {inspireSuggestions.map((s:any,i:number)=>(
-                        <div key={i} className="inspire-card">
-                          <div className="inspire-card-title">{s.title}</div>
-                          <div className="inspire-card-desc">{s.tagline}</div>
-                          <div className="inspire-card-meta">
-                            <span>{s.prep_time} prep</span>
-                            <span>{s.cook_time} cook</span>
-                            <span>{s.servings} servings</span>
-                          </div>
-                          <div style={{fontSize:12,color:C.sage,fontStyle:"italic",marginBottom:12}}>"{s.why}"</div>
-                          <button className="inspire-card-btn" onClick={()=>pickInspiredRecipe(s)}>Get Full Recipe →</button>
+                      {[0,1,2].map(i=>(
+                        <div key={i} className="inspire-card" style={{marginTop:12,opacity:1-i*0.2}} aria-hidden="true">
+                          <div className="gen-skel" style={{width:"62%",height:18}}/>
+                          <div className="gen-skel" style={{width:"90%"}}/>
+                          <div className="gen-skel" style={{width:"40%"}}/>
                         </div>
                       ))}
+                    </>
+                  );
+                })()}
+
+                {inspireStatus==="done"&&(
+                  <>
+                    <div className="inspire-picks" aria-label="Your answers">
+                      {[inspireTime,inspireVibe,inspireServes].map(x=><span key={x} className="inspire-pick">{x}</span>)}
                     </div>
-                    <button className="inspire-reset" onClick={()=>{setInspireStatus("idle");setInspireSuggestions([]);}}>← Start over</button>
+                    {inspireSuggestions.length>0?(
+                      <div className="inspire-results">
+                        {inspireSuggestions.map((sg:any,i:number)=>(
+                          <article key={i} className="inspire-card">
+                            <h2 className="inspire-card-title">{sg.title}</h2>
+                            {sg.tagline&&<p className="inspire-card-desc">{sg.tagline}</p>}
+                            <div className="inspire-card-meta">
+                              {sg.prep_time&&<span>{sg.prep_time} prep</span>}
+                              {sg.cook_time&&<span>{sg.cook_time} cook</span>}
+                              {sg.servings&&<span>Serves {sg.servings}</span>}
+                            </div>
+                            {sg.why&&<p className="inspire-card-why">{sg.why}</p>}
+                            <button className="inspire-card-btn" onClick={()=>pickInspiredRecipe(sg)}>Get the recipe</button>
+                          </article>
+                        ))}
+                      </div>
+                    ):(
+                      <p className="inspire-error" role="alert">No ideas came back that time. Try again, or change your answers.</p>
+                    )}
+                    <div className="inspire-again">
+                      <button className="ck-textlink" style={{alignSelf:"auto"}} onClick={doInspire}>Show three more</button>
+                      <button className="ck-textlink" style={{alignSelf:"auto"}} onClick={()=>{setInspireStatus("idle");setInspireSuggestions([]);}}>Change my answers</button>
+                    </div>
                   </>
                 )}
               </div>
