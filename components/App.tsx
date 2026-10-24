@@ -309,6 +309,27 @@ const CSS = `
 
   /* ── MOSAIC CARDS ── */
   /* ── EVERY CHEF MOSAIC CARDS ── */
+  .cm-page{display:flex;flex-direction:column;}
+  .cm-page .fl-lede{margin:8px 0 18px;}
+  .cm-gate{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:14px 16px;margin:0 0 16px;background:#1A1F2E;border-radius:18px;color:#FDFAF5;}
+  .cm-gate-title{font-family:'Fraunces',serif;font-size:18px;font-weight:600;}
+  .cm-gate-desc{font-size:14px;color:#C9C3BA;margin-top:2px;}
+  .cm-gate-btn{min-height:44px;padding:0 18px;border:none;border-radius:22px;background:#F4A021;color:#151210;font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;cursor:pointer;}
+  .cm-clear{width:36px;height:36px;margin-right:-8px;border:none;border-radius:18px;background:#F5EFE4;color:#151210;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+  .cm-count{margin:0 0 12px;font-size:14px;color:#6E635F;}
+  /* shared notice + buttons for errors and empty states */
+  .ui-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;}
+  .ui-details{margin-top:10px;font-size:13px;color:#6E635F;}
+  .ui-details summary{cursor:pointer;min-height:32px;display:flex;align-items:center;}
+  .ui-details code{display:block;margin-top:6px;padding:8px 10px;background:#F5EFE4;border-radius:8px;font-size:12px;word-break:break-all;color:#4F4744;}
+  .ui-notice{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:18px;background:#fff;border:1px solid #ECE6DD;border-radius:18px;}
+  .ui-notice-title{font-family:'Fraunces',serif;font-size:20px;font-weight:600;color:#151210;}
+  .ui-notice-text{font-size:15px;line-height:1.5;color:#4F4744;}
+  .ui-btn-primary{min-height:48px;padding:0 22px;border:none;border-radius:24px;background:#F4A021;color:#151210;font-family:'Outfit',sans-serif;font-size:16px;font-weight:600;cursor:pointer;}
+  .ui-btn-primary:hover{background:#E8941A;}
+  .ui-btn-secondary{min-height:44px;padding:0 18px;margin-top:6px;border:1px solid #CFC6B8;border-radius:22px;background:#fff;color:#151210;font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;cursor:pointer;}
+  .ui-btn-secondary:hover{border-color:#1A1F2E;}
+  .ui-btn-primary:focus-visible,.ui-btn-secondary:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
   .fl-wrap{width:100%;max-width:960px;margin:0 auto;text-align:left;padding-bottom:120px;}
   .fl-lede{margin:6px 0 16px;font-size:16px;line-height:1.5;color:#4F4744;}
   .fl-bar{margin:0 -20px 16px;}
@@ -1074,6 +1095,9 @@ const CSS = `
   .gen-dot{width:8px;height:8px;border-radius:4px;background:#F4A021;animation:rxPulse 1s ease-in-out infinite;}
   .gen-label{font-size:13px;letter-spacing:1.5px;color:#6E635F;font-weight:600;margin:10px 0 0;}
   .gen-row{display:grid;grid-template-columns:88px 1fr;align-items:center;min-height:46px;border-bottom:1px solid #ECE6DD;}
+  .gen-bar-indeterminate div{width:35%!important;height:100%;border-radius:3px;background:#F4A021;animation:genSlide 1.4s ease-in-out infinite;}
+  @keyframes genSlide{0%{transform:translateX(-100%)}100%{transform:translateX(290%)}}
+  @media (prefers-reduced-motion:reduce){.gen-bar-indeterminate div{animation:none;width:100%!important;opacity:.5;}}
   .gen-note{margin:14px 0 0;font-size:14px;line-height:1.5;color:#6E635F;}
 
   /* ── PLAN ── */
@@ -1165,6 +1189,168 @@ const CSS = `
     .recipe-banner{background:#1A1F2E;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     .two-col{grid-template-columns:200px 1fr;gap:24px;}
   }
+  /* ═══ Sheets, dialogs and menus (redesign) ═══ */
+  .share-overlay,.qr-scan-overlay,.account-sheet-overlay,.edit-panel-overlay,.modal-overlay,.signout-confirm-overlay,.save-prompt-overlay{background:rgba(26,31,46,.5);}
+  .share-sheet,.qr-scan-sheet,.account-sheet,.edit-panel,.modal,.signout-confirm,.save-prompt{background:#FDFAF5;box-shadow:0 -8px 40px rgba(26,31,46,.18);}
+  .ui-sheet-title,.share-sheet-title,.qr-scan-title,.edit-panel-title,.modal-title,.signout-confirm-title,.save-prompt-title{font-family:'Fraunces',serif;font-size:24px;font-weight:700;letter-spacing:-.3px;line-height:1.15;color:#151210;}
+  .ui-sheet-sub,.share-sheet-dish,.qr-scan-sub,.signout-confirm-sub,.save-prompt-sub{font-size:15px;line-height:1.5;color:#4F4744;}
+  .ui-close{position:absolute;top:14px;right:14px;width:44px;height:44px;border:none;border-radius:22px;background:#F5EFE4;color:#151210;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .ui-close:hover{background:#EDE3D2;}
+  .ui-close:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
+  .ui-handle{width:40px;height:5px;border-radius:3px;background:#E3DCD0;margin:10px auto 0;}
+  @media(min-width:640px){.ui-handle{display:none;}}
+
+  /* Share */
+  .share-sheet{padding:22px 20px calc(24px + env(safe-area-inset-bottom,0px));max-width:460px;border-radius:24px 24px 0 0;}
+  @media(min-width:640px){.share-sheet{border-radius:24px;padding:28px;}}
+  .share-sheet-title{margin:8px 56px 4px 0;}
+  .share-sheet-dish{margin:0 56px 18px 0;white-space:normal;}
+  .share-url-row{background:#fff;border:1px solid #E3DCD0;border-radius:14px;padding:6px 6px 6px 14px;margin-bottom:18px;min-height:52px;}
+  .share-url-text{font-size:15px;}
+  .share-copy-btn{min-height:40px;padding:0 16px;border-radius:20px;font-size:14px;font-weight:600;}
+  .share-qr{background:#fff;border:1px solid #ECE6DD;border-radius:18px;padding:16px;margin-bottom:18px;}
+  .share-qr img{width:180px;height:180px;display:block;}
+  .share-qr-label{font-size:14px;letter-spacing:0;text-transform:none;color:#6E635F;}
+  .share-native-btn{min-height:52px;border-radius:26px;font-size:17px;font-weight:600;color:#151210;display:flex;align-items:center;justify-content:center;gap:8px;}
+
+  /* QR scanner */
+  .qr-scan-sheet{background:#1A1F2E;padding:22px 20px calc(24px + env(safe-area-inset-bottom,0px));}
+  .qr-scan-title{color:#FDFAF5;margin:8px 56px 6px 0;}
+  .qr-scan-sub{color:#C9C3BA;margin:0 0 18px;}
+  .qr-scan-sheet .ui-close{background:rgba(253,250,245,.12);color:#FDFAF5;}
+  .qr-scan-sheet .ui-close:hover{background:rgba(253,250,245,.2);}
+  .qr-scan-status{font-size:15px;color:#C9C3BA;line-height:1.5;}
+  .qr-scan-retry{min-height:48px;border-radius:24px;font-size:16px;font-weight:600;color:#151210;}
+  .qr-scan-sheet .ui-handle{background:rgba(253,250,245,.25);}
+
+  /* Account */
+  .account-sheet{border-radius:24px 24px 0 0;padding:0 0 calc(16px + env(safe-area-inset-bottom,0px));}
+  .account-sheet-user{padding:18px 20px 16px;border-bottom:1px solid #ECE6DD;}
+  .account-sheet-name{font-size:21px;font-weight:600;}
+  .account-sheet-email{font-size:15px;color:#6E635F;}
+  .account-sheet-actions{padding:8px 12px;}
+  .account-sheet-btn{min-height:52px;border-radius:14px;font-size:17px;font-weight:500;}
+  .account-sheet-btn.danger{color:#B8340F;}
+  .account-sheet-btn:hover{background:#F5EFE4;}
+  .account-sheet-cancel{min-height:52px;padding:0;border:1px solid #E3DCD0;border-radius:26px;font-size:17px;font-weight:600;color:#151210;}
+  .account-dropdown{border:1px solid #ECE6DD;border-radius:16px;padding:6px;min-width:240px;box-shadow:0 12px 32px rgba(26,31,46,.14);}
+  .account-dropdown-name{font-size:17px;font-weight:600;}
+  .account-dropdown-email{font-size:14px;color:#6E635F;}
+  .account-dropdown-item{min-height:44px;border-radius:10px;font-size:15px;}
+  .account-dropdown-item.danger{color:#B8340F;}
+  .account-dropdown-item:hover{background:#F5EFE4;}
+  .auth-avatar-placeholder,.account-sheet-avatar-placeholder{color:#151210;}
+
+  /* Confirm + save prompt */
+  .signout-confirm,.save-prompt{border-radius:24px;padding:26px 22px 22px;max-width:380px;text-align:left;box-shadow:0 20px 60px rgba(26,31,46,.25);}
+  .signout-confirm-title,.save-prompt-title{margin:0 0 8px;}
+  .signout-confirm-sub,.save-prompt-sub{margin:0 0 20px;}
+  .signout-confirm-btns{gap:10px;}
+  .signout-confirm-cancel,.signout-confirm-go{min-height:48px;padding:0;border-radius:24px;font-size:16px;font-weight:600;}
+  .signout-confirm-cancel{border:1px solid #CFC6B8;background:#fff;color:#151210;}
+  .signout-confirm-go{background:#1A1F2E;color:#FDFAF5;}
+  .save-prompt-btn{min-height:52px;padding:0;border-radius:26px;font-size:17px;font-weight:600;}
+  .save-prompt-skip{display:block;width:100%;min-height:44px;margin-top:8px;font-size:15px;color:#1E3A2F;text-decoration:underline;text-underline-offset:3px;}
+
+  /* Pick-a-recipe modal (Plan) */
+  .modal{border-radius:22px;}
+  .modal-title{margin-bottom:14px;}
+  .modal-search{min-height:48px;padding:0 14px;border:1px solid #E3DCD0;border-radius:14px;font-size:16px;background:#fff;}
+  .modal-search:focus{border-color:#1A1F2E;box-shadow:0 0 0 3px rgba(244,160,33,.35);}
+  .modal-cat-label{font-size:12px;letter-spacing:1.5px;color:#1E3A2F;padding:14px 0 6px;}
+  .modal-item{border:1px solid #ECE6DD;border-radius:14px;padding:14px 16px;}
+  .modal-item:hover{border-color:#CFC6B8;}
+  .modal-item-title{font-size:18px;font-weight:600;line-height:1.25;}
+  .modal-item-meta{font-size:14px;color:#6E635F;margin-top:4px;}
+  .modal-close{min-height:48px;border:1px solid #CFC6B8;border-radius:24px;font-size:16px;font-weight:600;color:#151210;background:#fff;}
+
+  /* Edit recipe panel */
+  .edit-panel{border-radius:24px 24px 0 0;max-height:90vh;}
+  @media(min-width:768px){.edit-panel{border-radius:24px;max-height:85vh;}}
+  .edit-panel-header{padding:12px 20px 14px;border-bottom:1px solid #ECE6DD;position:relative;min-height:44px;}
+  .edit-panel-header .ui-close{position:static;}
+  .edit-panel-body{padding:4px 20px 20px;}
+  .edit-section-label{font-size:13px;letter-spacing:1.5px;color:#6E635F;font-weight:600;margin:20px 0 10px;}
+  .edit-title-input{width:100%;box-sizing:border-box;min-height:52px;padding:0 14px;border:1px solid #E3DCD0;border-radius:14px;background:#fff;font-family:'Fraunces',serif;font-size:20px;font-weight:600;color:#151210;outline:none;}
+  .edit-title-input:focus,.edit-ing-amt:focus,.edit-ing-name:focus,.edit-step-text:focus{border-color:#1A1F2E;box-shadow:0 0 0 3px rgba(244,160,33,.35);}
+  .edit-ing-amt,.edit-ing-name{min-height:46px;box-sizing:border-box;border:1px solid #E3DCD0;border-radius:12px;font-size:16px;background:#fff;}
+  .edit-step-text{border:1px solid #E3DCD0;border-radius:12px;font-size:16px;line-height:1.5;padding:10px 12px;background:#fff;}
+  .edit-step-num{width:28px;height:28px;font-size:13px;background:#1A1F2E;margin-top:8px;}
+  .edit-delete-btn{width:44px;height:44px;color:#9A8F88;font-size:20px;border-radius:22px;flex-shrink:0;}
+  .edit-delete-btn:hover{background:#F5EFE4;color:#B8340F;}
+  .edit-add-btn{min-height:44px;border:1px dashed #CFC6B8;border-radius:12px;font-size:15px;color:#1E3A2F;font-weight:500;}
+  .edit-panel-footer{padding:12px 20px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid #ECE6DD;}
+  .edit-save-btn{min-height:52px;border-radius:26px;font-size:17px;font-weight:600;color:#151210;}
+
+  /* Bring-a-recipe-in panels */
+  .ck-row-panel{padding:6px 0 16px;}
+  .scan-preview{max-height:220px;border-radius:14px;border:1px solid #ECE6DD;margin-bottom:12px;}
+  .scan-actions{gap:10px;flex-wrap:wrap;}
+  .scan-go-btn{min-height:48px;padding:0 22px;border-radius:24px;font-size:16px;font-weight:600;}
+  .scan-clear-btn{min-height:48px;padding:0 18px;border-radius:24px;border:1px solid #CFC6B8;background:#fff;color:#151210;font-size:15px;font-weight:600;}
+  .import-url-row{gap:8px;}
+  .import-url-input{min-height:48px;padding:0 14px;border:1px solid #E3DCD0;border-radius:14px;font-size:16px;background:#fff;}
+  .import-url-input:focus{border-color:#1A1F2E;box-shadow:0 0 0 3px rgba(244,160,33,.35);}
+  .import-url-btn{min-height:48px;padding:0 18px;border-radius:24px;font-size:15px;font-weight:600;white-space:nowrap;}
+  .import-url-btn:disabled,.scan-go-btn:disabled{background:#EDE6DA;color:#6E635F;cursor:wait;}
+  .import-progress{margin-top:12px;display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.45;color:#4F4744;}
+  .import-bar{background:#ECE6DD;max-width:320px;}
+  .import-status-ok{margin-top:12px;padding:12px 14px;background:#EEF3EC;border:1px solid #C9DCC4;border-radius:14px;font-size:15px;line-height:1.45;color:#1E3A2F;}
+  .import-status-err{margin-top:12px;padding:12px 14px;background:#FDECE6;border:1px solid #F3C3B3;border-radius:14px;font-size:15px;line-height:1.45;color:#8A2A0E;}
+  .ck-inline-link{font-size:15px;font-weight:600;}
+
+  /* Recipe page: remix + sources */
+  .remix-section{padding:18px;background:#fff;border:1px solid #ECE6DD;border-radius:18px;}
+  .remix-label{margin:0;font-family:'Fraunces',serif;font-size:21px;font-weight:600;letter-spacing:0;text-transform:none;color:#151210;display:block;}
+  .remix-sub{margin:4px 0 14px;font-size:15px;color:#4F4744;}
+  .remix-chips{justify-content:flex-start;gap:8px;margin-bottom:16px;}
+  .remix-chip{min-height:40px;padding:0 15px;border-radius:20px;border:1px solid #E3DCD0;font-size:14px;color:#151210;font-weight:400;}
+  .remix-chip.active{background:#1A1F2E;border-color:#1A1F2E;color:#FDFAF5;font-weight:600;}
+  .remix-go{min-height:48px;padding:0 22px;border-radius:24px;background:#1A1F2E;color:#FDFAF5;font-size:16px;font-weight:600;}
+  .remix-go:disabled{background:#EDE6DA;color:#6E635F;cursor:not-allowed;}
+  .source-section-label{margin:0 0 10px;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:#6E635F;font-weight:600;}
+
+  .source-link{min-height:40px;padding:0 15px;border:1px solid #E3DCD0;border-radius:20px;background:#fff;font-size:14px;color:#151210;}
+  .source-link:hover{border-color:#1A1F2E;}
+  .source-note{font-size:14px;color:#6E635F;font-style:normal;}
+
+  /* Library: Family */
+  .fm-wrap{display:flex;flex-direction:column;gap:12px;max-width:620px;}
+  .fm-card{gap:8px;}
+  .fm-code-label{margin-top:8px;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:#6E635F;font-weight:600;}
+  .fm-code{font-family:'Fraunces',serif;font-size:34px;font-weight:700;letter-spacing:5px;color:#151210;}
+  .fm-help{margin:0;font-size:15px;line-height:1.5;color:#4F4744;}
+  .fm-leave{min-height:44px;padding:0 6px;border:none;background:none;font-family:'Outfit',sans-serif;font-size:15px;color:#B8340F;text-decoration:underline;text-underline-offset:3px;cursor:pointer;}
+  .fm-status{margin:6px 0 0;padding:10px 12px;border-radius:12px;font-size:15px;line-height:1.4;background:#EEF3EC;color:#1E3A2F;}
+  .fm-status.err,.fm-status.error{background:#FDECE6;color:#8A2A0E;}
+  .fm-join-row{display:flex;gap:8px;width:100%;}
+  .fm-join-input{flex:1;min-width:0;min-height:48px;padding:0 14px;border:1px solid #E3DCD0;border-radius:14px;background:#fff;font-family:'Outfit',sans-serif;font-size:18px;letter-spacing:3px;text-transform:uppercase;color:#151210;outline:none;}
+  .fm-join-input:focus{border-color:#1A1F2E;box-shadow:0 0 0 3px rgba(244,160,33,.35);}
+  .fm-join-row .ui-btn-primary:disabled{background:#EDE6DA;color:#6E635F;cursor:not-allowed;}
+  .fm-save{margin-top:8px;min-height:40px;padding:0 14px;border:1px solid #CFC6B8;border-radius:20px;background:#fff;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;color:#151210;cursor:pointer;}
+  .fm-save:disabled{border-color:transparent;background:#EEF3EC;color:#1E3A2F;cursor:default;}
+
+  /* Library: Recent */
+  .history-list{gap:10px;margin-top:0;}
+  .history-item{border:1px solid #ECE6DD;border-radius:18px;padding:14px 14px 14px 18px;gap:12px;flex-wrap:wrap;}
+  .history-item:hover{border-color:#CFC6B8;box-shadow:0 4px 16px rgba(26,31,46,.08);}
+  .history-item-title{font-size:19px;font-weight:600;white-space:normal;line-height:1.25;margin-bottom:4px;}
+  .history-item-meta{font-size:14px;color:#6E635F;gap:12px;}
+  .history-item-time{font-size:14px;color:#6E635F;}
+  .history-item-save{min-height:40px;padding:0 14px;border-radius:20px;border:1px solid #CFC6B8;background:#fff;font-size:14px;font-weight:600;color:#151210;}
+  .history-item-save.saved{background:#EEF3EC;border-color:transparent;color:#1E3A2F;}
+  .history-item-save:hover{border-color:#1A1F2E;color:#151210;}
+  .history-clear{min-height:44px;margin:18px auto 0;display:block;border:none;background:none;font-family:'Outfit',sans-serif;font-size:15px;color:#B8340F;text-decoration:underline;text-underline-offset:3px;cursor:pointer;}
+  .history-empty,.empty-state{text-align:left;padding:28px 0;font-size:16px;color:#4F4744;}
+  .history-empty h3,.empty-state h3{font-family:'Fraunces',serif;font-size:22px;font-weight:600;color:#151210;margin:0 0 6px;}
+
+  .rx-stars{gap:2px;}
+  .rx-stars .star{font-size:30px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:#D9D1C4;}
+  .rx-stars .star.filled{color:#F4A021;}
+  .edit-ing-name{min-width:0;}
+  .edit-ing-row{gap:6px;}
+  .edit-ing-amt{width:96px;}
+
 `;
 
 /* ── CONSTANTS (card pool + suggestions now live in lib/dishes.ts) ── */
@@ -1507,9 +1693,9 @@ function buildInspirePrompt(time: string,vibe: string,serves: string,diets: stri
   const d=diets.length?" Dietary restrictions: "+diets.join(", ")+".":"";
   const f=fridge?.trim()?` Try to incorporate some or all of these ingredients the user already has: ${fridge.trim()}.`:"";
   const x=exclude.length?` Don't suggest any of these again: ${exclude.join("; ")}.`:"";
-  return `Suggest 3 distinct recipe ideas for someone who wants: time available: "${time}", vibe: "${vibe}", serving size: "${serves}".${d}${f}${x}
+  return `Suggest 4 distinct recipe ideas for someone who wants: time available: "${time}", vibe: "${vibe}", serving size: "${serves}".${d}${f}${x}
 Reply with ONLY valid JSON, no other text:
-{"suggestions":[{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"2","why":"One sentence on why this fits their request perfectly."},{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"2","why":"..."},{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"2","why":"..."}]}
+{"suggestions":[{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"2","why":"One sentence on why this fits their request perfectly."},{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"2","why":"..."},{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"2","why":"..."},{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"2","why":"..."}]}
 Make each suggestion meaningfully different from the others. Keep titles concise and appetizing.`;
 }
 
@@ -2278,7 +2464,7 @@ export default function App(){
   /* inspire */
   const doInspire=async()=>{
     if(!inspireTime||!inspireVibe||!inspireServes)return;
-    // "Show three more" passes the current ideas so the next batch is different
+    // "Show four more" passes the current ideas so the next batch is different
     const exclude=inspireStatus==="done"?inspireSuggestions.map((x:any)=>x.title).filter(Boolean):[];
     setInspireStatus("loading");setInspireSuggestions([]);inspireStart.current=Date.now();window.scrollTo({top:0});
     try{
@@ -2559,25 +2745,43 @@ ${tiktok.text}`}]);
   function SearchView(){
     return(
       <>
-        {status==="error"&&(
-          <div className="error-box" style={{margin:"20px auto 0",maxWidth:560}}>
-            <h3>We couldn't build that recipe</h3>
-            <p style={{fontSize:13,color:"#7A6E6A",marginTop:6,lineHeight:1.5}}>
-              {/credit balance|billing|insufficient|overloaded|429|529/i.test(errorMsg)
-                ?"We can't generate brand-new recipes right now. Recipes in Community and Saved still work — please check back soon."
-                :/timed? ?out|timeout|504/i.test(errorMsg)
-                  ?"That one took too long to generate. Give it another try."
-                  :"Something went wrong on our end. Please try again."}
-            </p>
-            {!/credit balance|billing/i.test(errorMsg)&&(
-              <p style={{fontSize:11,fontFamily:"monospace",background:"#f5f5f5",padding:"8px 12px",borderRadius:6,marginTop:8,textAlign:"left",wordBreak:"break-all",color:"#555"}}>{errorMsg}</p>
-            )}
-            <button className="back-btn" onClick={()=>doSearch()}>Try again</button>
-            <button className="back-btn" style={{marginLeft:8}} onClick={()=>setStatus("idle")}>Dismiss</button>
-          </div>
-        )}
+        {status==="error"&&(()=>{
+          const busy=/credit balance|billing|insufficient|overloaded|429|529/i.test(errorMsg);
+          const slow=/timed? ?out|timeout|504/i.test(errorMsg);
+          return(
+            <div className="gen-page">
+              <div className="rx-topbar">
+                <button className="rx-back" onClick={()=>{setStatus("idle");window.scrollTo({top:0});}}>
+                  <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+                  Cook
+                </button>
+              </div>
+              <div className="gen-body">
+                {loadingDish&&<h1 className="rx-title">{loadingDish}</h1>}
+                <div className="ui-notice" role="alert" style={{marginTop:8,maxWidth:560}}>
+                  <div className="ui-notice-title">{busy?"New recipes are paused for now":slow?"That took too long":"We couldn't make that recipe"}</div>
+                  <div className="ui-notice-text">
+                    {busy?"We can't write brand-new recipes right now. Your saved recipes and Community recipes still open as usual. Please check back soon."
+                      :slow?"Writing this one took longer than usual. Trying again usually works."
+                      :"Something went wrong on our end. Trying again usually works."}
+                  </div>
+                  <div className="ui-actions">
+                    {!busy&&<button className="ui-btn-primary" onClick={()=>doSearch()}>Try again</button>}
+                    <button className="ui-btn-secondary" style={{marginTop:0}} onClick={()=>{setStatus("idle");setHomeMode("search");window.scrollTo({top:0});setTimeout(()=>inputRef.current?.focus(),50);}}>Search for something else</button>
+                  </div>
+                  {errorMsg&&!busy&&(
+                    <details className="ui-details">
+                      <summary>Details for support</summary>
+                      <code>{errorMsg}</code>
+                    </details>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
         {status==="loading"&&GeneratingView()}
-        {status!=="done"&&status!=="loading"&&(
+        {status!=="done"&&status!=="loading"&&status!=="error"&&(
           <div className="ck-page">
           {homeMode==="search"&&(
             <>
@@ -2626,7 +2830,7 @@ ${tiktok.text}`}]);
               <button className="ck-inspire" onClick={()=>{setHomeMode("inspire");window.scrollTo({top:0});}}>
                 <span className="ck-inspire-text">
                   <span className="ck-inspire-title">Not sure what to make?</span>
-                  <span className="ck-inspire-sub">Tell us your time and mood. We'll pick three.</span>
+                  <span className="ck-inspire-sub">Tell us your time and mood. We'll pick four.</span>
                 </span>
                 <span className="ck-inspire-cta">Inspire me</span>
               </button>
@@ -2673,17 +2877,23 @@ ${tiktok.text}`}]);
                     <div className="ck-row-panel">
                       <img src={scanPreview} className="scan-preview" alt="Recipe card to digitize"/>
                       <div className="scan-actions">
-                        <button className="scan-go-btn" onClick={doScan} disabled={scanStatus==="scanning"}>{scanStatus==="scanning"?"Reading…":"Digitize recipe"}</button>
-                        <button className="scan-clear-btn" onClick={clearScan}>Clear</button>
+                        <button className="scan-go-btn" onClick={doScan} disabled={scanStatus==="scanning"}>{scanStatus==="scanning"?"Reading the card…":"Turn into a recipe"}</button>
+                        <button className="scan-clear-btn" onClick={clearScan} disabled={scanStatus==="scanning"}>Choose another</button>
                       </div>
+                      {scanStatus==="scanning"&&(
+                        <div className="import-progress" role="status">
+                          <div className="gen-bar gen-bar-indeterminate import-bar"><div/></div>
+                          Reading the handwriting and measurements. Usually 10–30 seconds.
+                        </div>
+                      )}
                     </div>
                   )}
                   {scanStatus==="done"&&scanMsg&&(
-                    <div className="ck-row-panel scan-success">✓ {scanMsg}{" "}
+                    <div className="ck-row-panel"><div className="import-status-ok" role="status">{scanMsg}{" "}
                       <button className="ck-inline-link" onClick={()=>{if(justAdded){setReturnTab(null);setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(justAdded);setServings(null);setStatus("done");setTab("search");}else setTab("library");}}>View recipe →</button>
-                    </div>
+                    </div></div>
                   )}
-                  {scanStatus==="error"&&<div className="ck-row-panel import-status-err">{scanMsg}</div>}
+                  {scanStatus==="error"&&<div className="ck-row-panel"><div className="import-status-err" role="alert">{scanMsg}</div></div>}
 
                   <button className="ck-row" aria-expanded={showUrlRow} onClick={()=>setShowUrlRow(v=>!v)}>
                     <span className="ck-row-icon" aria-hidden="true">{Ic.link(22)}</span>
@@ -2698,15 +2908,21 @@ ${tiktok.text}`}]);
                           onKeyDown={e=>e.key==="Enter"&&doFetchUrl()}
                           disabled={urlStatus==="loading"}/>
                         <button className="import-url-btn" onClick={doFetchUrl} disabled={urlStatus==="loading"||!urlInput.trim()}>
-                          {urlStatus==="loading"?"…":"Import"}
+                          {urlStatus==="loading"?"Importing…":"Import"}
                         </button>
                       </div>
+                      {urlStatus==="loading"&&(
+                        <div className="import-progress" role="status">
+                          <div className="gen-bar gen-bar-indeterminate import-bar"><div/></div>
+                          Reading the page and pulling out the recipe. Usually 10–30 seconds.
+                        </div>
+                      )}
                       {urlStatus==="done"&&urlMsg&&(
-                        <div className="import-status-ok">✓ {urlMsg}{" "}
+                        <div className="import-status-ok" role="status">{urlMsg}{" "}
                           <button className="ck-inline-link" onClick={()=>{if(justAdded){setReturnTab(null);setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(justAdded);setServings(null);setStatus("done");setTab("search");}else setTab("library");}}>View recipe →</button>
                         </div>
                       )}
-                      {urlStatus==="error"&&<div className="import-status-err">{urlMsg}</div>}
+                      {urlStatus==="error"&&<div className="import-status-err" role="alert">{urlMsg}</div>}
                     </div>
                   )}
 
@@ -2763,7 +2979,7 @@ ${tiktok.text}`}]);
               <div className="home-inspire-wrap">
                 {(inspireStatus==="idle"||inspireStatus==="error")&&(
                   <>
-                    <p className="inspire-lede">Answer three quick questions and we'll suggest three dishes.</p>
+                    <p className="inspire-lede">Answer three quick questions and we'll suggest four dishes.</p>
                     {inspireStatus==="error"&&<p className="inspire-error" role="alert">We couldn't come up with ideas just now. Check your connection and try again.</p>}
                     {([["How much time do you have?",INSPIRE_OPTIONS.time,inspireTime,setInspireTime],["What's the vibe?",INSPIRE_OPTIONS.vibe,inspireVibe,setInspireVibe],["How many are you feeding?",INSPIRE_OPTIONS.serves,inspireServes,setInspireServes]] as [string,string[],string,(v:string)=>void][]).map(([label,opts,val,set])=>(
                       <fieldset key={label} className="inspire-section">
@@ -2797,7 +3013,7 @@ ${tiktok.text}`}]);
                 {inspireStatus==="loading"&&(()=>{
                   const elapsed=Math.max(0,(Date.now()-inspireStart.current)/1000);
                   const pct=Math.round(95*(1-Math.exp(-elapsed/6)));
-                  const STEPS=["Reading your answers","Checking what's in season","Matching ideas to your mood","Picking the best three"];
+                  const STEPS=["Reading your answers","Checking what's in season","Matching ideas to your mood","Picking the best four"];
                   const at=elapsed<2?0:elapsed<5?1:elapsed<9?2:3;
                   return(
                     <>
@@ -2821,8 +3037,8 @@ ${tiktok.text}`}]);
                           ))}
                         </ul>
                       </div>
-                      {[0,1,2].map(i=>(
-                        <div key={i} className="inspire-card" style={{marginTop:12,opacity:1-i*0.2}} aria-hidden="true">
+                      {[0,1,2,3].map(i=>(
+                        <div key={i} className="inspire-card" style={{marginTop:12,opacity:1-i*0.15}} aria-hidden="true">
                           <div className="gen-skel" style={{width:"62%",height:18}}/>
                           <div className="gen-skel" style={{width:"90%"}}/>
                           <div className="gen-skel" style={{width:"40%"}}/>
@@ -2857,7 +3073,7 @@ ${tiktok.text}`}]);
                       <p className="inspire-error" role="alert">No ideas came back that time. Try again, or change your answers.</p>
                     )}
                     <div className="inspire-again">
-                      <button className="ck-textlink" style={{alignSelf:"auto"}} onClick={doInspire}>Show three more</button>
+                      <button className="ck-textlink" style={{alignSelf:"auto"}} onClick={doInspire}>Show four more</button>
                       <button className="ck-textlink" style={{alignSelf:"auto"}} onClick={()=>{setInspireStatus("idle");setInspireSuggestions([]);}}>Change my answers</button>
                     </div>
                   </>
@@ -3206,20 +3422,20 @@ ${tiktok.text}`}]);
           <div style={{padding:"28px 0 0",borderTop:"1px solid #EDE8E0",marginTop:32}}>
             <div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap",justifyContent:"space-between"}}>
               <div>
-                <div style={{fontSize:10,fontWeight:700,letterSpacing:"2px",textTransform:"uppercase",color:"#E8431A",marginBottom:8}}>Rate this recipe</div>
-                <div className="star-row">
+                <h2 className="source-section-label" id="rate-label">Rate this recipe</h2>
+                <div className="star-row rx-stars" role="group" aria-labelledby="rate-label">
                   {[1,2,3,4,5].map(n=>{
                     const currentRating=recipe?.id?ratings[recipe.id]||0:0;
                     return(
                       <button key={n} className={`star${currentRating>=n?" filled":""}`}
-                        style={{fontSize:24}}
+                        aria-label={`${n} star${n>1?"s":""}`} aria-pressed={currentRating>=n}
                         onClick={()=>recipe?.id&&setRatings(prev=>({...prev,[recipe.id]:prev[recipe.id]===n?0:n}))}>
                         ★
                       </button>
                     );
                   })}
                   {recipe?.id&&ratings[recipe.id]>0&&(
-                    <span style={{fontSize:12,color:"#7A6E6A",marginLeft:8,alignSelf:"center"}}>
+                    <span style={{fontSize:15,color:"#4F4744",marginLeft:8,alignSelf:"center"}}>
                       {["","One star","Two stars","Three stars","Four stars","Five stars"][ratings[recipe.id]]}
                     </span>
                   )}
@@ -3232,21 +3448,25 @@ ${tiktok.text}`}]);
         {/* Remix section — after method, before grocery */}
         {!recipe._scanned&&!recipe._imported&&(
           <div id="rx-remix" className="remix-section" style={{margin:"28px 0 0",maxWidth:"100%",scrollMarginTop:16}}>
-            <div className="remix-label">Not quite right? Remix it</div>
+            <h2 className="remix-label">Not quite right? Remix it</h2>
+            <p className="remix-sub">Pick what to change and we'll rewrite the recipe.</p>
             <div className="remix-chips">
               {REMIX_OPTIONS.map(chip=>(
-                <button key={chip} className={`remix-chip${remixChips.includes(chip)?" active":""}`}
+                <button key={chip} aria-pressed={remixChips.includes(chip)} className={`remix-chip${remixChips.includes(chip)?" active":""}`}
                   onClick={()=>toggleRemixChip(chip)}>
                   {chip}
                 </button>
               ))}
             </div>
             {remixStatus==="loading"?(
-              <div className="remix-loading">Remixing your recipe…</div>
+              <div className="import-progress" role="status" style={{marginTop:4}}>
+                <div className="gen-bar gen-bar-indeterminate import-bar"><div/></div>
+                Remixing your recipe. Usually 15–40 seconds.
+              </div>
             ):(
               <button className="remix-go" onClick={doRemix}
                 disabled={remixChips.length===0}>
-                {remixChips.length===0?"Select a preference above":"Remix →"}
+                {remixChips.length===0?"Pick at least one change":"Remix this recipe"}
               </button>
             )}
           </div>
@@ -3254,7 +3474,7 @@ ${tiktok.text}`}]);
 
         {sources.length>0&&(
           <div className="source-section">
-            <div className="source-section-label">Explore more on</div>
+            <h2 className="source-section-label">Explore more on</h2>
             <div className="source-links">
               {sources.map((s:string,i:number)=>(
                 <a key={i} href={getSiteUrl(s,dish)} target="_blank" rel="noopener noreferrer" className="source-link">{s} ↗</a>
@@ -3272,14 +3492,34 @@ ${tiktok.text}`}]);
   function SidePaneView(pane:{title:string;status:string;recipe:any}, idx:number){
     if(pane.status==="loading"||!pane.recipe){
       return(
-        <div className="side-pane-loading">
-          <div className="spinner"/>
-          <div className="loading-text" style={{fontSize:15}}>{pane.status==="error"?"Couldn't load that side.":`Making ${pane.title}…`}</div>
-          {pane.status==="error"&&(
-            <div style={{display:"flex",gap:10}}>
-              <button className="back-btn" onClick={()=>retryPairedSide(idx)}>Try again</button>
-              <button className="back-btn" onClick={()=>removePairedSide(idx)}>Remove</button>
+        <div className="gen-body" style={{paddingBottom:40}}>
+          <h1 className="rx-title">{pane.title}</h1>
+          {pane.status==="error"?(
+            <div className="ui-notice" role="alert" style={{marginTop:8,maxWidth:560}}>
+              <div className="ui-notice-title">We couldn't make this side</div>
+              <div className="ui-notice-text">Something went wrong on our end. Trying again usually works.</div>
+              <div className="ui-actions">
+                <button className="ui-btn-primary" onClick={()=>retryPairedSide(idx)}>Try again</button>
+                <button className="ui-btn-secondary" style={{marginTop:0}} onClick={()=>removePairedSide(idx)}>Remove side</button>
+              </div>
             </div>
+          ):(
+            <>
+              <div className="gen-skel" style={{width:"80%"}}/>
+              <div className="gen-card" aria-live="polite">
+                <div className="gen-card-head">
+                  <span className="gen-card-title">Writing this side</span>
+                  <span className="gen-card-time">usually 15–40 sec</span>
+                </div>
+                <div className="gen-bar gen-bar-indeterminate" aria-label="Loading"><div/></div>
+              </div>
+              {[64,48,72].map((w,i)=>(
+                <div key={i} className="gen-row" style={{opacity:1-i*0.2}} aria-hidden="true">
+                  <div className="gen-skel" style={{width:48,margin:0}}/>
+                  <div className="gen-skel" style={{width:`${w}%`,margin:0}}/>
+                </div>
+              ))}
+            </>
           )}
         </div>
       );
@@ -3357,89 +3597,83 @@ ${tiktok.text}`}]);
     });
 
     return(
-      <div className="community-wrap">
-        <button className="rx-back" style={{marginLeft:-12}} onClick={()=>{setTab("search");setHomeMode("search");window.scrollTo({top:0});}}>
+      <div className="lib-page cm-page">
+        <button className="rx-back ck-mode-back" onClick={()=>{setTab("search");setHomeMode("search");window.scrollTo({top:0});}}>
           <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="m15 6-6 6 6 6"/></svg>
           Cook
         </button>
-        <div className="community-header">
-          <h2 className="community-title"><em>Community</em> recipes</h2>
-          <p className="community-sub">Real dishes, generated by everyone using Every Chef.</p>
-        </div>
+        <h1 className="ck-title" style={{margin:"14px 0 0"}}>Community recipes</h1>
+        <p className="fl-lede">Dishes other people have made with Every Chef. Tap one to open it.</p>
 
         {!communityAuthed&&communityStatus==="done"&&(
-          <div className="community-gate">
-            <div className="community-gate-icon">{Ic.lock(16)}</div>
-            <div className="community-gate-text">
-              <div className="community-gate-title">Sign up to see the full Community</div>
-              <div className="community-gate-desc">You're seeing a few highlights. Create a free account to browse everything that's been generated so far.</div>
+          <div className="cm-gate">
+            <div>
+              <div className="cm-gate-title">You're seeing a few highlights</div>
+              <div className="cm-gate-desc">Create a free account to browse every community recipe.</div>
             </div>
-            <button className="community-gate-btn" onClick={()=>openSignIn()}>Sign up free</button>
+            <button className="cm-gate-btn" onClick={()=>openSignIn()}>Sign up free</button>
           </div>
         )}
 
         {communityStatus==="loading"&&(
-          <div style={{textAlign:"center",padding:"60px 20px",color:C.muted,fontSize:14}}>Loading recipes…</div>
+          <div className="fl-grid" aria-busy="true" aria-label="Loading community recipes">
+            {[0,1,2,3].map(i=>(
+              <div key={i} className="fl-card" style={{opacity:1-i*0.18,cursor:"default"}} aria-hidden="true">
+                <div className="gen-skel" style={{width:"30%",height:12}}/>
+                <div className="gen-skel" style={{width:"70%",height:18}}/>
+                <div className="gen-skel" style={{width:"90%"}}/>
+              </div>
+            ))}
+          </div>
         )}
         {communityStatus==="error"&&(
-          <div style={{textAlign:"center",padding:"60px 20px",color:C.muted,fontSize:14}}>Couldn't load Community right now. Try again in a moment.</div>
+          <div className="ui-notice" role="alert">
+            <div className="ui-notice-title">Couldn't load community recipes</div>
+            <div className="ui-notice-text">Check your connection and try again.</div>
+            <button className="ui-btn-secondary" onClick={loadCommunity}>Try again</button>
+          </div>
         )}
 
         {communityStatus==="done"&&(
           <>
-            {/* Search */}
-            <div className="community-search-wrap">
-              <span className="community-search-icon">{Ic.search(16)}</span>
-              <input
-                className="community-search-input"
-                placeholder="Search by dish or ingredient…"
-                value={communitySearch}
-                onChange={e=>setCommunitySearch(e.target.value)}
-              />
+            <label className="lib-search">
+              <span aria-hidden="true" style={{display:"flex",color:"#6E635F"}}>{Ic.search(18)}</span>
+              <input placeholder="Search by dish or ingredient" aria-label="Search community recipes"
+                value={communitySearch} onChange={e=>setCommunitySearch(e.target.value)}/>
               {communitySearch&&(
-                <button className="community-search-clear" onClick={()=>setCommunitySearch("")}>×</button>
+                <button className="cm-clear" aria-label="Clear search" onClick={()=>setCommunitySearch("")}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+                </button>
               )}
-            </div>
+            </label>
 
-            {/* Category tabs — hidden during active search */}
-            {!sq&&(
-              <div className="community-cat-tabs">
+            {!sq?(
+              <div className="lib-filters" role="group" aria-label="Filter by category">
                 {COMM_CATS.map(cat=>(
-                  <button key={cat} className={`community-cat-tab${communityTab===cat?" active":""}`} onClick={()=>setCommunityTab(cat)}>{cat}</button>
+                  <button key={cat} className={`ck-chip${communityTab===cat?" on-dark":""}`} aria-pressed={communityTab===cat} onClick={()=>setCommunityTab(cat)}>{cat}</button>
                 ))}
               </div>
-            )}
-
-            {sq&&(
-              <div className="community-result-count">
-                {filtered.length===0?"No results":""}
-                {filtered.length===1?"1 recipe found":""}
-                {filtered.length>1?`${filtered.length} recipes found`:""}
-              </div>
+            ):(
+              <p className="cm-count" aria-live="polite">{filtered.length===0?"No matches":filtered.length===1?"1 recipe":`${filtered.length} recipes`}</p>
             )}
 
             {filtered.length===0?(
-              <div style={{textAlign:"center",padding:"40px 20px",color:C.muted,fontSize:14}}>
-                {sq?`No recipes found for "${communitySearch}"`:`No ${communityTab==="All"?"community":communityTab.toLowerCase()} recipes yet — check back soon.`}
+              <div className="empty-state">
+                {sq?<><h3>No matches for "{communitySearch}"</h3><p>Try another dish or ingredient, or search for it from the Cook tab to make it yourself.</p></>
+                  :<><h3>Nothing here yet</h3><p>No {communityTab==="All"?"community":communityTab.toLowerCase()} recipes yet. Check back soon.</p></>}
               </div>
             ):(
-              <div className="community-list">
-                {filtered.map((r:any,i:number)=>{
-                  const swatchColors=["#F4A021","#E8431A","#1E3A2F"];
-                  const swatch=swatchColors[i%3];
-                  const cat=communityCategory(r.title);
-                  return(
-                    <div key={r.title+i} className="community-list-item" onClick={()=>openCommunityRecipe(r)}>
-                      <div className="community-list-swatch" style={{background:swatch}}/>
-                      <div className="community-list-text">
-                        <div className="community-list-title">{r.title}</div>
-                        <div className="community-list-tagline">{r.tagline}</div>
-                        <div className="community-list-cat" style={{color:swatch}}>{cat}</div>
-                      </div>
-                      <svg className="community-list-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                    </div>
-                  );
-                })}
+              <div className="fl-grid">
+                {filtered.map((r:any,i:number)=>(
+                  <button key={r.title+i} className="fl-card" onClick={()=>openCommunityRecipe(r)}>
+                    <span className="fl-card-cat">{communityCategory(r.title)}</span>
+                    <span className="fl-card-title">{r.title}</span>
+                    {r.tagline&&<span className="fl-card-desc">{r.tagline}</span>}
+                    <span className="fl-card-go" aria-hidden="true">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+                    </span>
+                  </button>
+                ))}
               </div>
             )}
           </>
@@ -3568,7 +3802,7 @@ ${tiktok.text}`}]);
                       </div>
                       <div className="history-item-time">{r._ts?timeAgo(r._ts):""}</div>
                       <button className={`history-item-save${sv?" saved":""}`} onClick={()=>toggleSave(r)}>
-                        {sv?"♥ Saved":"♡ Save"}
+                        {sv?"Saved":"Save"}
                       </button>
                     </div>
                   );
@@ -3847,65 +4081,70 @@ ${tiktok.text}`}]);
 
   /* ── FAMILY VIEW ── */
   function FamilyView(){
+    const status=familyStatus?<p className={`fm-status ${familyStatusType}`} role="status">{familyStatus}</p>:null;
     return(
-      <div className="family-wrap">
-        <div className="page-title">Family Code</div>
-        <div className="family-sub">Link your recipe collection with family or friends. Anyone with the same code sees your saved recipes and can add theirs too.</div>
+      <div className="fm-wrap">
+        <section className="ui-notice fm-card">
+          <h2 className="ui-notice-title">Share your collection</h2>
+          <p className="ui-notice-text">Everyone who uses the same family code sees each other's saved recipes and can add their own.</p>
+          {familyCode?(
+            <>
+              <div className="fm-code-label">Your family code</div>
+              <div className="fm-code" aria-label={`Family code ${familyCode.split("").join(" ")}`}>{familyCode}</div>
+              <p className="fm-help">Send this code to anyone you want to share with. They enter it in their Library under Family.</p>
+              <div className="ui-actions">
+                <button className="ui-btn-primary" onClick={()=>{navigator.clipboard?.writeText(familyCode);setFamilyStatus("Code copied.");setFamilyStatusType("ok");}}>Copy code</button>
+                <button className="ui-btn-secondary" style={{marginTop:0}} onClick={()=>{syncToFamily(saved,familyCode);setFamilyStatus("Synced. Your recipes are up to date.");setFamilyStatusType("ok");}}>Sync now</button>
+                <button className="fm-leave" onClick={leaveFamilyCode}>Leave this code</button>
+              </div>
+              {status}
+            </>
+          ):(
+            <>
+              <div className="ui-actions">
+                <button className="ui-btn-primary" onClick={createFamilyCode}>Create a family code</button>
+              </div>
+              {status}
+            </>
+          )}
+        </section>
 
-        {familyCode?(
-          <div className="family-current">
-            <div className="family-code-label">Your Family Code</div>
-            <div className="family-code-display">{familyCode}</div>
-            <div style={{fontSize:13,color:C.muted,marginBottom:10}}>Share this code with anyone you want to connect with. They enter it on their Every Chef app to join your collection.</div>
-            <div className="family-code-actions">
-              <button className="family-code-btn primary" onClick={()=>{navigator.clipboard?.writeText(familyCode);setFamilyStatus("Code copied to clipboard!");setFamilyStatusType("ok");}}>Copy Code</button>
-              <button className="family-code-btn" onClick={()=>{syncToFamily(saved,familyCode);setFamilyStatus("Synced! Your recipes are up to date.");setFamilyStatusType("ok");}}>Sync Now</button>
-              <button className="family-code-btn" onClick={leaveFamilyCode}>Leave</button>
-            </div>
-            {familyStatus&&<div className={`family-status ${familyStatusType}`}>{familyStatus}</div>}
+        <section className="ui-notice fm-card">
+          <h2 className="ui-notice-title" style={{fontSize:18}}>Join someone else's</h2>
+          <label htmlFor="fm-join" className="ui-notice-text">Enter the code they shared with you</label>
+          <div className="fm-join-row">
+            <input id="fm-join" className="fm-join-input" placeholder="ABC123" maxLength={8} autoCapitalize="characters" autoComplete="off"
+              value={joinInput} onChange={e=>setJoinInput(e.target.value.toUpperCase())}
+              onKeyDown={e=>{if(e.key==="Enter"&&joinInput.trim())joinFamilyCode();}}/>
+            <button className="ui-btn-primary" onClick={joinFamilyCode} disabled={!joinInput.trim()}>Join</button>
           </div>
-        ):(
-          <div className="family-current">
-            <div style={{fontSize:14,color:C.muted,marginBottom:14,lineHeight:1.6}}>You don't have a family code yet. Create one to share your recipes, or enter a code from someone else to join their collection.</div>
-            <button className="family-code-btn primary" onClick={createFamilyCode}>Create a Family Code</button>
-            {familyStatus&&<div className={`family-status ${familyStatusType}`} style={{marginTop:12}}>{familyStatus}</div>}
-          </div>
-        )}
-
-        <div className="family-divider"><div className="family-divider-line"/><div className="family-divider-text">Join an existing code</div><div className="family-divider-line"/></div>
-
-        <div className="family-join-wrap">
-          <div className="family-join-label">Enter a code shared with you</div>
-          <div className="family-join-row">
-            <input className="family-join-input" placeholder="ABC123" maxLength={8}
-              value={joinInput} onChange={e=>setJoinInput(e.target.value.toUpperCase())}/>
-            <button className="family-join-btn" onClick={joinFamilyCode}>Join</button>
-          </div>
-          {!familyCode&&familyStatus&&<div className={`family-status ${familyStatusType}`} style={{marginTop:10}}>{familyStatus}</div>}
-        </div>
+        </section>
 
         {sharedRecipes.length>0&&(
-          <div className="family-shared-recipes">
-            <div className="family-shared-title">Shared Collection</div>
-            <div className="family-shared-sub">{sharedRecipes.length} recipe{sharedRecipes.length!==1?"s":""} shared under code {familyCode}</div>
-            <div className="cards-grid">
-              {sharedRecipes.map((r:any)=>(
-                <div key={r.id} className="recipe-card" onClick={()=>{setReturnTab("family");setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
-                  <div className="card-tag">Shared Recipe</div>
-                  <div className="card-title">{r.title}</div>
-                  <div className="card-desc">{r.tagline}</div>
-                  <div className="card-meta"><span>{r.prep_time} prep</span><span>{r.cook_time} cook</span></div>
-                  <div className="card-actions" onClick={e=>e.stopPropagation()}>
-                    <button className="card-btn" onClick={()=>setSaved(l=>[r,...l.filter((s:any)=>s.id!==r.id)])}>Save to Mine</button>
+          <section className="fm-shared">
+            <h2 className="pl-week" style={{margin:"8px 0 12px"}}><span>Shared collection · {sharedRecipes.length} recipe{sharedRecipes.length!==1?"s":""}</span></h2>
+            <div className="cards-grid lib-grid">
+              {sharedRecipes.map((r:any)=>{
+                const mine=saved.some((x:any)=>x.id===r.id);
+                return(
+                  <div key={r.id} className="recipe-card" onClick={()=>{setReturnTab("family");setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
+                    <div className="card-tag">Shared</div>
+                    <div className="card-title">{r.title}</div>
+                    {r.tagline&&<div className="card-desc">{r.tagline}</div>}
+                    <div className="card-meta"><span>{r.prep_time} prep</span><span>{r.cook_time} cook</span></div>
+                    <div onClick={e=>e.stopPropagation()}>
+                      <button className="fm-save" disabled={mine} onClick={()=>setSaved(l=>[r,...l.filter((x:any)=>x.id!==r.id)])}>{mine?"In your recipes":"Save to my recipes"}</button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
-          </div>
+          </section>
         )}
       </div>
     );
   }
+
 
   /* ── MODAL ── */
   function Modal(){
@@ -4130,8 +4369,8 @@ ${tiktok.text}`}]);
       {Modal()}
       {showAccountSheet&&user&&(
         <div className="account-sheet-overlay" onClick={()=>setShowAccountSheet(false)}>
-          <div className="account-sheet" onClick={e=>e.stopPropagation()}>
-            <div className="account-sheet-handle"/>
+          <div className="account-sheet" role="dialog" aria-modal="true" aria-label="Account" onClick={e=>e.stopPropagation()}>
+            <div className="ui-handle" aria-hidden="true"/>
             <div className="account-sheet-user">
               {user.imageUrl?<img className="account-sheet-avatar" src={user.imageUrl} alt=""/>:<div className="account-sheet-avatar-placeholder">{userInitial}</div>}
               <div>
@@ -4148,9 +4387,9 @@ ${tiktok.text}`}]);
       )}
       {showSignOutConfirm&&(
         <div className="signout-confirm-overlay" onClick={()=>setShowSignOutConfirm(false)}>
-          <div className="signout-confirm" onClick={e=>e.stopPropagation()}>
-            <div className="signout-confirm-title">Sign out?</div>
-            <div className="signout-confirm-sub">Your recipes are saved to your account and will be here when you come back.</div>
+          <div className="signout-confirm" role="alertdialog" aria-modal="true" aria-labelledby="so-title" aria-describedby="so-desc" onClick={e=>e.stopPropagation()}>
+            <h2 id="so-title" className="signout-confirm-title">Sign out?</h2>
+            <p id="so-desc" className="signout-confirm-sub">Your recipes and meal plan are saved to your account and will be here when you sign back in.</p>
             <div className="signout-confirm-btns">
               <button className="signout-confirm-cancel" onClick={()=>setShowSignOutConfirm(false)}>Cancel</button>
               <button className="signout-confirm-go" onClick={confirmSignOut}>Sign out</button>
@@ -4287,29 +4526,31 @@ ${tiktok.text}`}]);
         };
         return(
           <div className="share-overlay" onClick={()=>setShowShare(false)}>
-            <div className="share-sheet" onClick={e=>e.stopPropagation()}>
-              <button className="share-close" onClick={()=>setShowShare(false)}>×</button>
-              <div className="share-sheet-title">Share Recipe</div>
+            <div className="share-sheet" role="dialog" aria-modal="true" aria-labelledby="share-title" onClick={e=>e.stopPropagation()}>
+              <div className="ui-handle" aria-hidden="true"/>
+              <button className="ui-close" aria-label="Close" onClick={()=>setShowShare(false)}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+              <h2 id="share-title" className="share-sheet-title">Share recipe</h2>
               <div className="share-sheet-dish">{sr.title}</div>
               <div className="share-url-row">
-                <div className="share-url-text" style={{color:shareLoading?"#B8B0A8":"#151210"}}>{displayUrl}</div>
+                <div className="share-url-text" style={{color:shareLoading?"#9A8F88":"#151210"}}>{displayUrl}</div>
                 <button id="share-copy-btn" className="share-copy-btn" onClick={doCopy} disabled={!shareUrl||shareLoading}>
                   {shareLoading?"…":"Copy"}
                 </button>
               </div>
               {qrSrc?(
                 <div className="share-qr">
-                  <img src={qrSrc} alt="QR code"/>
-                  <div className="share-qr-label">Scan to open</div>
+                  <img src={qrSrc} alt={`QR code for ${sr.title}`}/>
+                  <div className="share-qr-label">Scan with a phone camera to open</div>
                 </div>
               ):(
-                <div style={{height:180,display:"flex",alignItems:"center",justifyContent:"center",color:"#B8B0A8",fontSize:13}}>
-                  Generating QR code…
+                <div className="share-qr" aria-busy="true">
+                  <div className="gen-skel" style={{width:180,height:180,borderRadius:12}}/>
+                  <div className="share-qr-label">Making a QR code…</div>
                 </div>
               )}
               {typeof navigator!=="undefined"&&"share" in navigator&&shareUrl&&(
                 <button className="share-native-btn" onClick={doNativeShare}>
-                  {Ic.share(16)} Share via…
+                  {Ic.share(18)} Share with…
                 </button>
               )}
             </div>
@@ -4319,22 +4560,23 @@ ${tiktok.text}`}]);
       {/* QR Scanner */}
       {showQrScanner&&(
         <div className="qr-scan-overlay" onClick={stopQrScanner}>
-          <div className="qr-scan-sheet" onClick={e=>e.stopPropagation()}>
-            <button className="qr-scan-close" onClick={stopQrScanner}>×</button>
-            <div className="qr-scan-title">Scan QR code</div>
-            <div className="qr-scan-sub">Point your camera at an Every Chef QR code — it'll open right here, signed in.</div>
+          <div className="qr-scan-sheet" role="dialog" aria-modal="true" aria-labelledby="qr-title" onClick={e=>e.stopPropagation()}>
+            <div className="ui-handle" aria-hidden="true"/>
+            <button className="ui-close" aria-label="Close scanner" onClick={stopQrScanner}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+            <h2 id="qr-title" className="qr-scan-title">Scan a recipe code</h2>
+            <p className="qr-scan-sub">Point your camera at an Every Chef QR code. The recipe opens right here.</p>
             <div className="qr-scan-frame">
               {qrStatus==="error"?(
                 <div className="qr-scan-status" style={{flexDirection:"column",gap:12}}>
                   <div>{qrErr}</div>
-                  <button className="qr-scan-retry" onClick={openQrScanner} style={{width:"auto",padding:"10px 20px"}}>Try again</button>
+                  <button className="qr-scan-retry" onClick={openQrScanner} style={{width:"auto",padding:"0 22px"}}>Try again</button>
                 </div>
               ):qrStatus==="starting"?(
-                <div className="qr-scan-status">Opening camera…</div>
+                <div className="qr-scan-status" role="status">Opening your camera…</div>
               ):qrStatus==="loading"?(
-                <div className="qr-scan-status" style={{flexDirection:"column",gap:10}}>
-                  <div className="spinner"/>
-                  Opening recipe…
+                <div className="qr-scan-status" role="status" style={{flexDirection:"column",gap:12}}>
+                  <div className="gen-bar gen-bar-indeterminate" style={{width:"60%"}}><div/></div>
+                  Opening the recipe…
                 </div>
               ):null}
               <video ref={qrVideoRef} playsInline muted style={{display:qrStatus==="scanning"?"block":"none"}}/>
@@ -4347,17 +4589,16 @@ ${tiktok.text}`}]);
       {/* Edit Recipe Panel */}
       {showEditPanel&&editRecipe&&(
         <div className="edit-panel-overlay" onClick={()=>setShowEditPanel(false)}>
-          <div className="edit-panel" onClick={e=>e.stopPropagation()}>
-            <div className="edit-panel-handle"/>
+          <div className="edit-panel" role="dialog" aria-modal="true" aria-labelledby="edit-title" onClick={e=>e.stopPropagation()}>
+            <div className="ui-handle" aria-hidden="true"/>
             <div className="edit-panel-header">
-              <div className="edit-panel-title">Edit Recipe</div>
-              <button className="edit-panel-close" onClick={()=>setShowEditPanel(false)}>×</button>
+              <h2 id="edit-title" className="edit-panel-title">Edit recipe</h2>
+              <button className="ui-close" aria-label="Close without saving" onClick={()=>setShowEditPanel(false)}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
             </div>
             <div className="edit-panel-body">
               {/* Title */}
-              <div className="edit-section-label">Title</div>
-              <input
-                style={{width:"100%",padding:"8px 10px",border:"1.5px solid #EDE8E0",borderRadius:8,fontFamily:"'Fraunces',serif",fontSize:15,color:"#151210",outline:"none",marginBottom:4,boxSizing:"border-box" as const}}
+              <label htmlFor="edit-title-input" className="edit-section-label" style={{display:"block"}}>Title</label>
+              <input id="edit-title-input" className="edit-title-input"
                 value={editRecipe.title||""}
                 onChange={e=>setEditRecipe((r:any)=>({...r,title:e.target.value}))}
               />
@@ -4474,17 +4715,16 @@ ${tiktok.text}`}]);
                 // keep any planned copies of this recipe in step with the edit
                 setPlan((p:any)=>{let ch=false;const n={...p};for(const k in n){const r=n[k];if(r&&((updated.id!=null&&r.id===updated.id)||(r.title===recipe.title))){n[k]=updated;ch=true;}}return ch?n:p;});
                 setShowEditPanel(false);setStepRewrite("idle");
-              }}>{stepRewrite==="loading"?"Updating steps…":"Save Changes"}</button>
+              }}>{stepRewrite==="loading"?"Updating steps…":"Save changes"}</button>
             </div>
           </div>
         </div>
       )}
       {showSavePrompt&&(
         <div className="save-prompt-overlay" onClick={()=>{setShowSavePrompt(false);setPendingSave(null);}}>
-          <div className="save-prompt" onClick={e=>e.stopPropagation()}>
-            <div className="save-prompt-icon">🔖</div>
-            <div className="save-prompt-title">Save your recipes</div>
-            <div className="save-prompt-sub">Sign in to save recipes across all your devices. Free, takes 10 seconds.</div>
+          <div className="save-prompt" role="dialog" aria-modal="true" aria-labelledby="sp-title" onClick={e=>e.stopPropagation()}>
+            <h2 id="sp-title" className="save-prompt-title">Keep this recipe</h2>
+            <p className="save-prompt-sub">Sign in to save recipes to every device you use. It's free and takes a few seconds.</p>
             <button className="save-prompt-btn" onClick={()=>{
               setShowSavePrompt(false);
               openSignIn();
@@ -4493,7 +4733,7 @@ ${tiktok.text}`}]);
               setShowSavePrompt(false);
               if(pendingSave){setSaved((l:any[])=>[{...pendingSave,_savedAt:Date.now(),id:pendingSave.id||Date.now()},...l]);}
               setPendingSave(null);
-            }}>Save without account (this device only)</button>
+            }}>Save on this device only</button>
           </div>
         </div>
       )}
