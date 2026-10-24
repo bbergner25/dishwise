@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "Every Chef",
   },
-  icons: { apple: "/icon-192.png" },
+  icons: { apple: "/apple-touch-icon.png", icon: "/favicon-32.png" },
 };
 
 export const viewport: Viewport = {
@@ -25,7 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <ClerkProvider>
       <html lang="en">
         <head>
-          <link rel="apple-touch-icon" href="/icon-192.png"/>
+          <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
           <link rel="preconnect" href="https://fonts.googleapis.com"/>
           <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous"/>
           <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9,700;1,9,700&family=Figtree:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
