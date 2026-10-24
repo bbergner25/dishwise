@@ -887,12 +887,12 @@ const CSS = `
   .rx-menu-danger{color:#B8340F;}
   .rx-menu-aa{font-family:'Fraunces',serif;font-weight:700;font-size:15px;width:17px;text-align:center;}
 
-  .rx-tabs{max-width:820px;margin:0 auto;display:flex;gap:6px;padding:4px 20px 2px;overflow-x:auto;scrollbar-width:none;}
+  .rx-tabs{max-width:820px;margin:0 auto;display:flex;gap:6px;padding:4px 32px 2px 20px;overflow-x:auto;scrollbar-width:none;-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 32px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 32px),transparent);}
   .rx-tabs::-webkit-scrollbar{display:none;}
-  .rx-tab{flex-shrink:0;max-width:220px;height:40px;padding:0 16px;border-radius:20px;border:1px solid #E3DCD0;background:#fff;color:#4F4744;font-family:'Figtree',sans-serif;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .15s,color .15s,border-color .15s;}
+  .rx-tab{flex-shrink:0;max-width:min(240px,62vw);height:40px;padding:0 16px;border-radius:20px;border:1px solid #E3DCD0;background:#fff;color:#4F4744;font-family:'Figtree',sans-serif;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .15s,color .15s,border-color .15s;}
   .rx-tab-side{color:#1A1F2E;}
   .rx-tab.active{background:#1A1F2E;border-color:#1A1F2E;color:#FDFAF5;font-weight:600;}
-  .rx-tab-label{overflow:hidden;text-overflow:ellipsis;}
+  .rx-tab-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .rx-tab-dot{width:6px;height:6px;border-radius:3px;background:#F4A021;flex-shrink:0;animation:rxPulse 1s ease-in-out infinite;}
   @keyframes rxPulse{0%,100%{opacity:.3}50%{opacity:1}}
   .rx-tab-add{flex-shrink:0;height:40px;padding:0 16px;border-radius:20px;border:1.5px dashed #B8AFA3;background:transparent;color:#4F4744;font-family:'Figtree',sans-serif;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;}
@@ -3195,9 +3195,9 @@ ${tiktok.text}`}]);
             </div>
 
             <div className="rx-tabs" role="tablist" aria-label="Dishes in this meal">
-              <button role="tab" aria-selected={activePane===0} className={`rx-tab${activePane===0?" active":""}`} onClick={()=>setActivePane(0)}>{recipe.title}</button>
+              <button role="tab" aria-selected={activePane===0} className={`rx-tab${activePane===0?" active":""}`} onClick={()=>setActivePane(0)} title={recipe.title}><span className="rx-tab-label">{recipe.title}</span></button>
               {pairedSides.map((p,i)=>(
-                <button key={i} role="tab" aria-selected={activePane===i+1} className={`rx-tab rx-tab-side${activePane===i+1?" active":""}`} onClick={()=>setActivePane(i+1)}>
+                <button key={i} role="tab" aria-selected={activePane===i+1} className={`rx-tab rx-tab-side${activePane===i+1?" active":""}`} onClick={()=>setActivePane(i+1)} title={p.title}>
                   <span style={{display:"flex",flexShrink:0}}>{Ic.leaf(13)}</span>
                   <span className="rx-tab-label">{p.title}</span>
                   {p.status==="loading"&&<span className="rx-tab-dot" aria-label="loading"/>}
