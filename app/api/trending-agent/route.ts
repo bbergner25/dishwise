@@ -102,14 +102,29 @@ export async function GET(req: NextRequest) {
     (authHeader && authHeader === `Bearer ${cronSecret}`);
 
   if (!authorized) {
+    // Vercel's scheduled run only sends a key when CRON_SECRET is set in the project's settings.
+    if (req.headers.get("user-agent")?.includes("vercel-cron")) {
+      try {
+        await redis.set("trending:last-run", {
+          at: new Date().toISOString(), ok: false,
+          error: process.env.CRON_SECRET ? "Scheduled run sent the wrong key" : "Scheduled run blocked: CRON_SECRET isn't set in Vercel",
+        });
+      } catch {}
+    }
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const results: { dish: string; status: string; error?: string }[] = [];
+  const now = new Date();
+  const cycle = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${now.getDate() <= 15 ? "01" : "15"}`;
 
   try {
     // 1. Get trending dishes from Claude + web search
     const dishes = await fetchTrendingDishes();
+
+    // Save the new list right away, so a timeout while pre-generating recipes below
+    // can't leave last month's list in place (uncached dishes are generated on tap).
+    await redis.set(TRENDING_KEY, { dishes, generatedAt: now.toISOString(), cycle });
 
     // 2. For each dish: check cache → generate if missing → store
     // Run all dishes in parallel — one after another can blow past the 60s limit
@@ -129,17 +144,11 @@ export async function GET(req: NextRequest) {
     results.push(...settled);
     const finalDishes: string[] = settled.map((r) => r.dish);
 
-    // 3. Write trending list to Redis (no expiry — overwrites on each run)
-    const trendingData = {
-      dishes: finalDishes,
-      generatedAt: new Date().toISOString(),
-      cycle: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${new Date().getDate() <= 15 ? "01" : "15"}`,
-    };
-    await redis.set(TRENDING_KEY, trendingData);
-
+    await redis.set("trending:last-run", { at: new Date().toISOString(), ok: true, results });
     return NextResponse.json({ ok: true, dishes: finalDishes, results });
   } catch (err: any) {
     console.error("Trending agent error:", err);
+    try { await redis.set("trending:last-run", { at: new Date().toISOString(), ok: false, error: String(err?.message || err) }); } catch {}
     return NextResponse.json({ error: String(err?.message || err), results }, { status: 500 });
   }
 }
