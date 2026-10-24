@@ -1648,6 +1648,9 @@ export default function App(){
   const [qrErr,setQrErr]         = useState("");
   const [ready,setReady]         = useState(false);
   const [cloudSynced,setCloudSynced] = useState(false); // true only after the cloud copy has been read
+  const [planCloud,setPlanCloud] = useState(false);       // plan: true once this device has read the account copy
+  const planLastSent=useRef("");                          // last plan payload sent to / read from the account
+  const planPushTimer=useRef<any>(null);
   const [justAdded,setJustAdded]     = useState<any>(null); // most recent scanned/imported recipe, so "View" can open it directly
   const [showSidePanel,setShowSidePanel] = useState(false); // "Pair it with a side" panel on the recipe page
   const [returnTab,setReturnTab]     = useState<string|null>(null); // tab to return to when leaving a recipe opened from Saved/Community/Week/Family
@@ -1871,6 +1874,77 @@ export default function App(){
     fetch("/api/recipes",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({recipes:saved})}).catch(()=>{});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[saved,ready,user?.id,cloudSynced]);
+
+  /* plan sync — the meal plan lives on the account so every signed-in device sees it.
+     First time on a device: merge (account wins on a clash, this device's extra days are kept),
+     so an empty device can't wipe the plan. After that the account copy is the source of truth,
+     re-read whenever the app comes back to the foreground. */
+  const planPayload=(p:any,ps:any,pm:any)=>{
+    const cutoff=dateKey(addDays(startOfToday(),-PLAN_PAST_DAYS));
+    const keep=(o:any)=>{const n:any={};for(const k in o||{})if(k>=cutoff)n[k]=o[k];return n;};
+    const sides:any={};
+    for(const [k,arr] of Object.entries(keep(ps))){
+      const done=(arr as any[]).filter(x=>x&&x.status!=="loading");
+      if(done.length)sides[k]=done;
+    }
+    return {plan:keep(p),sides,made:keep(pm)};
+  };
+  const pullPlan=async(firstTime:boolean)=>{
+    const res=await fetch("/api/plan");
+    if(!res.ok)throw new Error("plan read failed");
+    const d=await res.json();
+    if(!d.found){ // nothing on the account yet: this device's plan becomes the account's
+      planLastSent.current="";
+      return;
+    }
+    const cp=d.plan||{}, cs=d.sides||{}, cm=d.made||{};
+    if(firstTime){
+      setPlan((l:any)=>({...l,...cp}));
+      setPlanSides((l:any)=>{const n={...l};for(const k in cs)n[k]=cs[k];for(const k in cp)if(!cs[k])delete n[k];return n;});
+      setPlanMade((l:any)=>({...l,...cm}));
+    }else{
+      // keep any side still being generated on this device
+      setPlan(cp);
+      setPlanSides((l:any)=>{const n:any={...cs};for(const k in l){const loading=(l[k]||[]).filter((x:any)=>x?.status==="loading");if(loading.length&&cp[k])n[k]=[...(n[k]||[]),...loading.filter((x:any)=>!(n[k]||[]).some((y:any)=>y.title===x.title))];}return n;});
+      setPlanMade(cm);
+    }
+    planLastSent.current=JSON.stringify({plan:cp,sides:cs,made:cm});
+  };
+  useEffect(()=>{
+    if(!isLoaded||!user||!ready)return;
+    setPlanCloud(false);
+    let cancelled=false;
+    const flag=`dw-plan-synced:${user.id}`;
+    let first=true;
+    try{first=!localStorage.getItem(flag);}catch{}
+    (async()=>{
+      try{
+        await pullPlan(first);
+        if(cancelled)return;
+        try{localStorage.setItem(flag,"1");}catch{}
+        setPlanCloud(true);
+      }catch{} // stay un-synced: never push after a failed read
+    })();
+    const onVisible=()=>{
+      if(document.visibilityState!=="visible"||planPushTimer.current)return; // don't clobber an unsent edit
+      pullPlan(false).catch(()=>{});
+    };
+    document.addEventListener("visibilitychange",onVisible);
+    return()=>{cancelled=true;document.removeEventListener("visibilitychange",onVisible);};
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[isLoaded,user?.id,ready]);
+  useEffect(()=>{
+    if(!ready||!user||!planCloud)return;
+    const body=JSON.stringify(planPayload(plan,planSides,planMade));
+    if(body===planLastSent.current)return;
+    if(planPushTimer.current)clearTimeout(planPushTimer.current);
+    planPushTimer.current=setTimeout(()=>{
+      planPushTimer.current=null;
+      fetch("/api/plan",{method:"POST",headers:{"Content-Type":"application/json"},body})
+        .then(r=>{if(r.ok)planLastSent.current=body;}).catch(()=>{});
+    },700);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[plan,planSides,planMade,ready,user?.id,planCloud]);
 
   /* scroll-hide bottom nav */
   useEffect(()=>{
