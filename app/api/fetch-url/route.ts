@@ -70,38 +70,114 @@ function isTikTok(hostname: string): boolean {
   return /(^|\.)tiktok\.com$/.test(hostname);
 }
 
-// TikTok recipes usually live in the video caption. TikTok's public oEmbed endpoint
-// (meant for embedding videos) returns the caption as `title`, with no API key.
-// Short links (/t/..., vm.tiktok.com/...) are followed to the full /@user/video/ID address first.
+// TikTok recipes usually live in the video caption. We try several ways to read it,
+// because TikTok answers server requests inconsistently (short links sometimes redirect
+// to a sign-in or home page instead of the video):
+//   1. resolve the link to /@user/video/<id> (redirects, then any video id in the page)
+//   2. oEmbed (TikTok's public embed API) -> `title` is the caption
+//   3. the embed page / video page HTML -> the caption inside its JSON ("desc")
+// The longest caption found wins.
+const VIDEO_ID_RE = /\/video\/(\d{8,})/;
+
+function decodeJsonString(s: string): string {
+  try { return JSON.parse(`"${s}"`); } catch { return s.replace(/\\n/g, "\n").replace(/\\u002F/gi, "/"); }
+}
+
+function captionFromHtml(html: string): string {
+  let best = "";
+  const patterns = [
+    /"desc"\s*:\s*"((?:[^"\\]|\\.)*)"/g,
+    /"description"\s*:\s*"((?:[^"\\]|\\.)*)"/g,
+    /<meta[^>]+property="og:description"[^>]+content="([^"]*)"/gi,
+  ];
+  for (const re of patterns) {
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(html))) {
+      const t = decodeJsonString(m[1]).replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&#39;/g, "'").trim();
+      if (t.length > best.length) best = t;
+    }
+  }
+  return best;
+}
+
+async function getText(url: string): Promise<{ finalUrl: string; html: string } | null> {
+  try {
+    const r = await fetch(url, {
+      redirect: "follow",
+      headers: { "User-Agent": BROWSER_UA, "Accept": "text/html,application/xhtml+xml", "Accept-Language": "en-US,en;q=0.9" },
+      signal: AbortSignal.timeout(10000),
+    });
+    return { finalUrl: r.url, html: await r.text() };
+  } catch { return null; }
+}
+
 async function importTikTok(url: string) {
-  let videoUrl = url;
-  if (!/\/video\/\d+/.test(videoUrl)) {
+  let videoUrl = url.split("?")[0];
+  let videoId = videoUrl.match(VIDEO_ID_RE)?.[1] || "";
+  let pageHtml = "";
+
+  // 1. Resolve short links (/t/..., vm.tiktok.com/...) to the full video address.
+  if (!videoId) {
+    // Ask for the redirect without following it first: the Location header is the most reliable source.
     try {
-      const r = await fetch(url, { redirect: "follow", headers: { "User-Agent": BROWSER_UA }, signal: AbortSignal.timeout(10000) });
-      if (/\/video\/\d+/.test(r.url)) videoUrl = r.url;
-      else {
-        const html = await r.text();
-        const m = html.match(/https:\/\/www\.tiktok\.com\/@[\w.-]+\/video\/\d+/);
-        if (m) videoUrl = m[0];
-      }
+      const r = await fetch(url, { redirect: "manual", headers: { "User-Agent": BROWSER_UA }, signal: AbortSignal.timeout(10000) });
+      const loc = r.headers.get("location") || "";
+      const id = loc.match(VIDEO_ID_RE)?.[1];
+      if (id) { videoId = id; videoUrl = loc.split("?")[0]; }
     } catch {}
   }
-  videoUrl = videoUrl.split("?")[0];
+  if (!videoId) {
+    const page = await getText(url);
+    if (page) {
+      pageHtml = page.html;
+      const id = page.finalUrl.match(VIDEO_ID_RE)?.[1] || page.html.match(VIDEO_ID_RE)?.[1] || page.html.match(/"(?:itemId|videoId|aweme_id)"\s*:\s*"?(\d{8,})/)?.[1];
+      if (id) {
+        videoId = id;
+        const full = page.finalUrl.match(/https:\/\/www\.tiktok\.com\/@[\w.-]+\/video\/\d+/)?.[0] || page.html.match(/https:\/\/www\.tiktok\.com\/@[\w.-]+\/video\/\d+/)?.[0];
+        videoUrl = full || `https://www.tiktok.com/@_/video/${id}`;
+      }
+    }
+  }
 
-  const res = await fetch(`https://www.tiktok.com/oembed?url=${encodeURIComponent(videoUrl)}`, {
-    headers: { "User-Agent": BROWSER_UA, "Accept": "application/json" },
-    signal: AbortSignal.timeout(10000),
-  });
-  if (!res.ok) {
+  let caption = "";
+  let author = "";
+
+  // 2. oEmbed
+  try {
+    const res = await fetch(`https://www.tiktok.com/oembed?url=${encodeURIComponent(videoUrl)}`, {
+      headers: { "User-Agent": BROWSER_UA, "Accept": "application/json" },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (res.ok) {
+      const data = await res.json().catch(() => null);
+      caption = (data?.title || "").trim();
+      author = data?.author_unique_id || data?.author_name || "";
+    }
+  } catch {}
+
+  // 3. Page JSON, when oEmbed gave nothing useful
+  const looksLikeRecipe = (t: string) => t.length >= 60 && /\d/.test(t);
+  if (!looksLikeRecipe(caption) && videoId) {
+    for (const u of [`https://www.tiktok.com/embed/v2/${videoId}`, videoUrl]) {
+      const page = u === videoUrl && pageHtml ? { finalUrl: u, html: pageHtml } : await getText(u);
+      if (!page) continue;
+      const c = captionFromHtml(page.html);
+      if (c.length > caption.length) caption = c;
+      if (!author) author = page.html.match(/"uniqueId"\s*:\s*"([\w.-]+)"/)?.[1] || "";
+      if (looksLikeRecipe(caption)) break;
+    }
+  }
+  if (!author) author = videoUrl.match(/@([\w.-]+)\/video/)?.[1] || "";
+  if (author === "_") author = "";
+
+  console.log("[tiktok-import]", JSON.stringify({ input: url, videoId, videoUrl, captionLength: caption.length, hasDigits: /\d/.test(caption) }));
+
+  if (!videoId && !caption) {
     return NextResponse.json({ error: "Couldn't open that TikTok. Make sure the video is public, then copy its link again." }, { status: 422 });
   }
-  const data = await res.json().catch(() => null);
-  const caption: string = (data?.title || "").trim();
-  const author: string = data?.author_unique_id || data?.author_name || "";
-  // A caption with a real recipe has some length and some numbers (amounts, times, temps).
-  if (caption.length < 60 || !/\d/.test(caption)) {
+  if (!looksLikeRecipe(caption)) {
     return NextResponse.json({
-      error: "This TikTok's caption doesn't include the recipe — it's probably only in the video. Tip: if the recipe is on screen, take a screenshot and use Photograph a recipe card.",
+      error: "We couldn't find a recipe in this TikTok's caption. If the recipe is on screen in the video, take a screenshot and use Photograph a recipe card.",
       source: "tiktok",
     }, { status: 422 });
   }
