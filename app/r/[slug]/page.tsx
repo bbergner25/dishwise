@@ -136,7 +136,7 @@ export default async function PublicRecipePage({ params }: { params: { slug: str
         .pr-body{max-width:820px;margin:0 auto;padding:28px 20px 0;display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:48px;}
         @media(max-width:760px){.pr-body{grid-template-columns:1fr;gap:32px;}}
         .pr-section-label{font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:#6E635F;font-weight:600;margin-bottom:6px;}
-        .pr-group-label{font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#1E3A2F;padding:14px 0 2px;}
+        .pr-group-label{font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#1A1F2E;padding:14px 0 2px;}
         .pr-ings{list-style:none;}
         .pr-ing{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:baseline;padding:11px 0;border-bottom:1px solid #ECE6DD;font-size:17px;line-height:1.4;}
         .pr-ing.no-prep{grid-template-columns:minmax(0,1fr);}
@@ -149,14 +149,14 @@ export default async function PublicRecipePage({ params }: { params: { slug: str
         .pr-step-num{width:30px;height:30px;border-radius:50%;background:#1A1F2E;color:#FDFAF5;font-family:'Fraunces',serif;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
         .pr-step-text{font-size:17px;line-height:1.6;color:#151210;padding-top:2px;}
         .pr-source{max-width:820px;margin:0 auto;padding:4px 20px 0;font-size:14px;color:#6E635F;}
-        .pr-source a{color:#1E3A2F;text-decoration:underline;text-underline-offset:3px;}
+        .pr-source a{color:#1A1F2E;text-decoration:underline;text-underline-offset:3px;}
 
         .pr-cta{max-width:780px;margin:32px auto 0;padding:0 20px;}
         .pr-cta-card{background:#fff;border:1px solid #ECE6DD;border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:6px;}
         .pr-cta-title{font-family:'Fraunces',serif;font-size:20px;font-weight:700;color:#151210;}
         .pr-cta-sub{font-size:15px;line-height:1.5;color:#4F4744;}
         .pr-footer{text-align:center;padding:24px 20px calc(120px + env(safe-area-inset-bottom,0px));font-size:13px;color:#9A8F88;}
-        .pr-footer a{color:#1E3A2F;}
+        .pr-footer a{color:#1A1F2E;}
 
         .pr-actionbar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(253,250,245,.96);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid #ECE6DD;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));}
         .pr-actionbar-inner{max-width:780px;margin:0 auto;display:flex;}
