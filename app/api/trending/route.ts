@@ -11,7 +11,10 @@ const redis = new Redis({
 // Returns current trending dishes. Falls back to promoted list if no trending data exists yet.
 export async function GET() {
   try {
-    const data = await redis.get<{ dishes: string[]; generatedAt: string; cycle: string }>("trending:current");
+    const [data, lastRun] = await Promise.all([
+      redis.get<{ dishes: string[]; generatedAt: string; cycle: string }>("trending:current"),
+      redis.get<{ at: string; ok: boolean; error?: string }>("trending:last-run").catch(() => null),
+    ]);
 
     if (data?.dishes?.length) {
       return NextResponse.json({
@@ -19,6 +22,7 @@ export async function GET() {
         generatedAt: data.generatedAt,
         cycle: data.cycle,
         source: "agent",
+        lastRun: lastRun ? { at: lastRun.at, ok: lastRun.ok, error: lastRun.error } : null,
       });
     }
 
