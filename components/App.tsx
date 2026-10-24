@@ -2344,7 +2344,8 @@ export default function App(){
   /* ── Back navigation ──
      Every screen you move to becomes a browser-history step, so Safari's edge swipe,
      Android's back button and (in the home-screen app) our own left-edge swipe all go
-     back to the last place you were. The "writing your recipe" screen is a step too,
+     back to the last place you were (iOS gives home-screen web apps the same native
+     edge swipe once screens are history steps). The "writing your recipe" screen is a step too,
      but it's replaced by the recipe once it's ready, and skipped when going forward. */
   const navStack=useRef<any[]>([]);
   const navIdx=useRef(0);
@@ -2398,60 +2399,6 @@ export default function App(){
     window.addEventListener("popstate",onPop);
     return()=>window.removeEventListener("popstate",onPop);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[]);
-  // Home-screen app only (Safari already has its own edge swipe): drag from the left edge to go back.
-  useEffect(()=>{
-    const standalone=window.matchMedia?.("(display-mode: standalone)").matches||(navigator as any).standalone;
-    if(!standalone)return;
-    const EDGE=24;
-    let active=false,decided=false,sx=0,sy=0,dx=0;
-    const body=document.body, html=document.documentElement;
-    const reset=(animate:boolean)=>{
-      body.style.transition=animate?"transform .22s ease-out":"none";
-      body.style.transform="";body.style.boxShadow="";
-      if(!animate)html.style.background="";
-      else setTimeout(()=>{html.style.background="";body.style.transition="";},230);
-    };
-    const start=(e:TouchEvent)=>{
-      const t=e.touches[0];
-      if(!t||t.clientX>EDGE||navIdx.current===0||navLive.current.cookRecipe)return;
-      active=true;decided=false;sx=t.clientX;sy=t.clientY;dx=0;
-      e.stopPropagation();
-    };
-    const move=(e:TouchEvent)=>{
-      if(!active)return;
-      const t=e.touches[0];dx=t.clientX-sx;const dy=t.clientY-sy;
-      if(!decided){
-        if(Math.abs(dy)>10&&Math.abs(dy)>Math.abs(dx)){active=false;return;}
-        if(dx<10)return;
-        decided=true;html.style.background="#1A1F2E";
-      }
-      e.preventDefault();e.stopPropagation();
-      body.style.transition="none";
-      body.style.transform=`translateX(${Math.max(0,dx)}px)`;
-      body.style.boxShadow="-12px 0 32px rgba(26,31,46,.35)";
-    };
-    const end=(e:TouchEvent)=>{
-      if(!active)return;
-      active=false;
-      if(!decided)return;
-      e.stopPropagation();
-      if(dx>window.innerWidth*0.33){
-        body.style.transition="transform .2s ease-out";
-        body.style.transform=`translateX(${window.innerWidth}px)`;
-        setTimeout(()=>{window.history.back();requestAnimationFrame(()=>reset(false));},190);
-      }else reset(true);
-    };
-    document.addEventListener("touchstart",start,{capture:true,passive:true});
-    document.addEventListener("touchmove",move,{capture:true,passive:false});
-    document.addEventListener("touchend",end,{capture:true});
-    document.addEventListener("touchcancel",end,{capture:true});
-    return()=>{
-      document.removeEventListener("touchstart",start,{capture:true} as any);
-      document.removeEventListener("touchmove",move,{capture:true} as any);
-      document.removeEventListener("touchend",end,{capture:true} as any);
-      document.removeEventListener("touchcancel",end,{capture:true} as any);
-    };
   },[]);
 
   // Adds a side dish alongside the main dish. If it's already paired, just switches to it.
