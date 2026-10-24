@@ -114,7 +114,7 @@ export default async function PublicRecipePage({ params }: { params: { slug: str
     <>
       <style>{`
         *{box-sizing:border-box;margin:0;padding:0;}
-        body{background:#FDFAF5;font-family:'Outfit',sans-serif;color:#151210;-webkit-font-smoothing:antialiased;}
+        body{background:#FDFAF5;font-family:'Figtree',sans-serif;color:#151210;-webkit-font-smoothing:antialiased;}
         a{color:inherit;text-decoration:none;}
 
         .pr-header{background:#1A1F2E;height:64px;display:flex;align-items:center;justify-content:center;position:sticky;top:0;z-index:20;}
