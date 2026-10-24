@@ -1719,6 +1719,25 @@ export default function App(){
   const qrRafRef    = useRef<number|null>(null);
 
   /* stop the camera if the component unmounts while the scanner is open */
+  // Deep link from a public share page: /?open=<slug> loads that shared recipe right in the app.
+  useEffect(()=>{
+    let slug="";
+    try{slug=new URLSearchParams(window.location.search).get("open")||"";}catch{}
+    if(!slug)return;
+    try{const u=new URL(window.location.href);u.searchParams.delete("open");window.history.replaceState(null,"",u.pathname+u.search+u.hash);}catch{}
+    (async()=>{
+      try{
+        const res=await fetch(`/api/share?slug=${encodeURIComponent(slug)}`);
+        const data=await res.json().catch(()=>({found:false}));
+        if(!data?.found||!data.recipe)return;
+        const r={...data.recipe,id:Date.now(),_dish:data.recipe.title||slug,_ts:Date.now(),_fromCache:true};
+        setReturnTab(null);setPairedSides([]);setActivePane(0);setReturnDayKey(null);
+        setRecipe(r);setServings(null);setStatus("done");setTab("search");
+        window.scrollTo({top:0});
+      }catch{}
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
   // Track the visible viewport height (shrinks when the phone keyboard opens) so top-anchored sheets can fit above it.
   useEffect(()=>{
     const vv=(window as any).visualViewport; if(!vv)return;
