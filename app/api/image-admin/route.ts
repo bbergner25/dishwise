@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 // Private admin page for dish photos. Open in a browser:
 //   /api/image-admin?secret=WARM_SECRET                         → status + links
 //   /api/image-admin?secret=WARM_SECRET&action=test&dishes=Kung Pao Noodles|Cottage Pie|Fish Tacos
@@ -6,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   redis, ensurePhoto, normalizeDish, spentCents, imagesEnabled,
   MONTHLY_BUDGET_CENTS, COST_TENTHS, IMAGE_MODEL,
-  currentBatch, startBatch, pollBatch, failedDishes, BACKFILL_ON, BATCH_SIZE,
+  currentBatch, startBatch, pollBatch, failedDishes, BACKFILL_ON, BATCH_SIZE, PREVIEW_USERS,
 } from "../../../lib/mealImage";
 
 export const maxDuration = 60;
@@ -117,6 +118,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL(`/api/image-admin?secret=${secret}`, req.url));
   }
 
+  if (action === "preview-on" || action === "preview-off") {
+    const { userId } = await auth();
+    if (!userId) return page("Sign in first", `<h1>Sign in first</h1><p>Sign in to everychef.app in this browser, then come back and tap the link again.</p><p><a href="/">Open Every Chef</a> · <a href="?secret=${secret}">← Back</a></p>`);
+    if (action === "preview-on") await redis.sadd(PREVIEW_USERS, userId); else await redis.srem(PREVIEW_USERS, userId);
+    return NextResponse.redirect(new URL(`/api/image-admin?secret=${secret}`, req.url));
+  }
+
   if (action === "batch-stop") {
     await redis.del(BACKFILL_ON);
     return NextResponse.redirect(new URL(`/api/image-admin?secret=${secret}`, req.url));
@@ -128,6 +136,9 @@ export async function GET(req: NextRequest) {
   const nextErr = poll?.next?.error || "";
   const outOfCredit = / 402|prepayment credits/i.test(nextErr);
   const spent = await spentCents();
+  let me: string | null = null;
+  try { me = (await auth()).userId; } catch {}
+  const mePreview = me ? !!(await redis.sismember(PREVIEW_USERS, me)) : false;
   const batchHtml = running
     ? `<div style="padding:14px 16px;background:#FFF6E6;border:1px solid #F1D9A8;border-radius:14px;margin:12px 0"><strong>Backfill running</strong> · current group of ${running.keys.length} started ${esc(new Date(running.startedAt).toLocaleString("en-US",{timeZone:"America/Chicago"}))} (Central)<br>
        <span class="muted">Google status: ${esc(poll?.state || "checking")}${poll?.saved ? ` · ${poll.saved} photos saved just now` : ""}. This page checks again every minute while it's open.</span>
@@ -141,6 +152,9 @@ export async function GET(req: NextRequest) {
     : "";
   return new NextResponse((await page("Dish photos", `<h1>Dish photos</h1>${batchHtml}
     <table><tr><td>Photos switched on for everyone</td><td><strong>${imagesEnabled() ? "Yes" : "No (only this admin page makes photos)"}</strong></td></tr>
+    <tr><td>Photos on your account</td><td>${!me ? `Not signed in here. <a href="/">Sign in to Every Chef</a> in this browser first.`
+      : mePreview ? `<strong>Yes</strong>, on every device where you're signed in · <a href="?secret=${secret}&action=preview-off">Turn off</a>`
+      : `No · <a href="?secret=${secret}&action=preview-on">Show photos on my account (all devices)</a>`}</td></tr>
     <tr><td>Model</td><td>${esc(IMAGE_MODEL)}</td></tr>
     <tr><td>Spent this month</td><td>$${(spent / 100).toFixed(2)} of $${(MONTHLY_BUDGET_CENTS / 100).toFixed(2)} cap</td></tr></table>
     <ul><li><a href="?secret=${secret}&action=test&dishes=${encodeURIComponent("Kung Pao Noodles|Cottage Pie|Fish Tacos")}">Make test photos: Kung Pao Noodles, Cottage Pie, Fish Tacos</a> (about 10¢, takes up to a minute)</li>

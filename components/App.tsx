@@ -2427,10 +2427,16 @@ export default function App(){
       const qs=need.slice(i,i+50).map(t=>"t="+encodeURIComponent(t)).join("&");
       fetch(`/api/recipe-image?${qs}`).then(r=>r.json()).then(d=>{
         if(d.enabled)setPhotosServerOn(true);
+        if(d.preview)setPhotosPreview(true);
         if(d.photos&&Object.keys(d.photos).length)setDishPhotos(p=>({...p,...d.photos}));
       }).catch(()=>{});
     }
   };
+  // photos preview that follows the signed-in account (set on the admin page)
+  useEffect(()=>{
+    if(!user?.id)return;
+    fetch("/api/recipe-image").then(r=>r.json()).then(d=>{if(d.enabled)setPhotosServerOn(true);if(d.preview)setPhotosPreview(true);}).catch(()=>{});
+  },[user?.id]);
   // look up photos for everything currently on screen
   useEffect(()=>{
     const titles=[

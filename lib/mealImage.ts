@@ -261,3 +261,5 @@ export async function pollBatch(timeBudgetMs = 45000): Promise<{ state: string; 
   if (remaining === 0) await redis.del(BATCH_KEY);
   return { state, saved, failed, remaining };
 }
+
+export const PREVIEW_USERS = "dish-photo-preview-users"; // accounts that see photos before they're on for everyone
