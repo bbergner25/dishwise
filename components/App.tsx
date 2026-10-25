@@ -1391,7 +1391,8 @@ const CSS = `
   .pp-toast button{min-height:40px;padding:0 14px;border:none;border-radius:20px;background:#F4A021;color:#151210;font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;}
 
   /* Dish photos (with illustrated fallback underneath) */
-  .dish-pic{position:relative;overflow:hidden;background:#F5EFE4;}
+  .dish-pic{position:relative;overflow:hidden;background:#F5EFE4;container-type:size;}
+  .dish-pic-mark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-style:italic;font-weight:700;font-size:44px;font-size:clamp(16px,34cqmin,84px);color:#E5D8C4;user-select:none;}
   .dish-pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .45s ease;}
   .dish-pic img.in{opacity:1;}
   @media (prefers-reduced-motion:reduce){.dish-pic img{transition:none;}}
@@ -1536,37 +1537,6 @@ function ingParts(ing: any){
 }
 
 /* ── Meal art: simple illustrated cards used until (or instead of) a dish photo ── */
-function dishKind(title: string): string{
-  const t=(title||"").toLowerCase();
-  if(/soup|stew|chili|chowder|bisque|pho|ramen|broth|gumbo|congee|curry/.test(t))return "soup";
-  if(/pie|casserole|bake|lasagna|gratin|enchilada|cobbler|crumble|shepherd|cottage|mac and cheese|pot pie/.test(t))return "bake";
-  if(/taco|burrito|quesadilla|fajita|tostada/.test(t))return "taco";
-  if(/ravioli|gnocchi|tortellini|dumpling|gyoza|pierogi/.test(t))return "ravioli";
-  if(/noodle|pasta|spaghetti|linguine|udon|lo mein|pad thai|fettuccine|penne|rigatoni|orzo/.test(t))return "noodles";
-  if(/cake|brownie|cookie|tart|cheesecake|pudding|tiramisu|muffin|bread|pancake|waffle|crumb|latte/.test(t))return "sweet";
-  if(/salad|bowl|rice|quinoa|grain|poke|risotto|fried rice/.test(t))return "bowl";
-  return "plate";
-}
-const ART_BG=["#F3D6C7","#FBE7B5","#F7E3C2","#E9E2D6"];
-function artHash(s: string){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
-function MealArt({title}:{title:string}){
-  const k=dishKind(title), bg=ART_BG[artHash((title||"").toLowerCase())%ART_BG.length];
-  const shade="rgba(26,31,46,.08)";
-  return(
-    <svg aria-hidden="true" viewBox="0 0 360 240" preserveAspectRatio="xMidYMid slice" style={{width:"100%",height:"100%",display:"block"}}>
-      <rect width="360" height="240" fill={bg}/>
-      {k==="bake"&&<g><ellipse cx="186" cy="130" rx="112" ry="76" fill={shade}/><ellipse cx="180" cy="120" rx="112" ry="76" fill="#1A1F2E"/><ellipse cx="180" cy="120" rx="96" ry="62" fill="#F6DFA9"/><g fill="none" stroke="#E7BE6E" strokeWidth="7" strokeLinecap="round"><path d="M118 104c12-10 24-10 36 0"/><path d="M162 90c12-10 24-10 36 0"/><path d="M206 104c12-10 24-10 36 0"/><path d="M138 134c12-10 24-10 36 0"/><path d="M184 134c12-10 24-10 36 0"/></g></g>}
-      {k==="soup"&&<g><circle cx="186" cy="128" r="92" fill={shade}/><circle cx="180" cy="120" r="92" fill="#FDFAF5"/><circle cx="180" cy="120" r="74" fill="#C9401E"/><g fill="#F6D58A"><path d="M128 100c16-10 30 6 46-4s28 2 28 2c-6 12-20 14-30 10s-24 8-44-8z"/><path d="M166 144c16-10 30 6 46-4s22 0 22 0c-6 12-18 16-28 12s-22 8-40-8z"/></g><g fill="#FFFDF7"><circle cx="212" cy="96" r="12"/><circle cx="146" cy="134" r="10"/></g></g>}
-      {k==="noodles"&&<g><circle cx="186" cy="128" r="92" fill={shade}/><circle cx="180" cy="120" r="92" fill="#1A1F2E"/><circle cx="180" cy="120" r="74" fill="#A34A14"/><g fill="none" stroke="#F2C277" strokeWidth="8" strokeLinecap="round"><path d="M118 108c22-22 56-22 76-6s34 10 46-2"/><path d="M120 132c22-18 54-18 74-4s32 8 46-4"/><path d="M132 154c18-12 44-12 62-2s28 6 38-4"/></g><g fill="#D7261A"><circle cx="150" cy="96" r="6"/><circle cx="214" cy="140" r="6"/></g></g>}
-      {k==="taco"&&<g><ellipse cx="186" cy="188" rx="104" ry="14" fill={shade}/><path d="M84 180a96 96 0 0 1 192 0z" fill="#F3C77B"/><path d="M100 174c10-34 30-50 52-44 12-18 40-18 50-2 20-8 42 10 50 46z" fill="#8A4C9A"/><g fill="#E9A64A"><rect x="118" y="128" width="40" height="24" rx="11"/><rect x="160" y="118" width="42" height="24" rx="11"/><rect x="204" y="130" width="36" height="22" rx="10"/></g><path d="M118 134c16 10 32-6 48 2s30-6 46 2 24 4 30 0" fill="none" stroke="#FFFDF7" strokeWidth="6" strokeLinecap="round"/></g>}
-      {k==="ravioli"&&<g><circle cx="186" cy="128" r="94" fill={shade}/><circle cx="180" cy="120" r="94" fill="#FDFAF5"/><circle cx="180" cy="120" r="72" fill="#F2E3C3"/><g fill="#F4C46A"><rect x="128" y="80" width="46" height="46" rx="10"/><rect x="186" y="80" width="46" height="46" rx="10"/><rect x="128" y="126" width="46" height="46" rx="10"/><rect x="186" y="126" width="46" height="46" rx="10"/></g><g fill="#E39E3C"><circle cx="151" cy="103" r="8"/><circle cx="209" cy="103" r="8"/><circle cx="151" cy="149" r="8"/><circle cx="209" cy="149" r="8"/></g></g>}
-      {k==="bowl"&&<g><circle cx="186" cy="128" r="92" fill={shade}/><circle cx="180" cy="120" r="92" fill="#FDFAF5"/><circle cx="180" cy="120" r="74" fill="#EEDDB6"/><path d="M180 120V46a74 74 0 0 1 64 37z" fill="#8FB25A"/><path d="M180 120l64-37a74 74 0 0 1 0 74z" fill="#F4C430"/><g fill="none" stroke="#EF7E52" strokeWidth="12" strokeLinecap="round"><path d="M128 108a18 18 0 1 1 26 24"/><path d="M150 150a18 18 0 1 1 26 24"/></g></g>}
-      {k==="sweet"&&<g><circle cx="186" cy="128" r="94" fill={shade}/><circle cx="180" cy="120" r="94" fill="#FDFAF5"/><path d="M120 150 236 98v52z" fill="#E9B96A"/><path d="M120 150 236 98v14L120 162z" fill="#7A3E1C"/><path d="M120 150 236 98" stroke="#FFF4D6" strokeWidth="8" strokeLinecap="round"/><circle cx="214" cy="92" r="9" fill="#C9401E"/></g>}
-      {k==="plate"&&<g><circle cx="186" cy="128" r="94" fill={shade}/><circle cx="180" cy="120" r="94" fill="#FDFAF5"/><circle cx="180" cy="120" r="72" fill="#F2E3C3"/><ellipse cx="160" cy="114" rx="40" ry="28" fill="#B5652A"/><path d="M134 104c10 6 22 8 34 4M138 120c10 6 22 8 34 4" stroke="#8A4517" strokeWidth="4" fill="none" strokeLinecap="round"/><g fill="#8FB25A"><circle cx="214" cy="104" r="11"/><circle cx="226" cy="124" r="10"/><circle cx="208" cy="140" r="11"/></g><g fill="#F4C430"><circle cx="186" cy="150" r="7"/><circle cx="172" cy="156" r="6"/></g></g>}
-    </svg>
-  );
-}
-
 function DishPic({title,src,className}:{title:string;src?:string|null;className:string}){
   // remember WHICH image finished loading, so a cached image that loads instantly is never missed
   const [loadedSrc,setLoadedSrc]=useState<string|null>(null);
@@ -1574,7 +1544,7 @@ function DishPic({title,src,className}:{title:string;src?:string|null;className:
   useEffect(()=>{const el=imgRef.current;if(src&&el&&el.complete&&el.naturalWidth>0)setLoadedSrc(src);},[src]);
   return(
     <div className={`dish-pic ${className}`}>
-      <MealArt title={title}/>
+      <span className="dish-pic-mark" aria-hidden="true">e</span>
       {src&&<img ref={imgRef} key={src} src={src} alt="" loading="lazy" className={loadedSrc===src?"in":""} onLoad={()=>setLoadedSrc(src)}/>}
     </div>
   );
@@ -2040,6 +2010,7 @@ export default function App(){
   const inputRef    = useRef<HTMLInputElement>(null);
   const fileRef     = useRef<HTMLInputElement>(null);
   const lastScrollY = useRef(0);
+  const progScrollAt = useRef(0);
   const qrVideoRef  = useRef<HTMLVideoElement>(null);
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
   const qrStreamRef = useRef<MediaStream|null>(null);
@@ -2281,6 +2252,8 @@ export default function App(){
       const y=Math.min(Math.max(window.scrollY,0),max);
       const dy=y-lastScrollY.current;
       lastScrollY.current=y;
+      // the app moving the page itself (opening a screen, going back) isn't the person scrolling
+      if(Date.now()-progScrollAt.current<500||Math.abs(dy)>400){travel=0;return;}
       if(y<40||y>=max-48){setNavHidden(false);travel=0;return;}
       if(dy===0)return;
       travel=(Math.sign(dy)===Math.sign(travel))?travel+dy:dy;
@@ -2513,6 +2486,7 @@ export default function App(){
     navStack.current.push(snap);
     navIdx.current=navStack.current.length-1;
     try{window.history.pushState({ecNav:navIdx.current},"");}catch{}
+    progScrollAt.current=Date.now();setNavHidden(false);
     window.scrollTo(0,0);   // a new screen always opens at the top
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[screenKey,ready,pairedSides,activePane]);
@@ -2542,7 +2516,8 @@ export default function App(){
       setPairedSides(snap.pairedSides||[]);setActivePane(snap.activePane||0);
       if(snap.recipe){setRecipe(snap.recipe);setStatus("done");}else{setRecipe(null);setStatus("idle");}
       const y=snap.scrollY||0;
-      requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,y)));
+      progScrollAt.current=Date.now();setNavHidden(false);
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{progScrollAt.current=Date.now();window.scrollTo(0,y);}));
     };
     window.addEventListener("popstate",onPop);
     return()=>window.removeEventListener("popstate",onPop);
@@ -4647,7 +4622,7 @@ ${tiktok.text}`}]);
                           <span className="pp-label">{i===0?"Today":i===1?"Tomorrow":d.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"})}</span>
                           <span className="pp-meta">{same?"Already planned":cur?cur.title:"Open"}</span>
                         </span>
-                        {cur&&!same&&<span className="pp-thumb"><DishPic title={cur.title} src={photosOn?photoFor(cur.title):null} className="pp-pic"/></span>}
+                        {cur&&!same&&photosOn&&photoFor(cur.title)&&<span className="pp-thumb"><DishPic title={cur.title} src={photoFor(cur.title)} className="pp-pic"/></span>}
                         <span className="pp-tag">{same?"✓":cur?"Replace":"+ Add"}</span>
                       </button>
                     </li>
