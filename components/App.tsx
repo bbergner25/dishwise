@@ -1552,12 +1552,14 @@ function MealArt({title}:{title:string}){
 }
 
 function DishPic({title,src,className}:{title:string;src?:string|null;className:string}){
-  const [loaded,setLoaded]=useState(false);
-  useEffect(()=>{setLoaded(false);},[src]);
+  // remember WHICH image finished loading, so a cached image that loads instantly is never missed
+  const [loadedSrc,setLoadedSrc]=useState<string|null>(null);
+  const imgRef=useRef<HTMLImageElement|null>(null);
+  useEffect(()=>{const el=imgRef.current;if(src&&el&&el.complete&&el.naturalWidth>0)setLoadedSrc(src);},[src]);
   return(
     <div className={`dish-pic ${className}`}>
       <MealArt title={title}/>
-      {src&&<img src={src} alt="" loading="lazy" className={loaded?"in":""} onLoad={()=>setLoaded(true)}/>}
+      {src&&<img ref={imgRef} key={src} src={src} alt="" loading="lazy" className={loadedSrc===src?"in":""} onLoad={()=>setLoadedSrc(src)}/>}
     </div>
   );
 }
