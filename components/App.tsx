@@ -4,6 +4,7 @@ import { suggestSides, rankSides, SideDish } from "../lib/sides";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { CARD_POOL, SUGGESTIONS, type CardDef } from "../lib/dishes";
 import { buildPrompt } from "../lib/prompts";
+import { TIME_RULE, totalRange, totalShort } from "../lib/times";
 import jsQR from "jsqr";
 
 const C = {
@@ -913,6 +914,9 @@ const CSS = `
   .rx-meta-serves{flex:1.4;flex-direction:row;align-items:center;justify-content:space-between;padding:4px 4px 4px 12px;}
   .rx-meta-label{font-size:12px;color:#6E635F;}
   .rx-meta-value{font-size:16px;font-weight:600;color:#151210;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .rx-meta-total{flex:2.2;}
+  .rx-meta-total .rx-meta-value{white-space:normal;line-height:1.25;}
+  .rx-meta-sub{margin:8px 2px 0;font-size:13px;color:#6E635F;}
   .rx-meta-div{width:1px;height:32px;background:#ECE6DD;flex-shrink:0;}
   .rx-stepper{display:flex;gap:2px;}
   .rx-stepper button{width:38px;height:44px;border:none;background:#F5EFE4;font-size:19px;color:#151210;cursor:pointer;font-family:'Figtree',sans-serif;}
@@ -1782,13 +1786,14 @@ function buildInspirePrompt(time: string,vibe: string,serves: string,diets: stri
   const x=exclude.length?` Don't suggest any of these again: ${exclude.join("; ")}.`:"";
   return `Suggest 4 distinct recipe ideas for someone who wants: time available: "${time}", vibe: "${vibe}", serving size: "${serves}".${d}${f}${x}
 Reply with ONLY valid JSON, no other text:
-{"suggestions":[{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"2","why":"One sentence on why this fits their request perfectly."},{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"2","why":"..."},{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"2","why":"..."},{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"2","why":"..."}]}
-Make each suggestion meaningfully different from the others. Keep titles concise and appetizing.`;
+{"suggestions":[{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","total_time":"X–Y mins","servings":"2","why":"One sentence on why this fits their request perfectly."},{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","total_time":"X–Y mins","servings":"2","why":"..."},{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","total_time":"X–Y mins","servings":"2","why":"..."},{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","total_time":"X–Y mins","servings":"2","why":"..."}]}
+Make each suggestion meaningfully different from the others. Keep titles concise and appetizing. Only suggest dishes whose realistic total_time fits the time available.
+${TIME_RULE}`;
 }
 
 function buildScanPrompt(): string{
   return `Extract the recipe from this image. Use US imperial measurements only (cups, tbsp, tsp, oz, lbs, °F). Each ingredient's "amount" holds only the quantity, unit and size (e.g. "1", "2 cups", "1 large"); the ingredient itself and any prep notes go in "name" (amount "1", name "red bell pepper, cored and diced"). Reply with ONLY valid JSON:
-{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"4","ingredient_groups":[{"label":"","items":[{"amount":"2 tbsp","name":"olive oil"}]}],"steps":["Full step."],"grocery_items":["olive oil"],"sources":[],"source_note":"Digitized from a recipe card."}`;
+{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","total_time":"X–Y mins","servings":"4","ingredient_groups":[{"label":"","items":[{"amount":"2 tbsp","name":"olive oil"}]}],"steps":["Full step."],"grocery_items":["olive oil"],"sources":[],"source_note":"Digitized from a recipe card."}\nIf the source lists times, keep them unless they are clearly unrealistic for a home cook; total_time is always your own realistic estimate. ${TIME_RULE}`;
 }
 
 function buildRemixPrompt(dish: string, diets: string[], seasonal: boolean, location: string, tweaks: string[]): string{
@@ -1801,8 +1806,8 @@ function buildRemixPrompt(dish: string, diets: string[], seasonal: boolean, loca
 
 function buildUrlPrompt(): string{
   return `Extract the recipe from the text content of this webpage. Ignore navigation, ads, comments, and all other non-recipe content. Use US imperial measurements only (cups, tbsp, tsp, oz, lbs, °F) — convert any metric amounts. Each ingredient's "amount" holds only the quantity, unit and size (e.g. "1", "2 cups", "1 large"); the ingredient itself and any prep notes go in "name" (amount "1", name "red bell pepper, cored and diced"). Reply with ONLY valid JSON:
-{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","servings":"4","ingredient_groups":[{"label":"","items":[{"amount":"2 tbsp","name":"olive oil"}]}],"steps":["Full detailed step."],"grocery_items":["olive oil"],"sources":[],"source_note":"Extracted from [site name]."}
-Group ingredients by component if applicable. Write full clear steps.`;
+{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","total_time":"X–Y mins","servings":"4","ingredient_groups":[{"label":"","items":[{"amount":"2 tbsp","name":"olive oil"}]}],"steps":["Full detailed step."],"grocery_items":["olive oil"],"sources":[],"source_note":"Extracted from [site name]."}
+Group ingredients by component if applicable. Write full clear steps.\nIf the source lists times, keep them unless they are clearly unrealistic for a home cook; total_time is always your own realistic estimate. ${TIME_RULE}`;
 }
 
 // Parse JSON-LD Recipe schema — the legal, structured data sites publish for Google
@@ -1993,6 +1998,7 @@ export default function App(){
   const [dishPhotos,setDishPhotos] = useState<Record<string,string>>({});   // AI dish photos by normalized title
   const [photosServerOn,setPhotosServerOn] = useState(false);               // photos switched on for everyone
   const [photosPreview,setPhotosPreview] = useState(false);                 // ?photos=1 preview on this device
+  const [dishTimes,setDishTimes]       = useState<Record<string,{prep_time:string;cook_time:string;total_time:string}>>({}); // realistic re-estimates for older recipes
   const photoAsked=useRef<Set<string>>(new Set());
   const photoMaking=useRef<Set<string>>(new Set());
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -2430,6 +2436,7 @@ export default function App(){
       fetch(`/api/recipe-image?${qs}`).then(r=>r.json()).then(d=>{
         if(d.enabled)setPhotosServerOn(true);
         if(d.preview)setPhotosPreview(true);
+        if(d.times&&Object.keys(d.times).length)setDishTimes(p=>({...p,...d.times}));
         if(d.photos&&Object.keys(d.photos).length)setDishPhotos(p=>({...p,...d.photos}));
       }).catch(()=>{});
     }
@@ -2464,6 +2471,9 @@ export default function App(){
     pairedSides.forEach(p=>p.recipe&&ensureDishPhoto(p.recipe));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[status,recipe?.title,pairedSides.length,photosServerOn,dishPhotos]);
+  // older recipes get their realistic re-estimated times; new ones already carry total_time
+  const withTimes=(r:any)=>{if(!r||r.total_time)return r;const f=dishTimes[dishKey(r.title)];return f?{...r,...f}:r;};
+  const tt=(r:any)=>totalShort(withTimes(r));
   const photoFor=(title:string,userPhoto?:string|null)=>userPhoto||dishPhotos[dishKey(title)]||null;
 
   /* ── Back navigation ──
@@ -3273,8 +3283,7 @@ ${tiktok.text}`}]);
                             <h2 className="inspire-card-title">{sg.title}</h2>
                             {sg.tagline&&<p className="inspire-card-desc">{sg.tagline}</p>}
                             <div className="inspire-card-meta">
-                              {sg.prep_time&&<span>{sg.prep_time} prep</span>}
-                              {sg.cook_time&&<span>{sg.cook_time} cook</span>}
+                              {tt(sg)&&<span>{tt(sg)}</span>}
                               {sg.servings&&<span>Serves {sg.servings}</span>}
                             </div>
                             {sg.why&&<p className="inspire-card-why">{sg.why}</p>}
@@ -3580,9 +3589,7 @@ ${tiktok.text}`}]);
           {recipe.tagline&&<p className="rx-tagline">{recipe.tagline}</p>}
           {recipe.seasonal_note&&<div className="rx-seasonal"><span style={{display:"flex"}}>{Ic.leaf(13)}</span> {recipe.seasonal_note}</div>}
           <div className="rx-meta">
-            <div className="rx-meta-item"><span className="rx-meta-label">Prep</span><span className="rx-meta-value">{recipe.prep_time}</span></div>
-            <div className="rx-meta-div"/>
-            <div className="rx-meta-item"><span className="rx-meta-label">Cook</span><span className="rx-meta-value">{recipe.cook_time}</span></div>
+            <div className="rx-meta-item rx-meta-total"><span className="rx-meta-label">Total time</span><span className="rx-meta-value">{totalRange(withTimes(recipe))||"—"}</span></div>
             <div className="rx-meta-div"/>
             <div className="rx-meta-item rx-meta-serves">
               <div style={{display:"flex",flexDirection:"column",gap:2}}>
@@ -3595,6 +3602,7 @@ ${tiktok.text}`}]);
               </div>
             </div>
           </div>
+          {(()=>{const w=withTimes(recipe);const parts=[w?.prep_time&&w.prep_time!=="—"&&`Prep ${w.prep_time}`,w?.cook_time&&w.cook_time!=="—"&&`Cook ${w.cook_time}`].filter(Boolean);return parts.length?<p className="rx-meta-sub">{parts.join(" · ")}</p>:null;})()}
           <div className="rx-shop">
             <label className="rx-shop-label" htmlFor="rx-shop-select">Where are you shopping?</label>
             <div className="rx-shop-row">
@@ -3761,12 +3769,11 @@ ${tiktok.text}`}]);
           <h1 className="rx-title">{r.title}</h1>
           {r.tagline&&<p className="rx-tagline">{r.tagline}</p>}
           <div className="rx-meta">
-            <div className="rx-meta-item"><span className="rx-meta-label">Prep</span><span className="rx-meta-value">{r.prep_time}</span></div>
-            <div className="rx-meta-div"/>
-            <div className="rx-meta-item"><span className="rx-meta-label">Cook</span><span className="rx-meta-value">{r.cook_time}</span></div>
+            <div className="rx-meta-item rx-meta-total"><span className="rx-meta-label">Total time</span><span className="rx-meta-value">{totalRange(withTimes(r))||"—"}</span></div>
             <div className="rx-meta-div"/>
             <div className="rx-meta-item"><span className="rx-meta-label">Serves</span><span className="rx-meta-value">{r.servings}</span></div>
           </div>
+          {(()=>{const w=withTimes(r);const parts=[w?.prep_time&&w.prep_time!=="—"&&`Prep ${w.prep_time}`,w?.cook_time&&w.cook_time!=="—"&&`Cook ${w.cook_time}`].filter(Boolean);return parts.length?<p className="rx-meta-sub">{parts.join(" · ")}</p>:null;})()}
         </header>
         <div className="recipe-body">
           <div className="two-col">
@@ -4023,8 +4030,7 @@ ${tiktok.text}`}]);
                       <div className="history-item-main" onClick={()=>{setReturnTab("library");setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
                         <div className="history-item-title">{r.title}</div>
                         <div className="history-item-meta">
-                          <span>{r.prep_time} prep</span>
-                          <span>{r.cook_time} cook</span>
+                          {tt(r)&&<span>{tt(r)}</span>}
                           <span>{r.servings} servings</span>
                         </div>
                       </div>
@@ -4083,7 +4089,7 @@ ${tiktok.text}`}]);
                           )}
                           <div className="card-title">{r.title}</div>
                           <div className="card-desc">{r.tagline}</div>
-                          <div className="card-meta"><span>{r.prep_time} prep</span><span>{r.cook_time} cook</span><span>{r.servings} srv</span></div>
+                          <div className="card-meta">{tt(r)&&<span>{tt(r)}</span>}<span>{r.servings} srv</span></div>
                           {/* Star rating */}
                           <div className="star-row" onClick={e=>e.stopPropagation()}>
                             {[1,2,3,4,5].map(n=>(
@@ -4203,7 +4209,7 @@ ${tiktok.text}`}]);
                     <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
                   </button>
                 </div>
-                {r.cook_time&&<div className="pl-meal-meta">{r.cook_time}</div>}
+                {tt(r)&&<div className="pl-meal-meta">{tt(r)}</div>}
                 <div className="pl-sides">
                   {sides.map((s,si)=>(
                     <span key={si} className={`pl-side${s.status==="loading"?" loading":s.status==="error"?" error":""}`}>
@@ -4362,7 +4368,7 @@ ${tiktok.text}`}]);
                     <div className="card-tag">Shared</div>
                     <div className="card-title">{r.title}</div>
                     {r.tagline&&<div className="card-desc">{r.tagline}</div>}
-                    <div className="card-meta"><span>{r.prep_time} prep</span><span>{r.cook_time} cook</span></div>
+                    <div className="card-meta">{tt(r)&&<span>{tt(r)}</span>}</div>
                     <div onClick={e=>e.stopPropagation()}>
                       <button className="fm-save" disabled={mine} onClick={()=>setSaved(l=>[r,...l.filter((x:any)=>x.id!==r.id)])}>{mine?"In your recipes":"Save to my recipes"}</button>
                     </div>
@@ -4470,7 +4476,7 @@ ${tiktok.text}`}]);
                   filteredForSide.map((r:any,i:number)=>(
                     <div key={i} className="modal-item" onClick={()=>{addPlanSide(sideDayKey!,r.title,r);setAssignDay(null);setModalSearch("");}}>
                       <div className="modal-item-title">{r.title}</div>
-                      <div className="modal-item-meta">{r.prep_time} prep · {r.cook_time} cook</div>
+                      <div className="modal-item-meta">{tt(r)}</div>
                     </div>
                   ))
                 )}
@@ -4495,7 +4501,7 @@ ${tiktok.text}`}]);
                       {grouped[cat].map((r:any)=>(
                         <div key={r.id} className="modal-item" onClick={()=>{assignMain(dayKey!,r);setAssignDay(null);setModalSearch("");}}>
                           <div className="modal-item-title">{r.title}</div>
-                          <div className="modal-item-meta">{r.prep_time} prep · {r.cook_time} cook</div>
+                          <div className="modal-item-meta">{tt(r)}</div>
                         </div>
                       ))}
                     </div>
@@ -4503,7 +4509,7 @@ ${tiktok.text}`}]);
                     filtered.map((r:any)=>(
                       <div key={r.id} className="modal-item" onClick={()=>{assignMain(dayKey!,r);setAssignDay(null);setModalSearch("");}}>
                         <div className="modal-item-title">{r.title}</div>
-                        <div className="modal-item-meta">{r.prep_time} prep · {r.cook_time} cook</div>
+                        <div className="modal-item-meta">{tt(r)}</div>
                       </div>
                     ))
                   )}

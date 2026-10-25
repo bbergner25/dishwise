@@ -1,6 +1,7 @@
 import { Redis } from "@upstash/redis";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { totalRange, getTimeFixes } from "../../../lib/times";
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL!,
@@ -100,15 +101,19 @@ function renderAmount(s: string){
 }
 
 export default async function PublicRecipePage({ params }: { params: { slug: string } }) {
-  const recipe = await getRecipe(params.slug);
-  if (!recipe) notFound();
+  const loaded = await getRecipe(params.slug);
+  if (!loaded) notFound();
+  let recipe = loaded;
+  if (!recipe.total_time) { // older recipes: use the realistic re-estimate if there is one
+    try { const t = String(recipe.title || "").toLowerCase().trim().replace(/\s+/g, " "); const f = (await getTimeFixes(redis, [t]))[t]; if (f) recipe = { ...recipe, ...f }; } catch {}
+  }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://everychef.app";
   const openUrl = `${appUrl}/?open=${encodeURIComponent(params.slug)}`;
   const eyebrow = recipe._author ? `From @${String(recipe._author).replace(/^@/,"")}` : "Shared recipe";
   let sourceHost = "";
   try { if (recipe._sourceUrl) sourceHost = new URL(recipe._sourceUrl).hostname.replace(/^www\./,""); } catch {}
-  const meta = [["Prep",recipe.prep_time],["Cook",recipe.cook_time],["Serves",recipe.servings]].filter(([,v])=>v);
+  const meta = [["Total",totalRange(recipe)],["Prep",recipe.prep_time],["Cook",recipe.cook_time],["Serves",recipe.servings]].filter(([,v])=>v&&v!=="—");
 
   return (
     <>

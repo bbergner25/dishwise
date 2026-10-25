@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 //   /api/image-admin?secret=WARM_SECRET                         → status + links
 //   /api/image-admin?secret=WARM_SECRET&action=test&dishes=Kung Pao Noodles|Cottage Pie|Fish Tacos
 //   /api/image-admin?secret=WARM_SECRET&action=count             → how many dishes still need photos + est. cost
+import { estimateTimes, TIME_KEY } from "../../../lib/times";
 import { NextRequest, NextResponse } from "next/server";
 import {
   redis, ensurePhoto, normalizeDish, spentCents, imagesEnabled,
@@ -54,6 +55,34 @@ async function needPhotos(): Promise<{ all: number; have: number; need: Map<stri
 }
 
 // Poll the running batch; when it finishes and the backfill is on, start the next one.
+// Re-estimate realistic times for recipes made before the realistic-times rule.
+const TIME_FAILED = "recipe-time-failed:v1";
+async function timesNeeded() {
+  const all = await allDishes();
+  const keys = Array.from(all.keys()).filter((k) => !all.get(k)?.total_time && (all.get(k)?.steps || []).length);
+  const done = new Set<string>();
+  for (let i = 0; i < keys.length; i += 100) {
+    const chunk = keys.slice(i, i + 100);
+    const vals = await redis.mget<any[]>(...chunk.map(TIME_KEY));
+    chunk.forEach((k, j) => vals[j] && done.add(k));
+  }
+  const failed = new Set(((await redis.smembers(TIME_FAILED)) || []) as string[]);
+  const need = keys.filter((k) => !done.has(k) && !failed.has(k));
+  return { all, need, total: keys.length, done: done.size, failed: failed.size };
+}
+async function fixTimes(budgetMs: number) {
+  const t0 = Date.now();
+  const { all, need } = await timesNeeded();
+  let fixed = 0, errors: string[] = [];
+  for (let i = 0; i < need.length && Date.now() - t0 < budgetMs; i += 6) {
+    await Promise.all(need.slice(i, i + 6).map(async (k) => {
+      try { await redis.set(TIME_KEY(k), await estimateTimes(all.get(k))); fixed++; }
+      catch (e: any) { errors.push(`${k}: ${e.message}`); if (!/Anthropic (429|5\d\d)/.test(e.message)) await redis.sadd(TIME_FAILED, k); }
+    }));
+  }
+  return { fixed, errors };
+}
+
 async function pollAndContinue() {
   const r = await pollBatch();
   let next: { started: number; error?: string } | null = null;
@@ -68,7 +97,7 @@ async function pollAndContinue() {
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const cronOk = !!process.env.CRON_SECRET && req.headers.get("authorization") === `Bearer ${process.env.CRON_SECRET}`;
-  if (cronOk) return NextResponse.json(await pollAndContinue()); // daily Vercel cron keeps the backfill moving
+  if (cronOk) { const t0 = Date.now(); const photos = await pollAndContinue(); const left = 50000 - (Date.now() - t0); const times = left > 8000 ? await fixTimes(left - 8000) : null; return NextResponse.json({ photos, times }); } // daily Vercel cron keeps the backfill moving
   if (!process.env.WARM_SECRET || sp.get("secret") !== process.env.WARM_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -106,6 +135,26 @@ export async function GET(req: NextRequest) {
       <p class="muted">Runs in groups of ${BATCH_SIZE}. Each group takes up to a day (usually much less). Leave the status page open to speed it along; a daily check also keeps it going.</p>` : ""}
       <details><summary>Dishes that still need a photo</summary><pre>${esc(Array.from(need.keys()).join("\n"))}</pre></details>
       <p><a href="?secret=${secret}">← Back</a></p>`);
+  }
+
+  if (action === "times") {
+    const run = sp.get("run") === "1" ? await fixTimes(35000) : null;
+    const st = await timesNeeded();
+    const going = !!run && st.need.length > 0 && run.fixed > 0;
+    const body = `<h1>Realistic cook times</h1>
+      <p class="muted">Recipes made before the realistic-times update get their prep, cook and total time re-estimated for a home cook. New recipes already include it.</p>
+      <table><tr><td>Older recipes</td><td><strong>${st.total}</strong></td></tr>
+      <tr><td>Re-estimated</td><td>${st.done}</td></tr>
+      <tr><td>Still to do</td><td><strong>${st.need.length}</strong></td></tr>
+      ${st.failed ? `<tr><td>Couldn't estimate</td><td>${st.failed}</td></tr>` : ""}</table>
+      ${run ? `<p>${run.fixed} done just now.${going ? " Keep this page open, it continues automatically." : ""}</p>` : ""}
+      ${run?.errors.length ? `<details><summary>Errors (${run.errors.length})</summary><pre style="white-space:pre-wrap">${esc(run.errors.slice(0, 20).join("\n"))}</pre></details>` : ""}
+      ${st.need.length && !going ? `<p><a href="?secret=${secret}&action=times&run=1" style="display:inline-block;padding:12px 20px;border-radius:24px;background:#F4A021;color:#151210;font-weight:600;text-decoration:none">Re-estimate ${st.need.length} recipes (about $${(st.need.length * 0.006).toFixed(2)})</a></p>` : ""}
+      ${!st.need.length ? "<p><strong>All done.</strong></p>" : ""}
+      <p><a href="?secret=${secret}">← Back</a></p>`;
+    return new NextResponse((await page("Cook times", body)).body, {
+      headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", ...(going ? { Refresh: `2; url=?secret=${secret}&action=times&run=1` } : {}) },
+    });
   }
 
   if (action === "batch-start" && sp.get("confirm") === "1") {
@@ -158,7 +207,8 @@ export async function GET(req: NextRequest) {
     <tr><td>Model</td><td>${esc(IMAGE_MODEL)}</td></tr>
     <tr><td>Spent this month</td><td>$${(spent / 100).toFixed(2)} of $${(MONTHLY_BUDGET_CENTS / 100).toFixed(2)} cap</td></tr></table>
     <ul><li><a href="?secret=${secret}&action=test&dishes=${encodeURIComponent("Kung Pao Noodles|Cottage Pie|Fish Tacos")}">Make test photos: Kung Pao Noodles, Cottage Pie, Fish Tacos</a> (about 10¢, takes up to a minute)</li>
-    <li><a href="?secret=${secret}&action=count">Count dishes that need photos + cost estimate</a></li></ul>`)).body, {
+    <li><a href="?secret=${secret}&action=count">Count dishes that need photos + cost estimate</a></li>
+    <li><a href="?secret=${secret}&action=times">Realistic cook times for older recipes</a></li></ul>`)).body, {
       headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", ...(running ? { Refresh: "60" } : {}) },
     });
 }

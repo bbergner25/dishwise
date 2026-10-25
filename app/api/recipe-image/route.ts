@@ -3,7 +3,8 @@
 //   POST /api/recipe-image { recipe }        → makes the photo if it's missing (signed-in, photos switched on)
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { redis, getPhotos, ensurePhoto, imagesEnabled, USER_DAILY_LIMIT, PREVIEW_USERS } from "../../../lib/mealImage";
+import { getTimeFixes } from "../../../lib/times";
+import { redis, normalizeDish, getPhotos, ensurePhoto, imagesEnabled, USER_DAILY_LIMIT, PREVIEW_USERS } from "../../../lib/mealImage";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -13,7 +14,9 @@ export async function GET(req: NextRequest) {
   try {
     let preview = false;
     try { const { userId } = await auth(); if (userId) preview = !!(await redis.sismember(PREVIEW_USERS, userId)); } catch {}
-    return NextResponse.json({ enabled: imagesEnabled(), preview, photos: titles.length ? await getPhotos(titles) : {} });
+    const norm = Array.from(new Set(titles.map(normalizeDish).filter(Boolean)));
+    const [photos, times] = norm.length ? await Promise.all([getPhotos(norm), getTimeFixes(redis, norm)]) : [{}, {}];
+    return NextResponse.json({ enabled: imagesEnabled(), preview, photos, times });
   } catch {
     return NextResponse.json({ enabled: false, photos: {} });
   }
