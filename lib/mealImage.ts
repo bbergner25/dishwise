@@ -168,3 +168,96 @@ export async function ensurePhoto(recipe: any, opts: { force?: boolean; skipBudg
     await redis.del(lockKey(title));
   }
 }
+
+/* ── Batch backfill (Gemini Batch API, about half price, results within ~24h) ── */
+const BATCH_KEY = "dish-photo-batch:current";
+const FAILED_SET = "dish-photo-failed:v1";
+export const BACKFILL_ON = "dish-photo-backfill:on";
+export const BATCH_SIZE = Number(process.env.IMAGE_BATCH_SIZE || 30);
+type BatchInfo = { name: string; keys: string[]; startedAt: string; model: string };
+
+export async function currentBatch() { return redis.get<BatchInfo>(BATCH_KEY); }
+export async function failedDishes(): Promise<string[]> { return (await redis.smembers(FAILED_SET)) as string[]; }
+
+export async function startBatch(dishes: Map<string, any>): Promise<{ started: number; name?: string; error?: string }> {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return { started: 0, error: "GEMINI_API_KEY is not set" };
+  if (await currentBatch()) return { started: 0, error: "A batch is already running" };
+  if ((await spentCents()) >= MONTHLY_BUDGET_CENTS) return { started: 0, error: "Monthly budget reached" };
+  const entries = Array.from(dishes.entries()).slice(0, BATCH_SIZE);
+  if (!entries.length) return { started: 0 };
+  const requests = entries.map(([k, recipe]) => ({
+    request: {
+      contents: [{ parts: [{ text: buildPrompt(recipe) }] }],
+      generationConfig: { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: "1:1", imageSize: "1K" } },
+    },
+    metadata: { key: k },
+  }));
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${IMAGE_MODEL}:batchGenerateContent`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+    body: JSON.stringify({ batch: { display_name: `everychef-photos-${Date.now()}`, input_config: { requests: { requests } } } }),
+  });
+  const raw = await res.text();
+  if (!res.ok) return { started: 0, error: `Gemini ${res.status}: ${raw.slice(0, 1500)}` };
+  const d = JSON.parse(raw);
+  const name: string = d.name || d.metadata?.name;
+  if (!name) return { started: 0, error: `No batch name returned: ${raw.slice(0, 500)}` };
+  await redis.set(BATCH_KEY, { name, keys: entries.map(([k]) => k), startedAt: new Date().toISOString(), model: IMAGE_MODEL } satisfies BatchInfo);
+  return { started: entries.length, name };
+}
+
+function pickImage(resp: any): string | null {
+  const parts: any[] = resp?.candidates?.[0]?.content?.parts || [];
+  const p = parts.find((x) => x.inlineData?.data || x.inline_data?.data);
+  return p?.inlineData?.data || p?.inline_data?.data || null;
+}
+
+// Checks the running batch; when it's done, saves its photos (time-boxed, safe to call repeatedly).
+export async function pollBatch(timeBudgetMs = 45000): Promise<{ state: string; saved: number; failed: number; remaining: number; error?: string }> {
+  const t0 = Date.now();
+  const b = await currentBatch();
+  if (!b) return { state: "none", saved: 0, failed: 0, remaining: 0 };
+  const key = process.env.GEMINI_API_KEY!;
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/${b.name}`, { headers: { "x-goog-api-key": key } });
+  const raw = await res.text();
+  if (!res.ok) return { state: "error", saved: 0, failed: 0, remaining: b.keys.length, error: `Gemini ${res.status}: ${raw.slice(0, 800)}` };
+  const d = JSON.parse(raw);
+  const state: string = d.metadata?.state || d.state || "UNKNOWN";
+  if (/PENDING|RUNNING/.test(state)) return { state, saved: 0, failed: 0, remaining: b.keys.length };
+  if (!/SUCCEEDED/.test(state)) { // failed, cancelled or expired: give up on this batch
+    await redis.del(BATCH_KEY);
+    return { state, saved: 0, failed: 0, remaining: 0, error: JSON.stringify(d.error || d.metadata?.error || "").slice(0, 800) };
+  }
+  let results: any[] =
+    d.response?.inlinedResponses?.inlinedResponses || d.dest?.inlinedResponses || d.metadata?.output?.inlinedResponses?.inlinedResponses || [];
+  const file = d.response?.responsesFile || d.dest?.fileName || d.metadata?.output?.responsesFile;
+  if (!results.length && file) {
+    const fr = await fetch(`https://generativelanguage.googleapis.com/download/v1beta/${file}:download?alt=media`, { headers: { "x-goog-api-key": key } });
+    results = (await fr.text()).split("\n").filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+  }
+  let saved = 0, failed = 0, timedOut = false;
+  const done = new Set<string>();
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
+    const k: string = r.metadata?.key || r.key || b.keys[i];
+    if (!k) continue;
+    if (await redis.get(`dish-photo:v1:${k}`)) { done.add(k); continue; }
+    if (Date.now() - t0 > timeBudgetMs) { timedOut = true; break; }
+    const b64 = pickImage(r.response || r);
+    if (!b64) { await redis.sadd(FAILED_SET, k); done.add(k); failed++; continue; }
+    try {
+      const url = await storePhoto(k, Buffer.from(b64, "base64"));
+      await redis.set(`dish-photo:v1:${k}`, { url, model: b.model + " (batch)", at: new Date().toISOString() } satisfies DishPhoto);
+      await addSpend(Math.round(COST_TENTHS / 2));
+      done.add(k); saved++;
+    } catch (e) { console.error("[batch-photo]", k, e); }
+  }
+  let remaining = b.keys.filter((k) => !done.has(k)).length;
+  if (!timedOut) { // everything returned has been handled; anything missing from the results won't come back
+    for (const k of b.keys) if (!done.has(k)) { await redis.sadd(FAILED_SET, k); failed++; }
+    remaining = 0;
+  }
+  if (remaining === 0) await redis.del(BATCH_KEY);
+  return { state, saved, failed, remaining };
+}

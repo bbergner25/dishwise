@@ -3,6 +3,10 @@
     {
       "path": "/api/trending-agent",
       "schedule": "0 9 1,15 * *"
+    },
+    {
+      "path": "/api/image-admin",
+      "schedule": "0 14 * * *"
     }
   ]
 }
