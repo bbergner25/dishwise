@@ -2514,7 +2514,7 @@ export default function App(){
       setTab(snap.tab);setHomeMode(snap.homeMode);
       setReturnTab(snap.returnTab);setReturnDayKey(snap.returnDayKey);
       setPairedSides(snap.pairedSides||[]);setActivePane(snap.activePane||0);
-      if(snap.recipe){setRecipe(snap.recipe);setStatus("done");}else{setRecipe(null);setStatus("idle");}
+      if(snap.recipe){setRecipe(snap.recipe);setStatus("done");}else{setRecipe(null);setStatus("idle");setQuery("");}
       const y=snap.scrollY||0;
       progScrollAt.current=Date.now();setNavHidden(false);
       requestAnimationFrame(()=>requestAnimationFrame(()=>{progScrollAt.current=Date.now();window.scrollTo(0,y);}));
