@@ -1537,6 +1537,18 @@ function ingParts(ing: any){
 }
 
 /* ── Meal art: simple illustrated cards used until (or instead of) a dish photo ── */
+// Two recipes can share a name (an AI "Chicken Pot Pie" and Grandma's scanned one).
+// Your own versions are told apart by id; generic AI/community recipes of one name count as the same dish.
+const isOwnRecipe=(r:any)=>!!(r&&(r._scanned||r._imported||r._edited||r._author));
+const sameRecipe=(a:any,b:any)=>{
+  if(!a||!b)return false;
+  if(a.id!=null&&a.id===b.id)return true;
+  const ta=(a.title||"").toLowerCase().trim(),tb=(b.title||"").toLowerCase().trim();
+  return !!ta&&ta===tb&&!isOwnRecipe(a)&&!isOwnRecipe(b);
+};
+// an edited recipe gets its own photo; everything else shares the dish's photo
+const photoName=(r:any)=>r?._edited&&r.id!=null?`${r.title} #${r.id}`:(r?.title||"");
+
 function DishPic({title,src,className}:{title:string;src?:string|null;className:string}){
   // remember WHICH image finished loading, so a cached image that loads instantly is never missed
   const [loadedSrc,setLoadedSrc]=useState<string|null>(null);
@@ -1941,6 +1953,7 @@ export default function App(){
   const [returnDayKey,setReturnDayKey] = useState<string|null>(null); // which day's sides to sync pairedSides back into, when returnTab is "week"
   const [planPick,setPlanPick] = useState<{recipe:any;sides:any[]}|null>(null); // recipe being added to the plan from its page
   const [planToast,setPlanToast] = useState<{day:string;title:string}|null>(null);
+  const [nameClash,setNameClash] = useState<{id:any;title:string}|null>(null);   // saved a second recipe with a name you already have
   useEffect(()=>{if(!planToast)return;const id=setTimeout(()=>setPlanToast(null),5000);return()=>clearTimeout(id);},[planToast]);
   const [pairedSides,setPairedSides] = useState<{title:string;status:string;recipe:any}[]>([]); // every side dish paired alongside the main dish (loading|done|error)
   const [activePane,setActivePane]   = useState(0); // 0 = main dish, 1..N = pairedSides[n-1]
@@ -2436,6 +2449,7 @@ export default function App(){
     const titles=[
       recipe?.title,...pairedSides.map(p=>p.title),...trendingDishes,
       ...saved.map((r:any)=>r.title),...Object.values(plan).map((r:any)=>r?.title),
+      ...[recipe,...saved,...Object.values(plan)].filter((r:any)=>r?._edited).map((r:any)=>photoName(r)),
       ...(tab==="community"?communityRecipes.map((r:any)=>r.title):[]),
     ];
     fetchPhotos(titles as string[]);
@@ -2444,10 +2458,10 @@ export default function App(){
   // make a photo for a recipe that doesn't have one yet (only when switched on for everyone)
   const ensureDishPhoto=(r:any)=>{
     if(!r?.title||!photosServerOn||!user)return;
-    const k=dishKey(r.title);
+    const name=photoName(r),k=dishKey(name);
     if(dishPhotos[k]||photoMaking.current.has(k))return;
     photoMaking.current.add(k);
-    fetch("/api/recipe-image",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({recipe:r})})
+    fetch("/api/recipe-image",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({recipe:r,key:name})})
       .then(x=>x.json()).then(d=>{if(d.url)setDishPhotos(p=>({...p,[k]:d.url}));}).catch(()=>{});
   };
   useEffect(()=>{
@@ -2457,9 +2471,9 @@ export default function App(){
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[status,recipe?.title,pairedSides.length,photosServerOn,dishPhotos]);
   // older recipes get their realistic re-estimated times; new ones already carry total_time
-  const withTimes=(r:any)=>{if(!r||r.total_time)return r;const f=dishTimes[dishKey(r.title)];return f?{...r,...f}:r;};
+  const withTimes=(r:any)=>{if(!r||r.total_time||isOwnRecipe(r))return r;const f=dishTimes[dishKey(r.title)];return f?{...r,...f}:r;};
   const tt=(r:any)=>totalShort(withTimes(r));
-  const photoFor=(title:string,userPhoto?:string|null)=>userPhoto||dishPhotos[dishKey(title)]||null;
+  const photoFor=(x:any,userPhoto?:string|null)=>userPhoto||(typeof x==="string"?dishPhotos[dishKey(x)]:(dishPhotos[dishKey(photoName(x))]||dishPhotos[dishKey(x?.title||"")]))||null;
 
   /* ── Back navigation ──
      Every screen you move to becomes a browser-history step, so Safari's edge swipe,
@@ -2942,7 +2956,13 @@ ${tiktok.text}`}]);
 
   const toggleDiet=(d: string)=>setDiets(f=>f.includes(d)?f.filter(x=>x!==d):[...f,d]);
   const isSaved=(r: any)=>r&&saved.some((s:any)=>s.id===r.id);
-  const toggleSave=(r: any)=>{if(!r)return;isSaved(r)?setSaved(l=>l.filter((s:any)=>s.id!==r.id)):setSaved(l=>[r,...l]);};
+  const toggleSave=(r: any)=>{
+    if(!r)return;
+    if(isSaved(r)){setSaved(l=>l.filter((s:any)=>s.id!==r.id));return;}
+    const t=(r.title||"").toLowerCase().trim();
+    if(t&&saved.some((s:any)=>s.id!==r.id&&(s.title||"").toLowerCase().trim()===t)){setNameClash({id:r.id,title:r.title});setTimeout(()=>setNameClash(c=>c&&c.id===r.id?null:c),7000);}
+    setSaved(l=>[r,...l]);
+  };
   const baseS=recipe?(parseInt(recipe.servings)||4):4;
   const curS=servings||baseS;
   const ratio=curS/baseS;
@@ -3516,8 +3536,7 @@ ${tiktok.text}`}]);
                 </button>
                 {(()=>{
                   const todayK=dateKey(startOfToday());
-                  const t=(activeRecipe?.title||"").toLowerCase();
-                  const planned=!!t&&Object.entries(plan).some(([k,r]:any)=>k>=todayK&&(r?.title||"").toLowerCase()===t);
+                  const planned=!!activeRecipe&&Object.entries(plan).some(([k,r]:any)=>k>=todayK&&sameRecipe(r,activeRecipe));
                   return(
                     <button className={`rx-plan${planned?" planned":""}`} disabled={!activeRecipe}
                       aria-label={planned?"Planned. Add to another day":"Add to plan"}
@@ -3569,7 +3588,7 @@ ${tiktok.text}`}]);
     return(
       <div className="recipe-page rx-page">
         <input ref={photoInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handlePhotoUpload}/>
-        {photosOn?<DishPic title={recipe.title} src={photoFor(recipe.title,photo)} className="rx-hero"/>:photo&&<img src={photo} className="rx-photo" alt={recipe.title}/>}
+        {photosOn?<DishPic title={recipe.title} src={photoFor(recipe,photo)} className="rx-hero"/>:photo&&<img src={photo} className="rx-photo" alt={recipe.title}/>}
         <header className="rx-head">
           <div className="rx-eyebrow">{recipe._author?`From @${recipe._author} on TikTok`:recipe._scanned?"Scanned recipe":recipe._imported?"Imported recipe":recipe._fromCache?"Community recipe":"Every Chef original"}</div>
           <h1 className="rx-title">{recipe.title}</h1>
@@ -3750,7 +3769,7 @@ ${tiktok.text}`}]);
     const ingFontSize=ingTextSize==="xl"?21:ingTextSize==="large"?19:17;
     return(
       <div className="recipe-page rx-page side-pane-page">
-        {photosOn&&<DishPic title={r.title||pane.title} src={photoFor(r.title||pane.title)} className="rx-hero"/>}
+        {photosOn&&<DishPic title={r.title||pane.title} src={photoFor(r.title?r:pane.title)} className="rx-hero"/>}
         <header className="rx-head">
           <div className="rx-eyebrow" style={{color:"#1A1F2E",display:"flex",alignItems:"center",gap:6}}>{Ic.leaf(13)} Side for {recipe.title}</div>
           <h1 className="rx-title">{r.title}</h1>
@@ -4050,7 +4069,7 @@ ${tiktok.text}`}]);
                       const isConfirming=confirmRemove===r.id;
                       return(
                         <div key={r.id} className={`recipe-card${photosOn?" has-pic":""}`} onClick={()=>{setReturnTab("library");setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
-                          {photosOn&&<DishPic title={r.title} src={photoFor(r.title,recipePhotos[r.id])} className="lib-pic"/>}
+                          {photosOn&&<DishPic title={r.title} src={photoFor(r,recipePhotos[r.id])} className="lib-pic"/>}
                           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                             <div className="card-tag">{r._scanned?"Scanned":r._imported?"Imported":isSharedOnly?"Shared":r.seasonal_note?"Seasonal":"Saved"}</div>
                             {!isSharedOnly&&(
@@ -4190,7 +4209,7 @@ ${tiktok.text}`}]);
             ):r?(
               <>
                 <div className="pl-meal-top">
-                  {photosOn&&<button className="pl-thumb" tabIndex={-1} aria-hidden="true" onClick={()=>openMeal(k)}><DishPic title={r.title} src={photoFor(r.title)} className="pl-pic"/></button>}
+                  {photosOn&&<button className="pl-thumb" tabIndex={-1} aria-hidden="true" onClick={()=>openMeal(k)}><DishPic title={r.title} src={photoFor(r)} className="pl-pic"/></button>}
                   <button className="pl-meal-title" onClick={()=>openMeal(k)}>{r.title}</button>
                   <button className="pl-remove" aria-label={`Remove ${r.title} from ${shortLabel(k)}`} onClick={()=>removeMeal(k)}>
                     <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
@@ -4351,7 +4370,7 @@ ${tiktok.text}`}]);
                 const mine=saved.some((x:any)=>x.id===r.id);
                 return(
                   <div key={r.id} className={`recipe-card${photosOn?" has-pic":""}`} onClick={()=>{setReturnTab("family");setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
-                    {photosOn&&<DishPic title={r.title} src={photoFor(r.title)} className="lib-pic"/>}
+                    {photosOn&&<DishPic title={r.title} src={photoFor(r)} className="lib-pic"/>}
                     <div className="card-tag">Shared</div>
                     <div className="card-title">{r.title}</div>
                     {r.tagline&&<div className="card-desc">{r.tagline}</div>}
@@ -4612,7 +4631,7 @@ ${tiktok.text}`}]);
               <ul className="pp-days">
                 {days.map((k,i)=>{
                   const cur=plan[k];
-                  const same=cur&&(cur.title||"").toLowerCase()===title;
+                  const same=!!cur&&sameRecipe(cur,planPick.recipe);
                   const d=keyToDate(k);
                   return(
                     <li key={k}>
@@ -4622,7 +4641,7 @@ ${tiktok.text}`}]);
                           <span className="pp-label">{i===0?"Today":i===1?"Tomorrow":d.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"})}</span>
                           <span className="pp-meta">{same?"Already planned":cur?cur.title:"Open"}</span>
                         </span>
-                        {cur&&!same&&photosOn&&photoFor(cur.title)&&<span className="pp-thumb"><DishPic title={cur.title} src={photoFor(cur.title)} className="pp-pic"/></span>}
+                        {cur&&!same&&photosOn&&photoFor(cur)&&<span className="pp-thumb"><DishPic title={cur.title} src={photoFor(cur)} className="pp-pic"/></span>}
                         <span className="pp-tag">{same?"✓":cur?"Replace":"+ Add"}</span>
                       </button>
                     </li>
@@ -4637,6 +4656,14 @@ ${tiktok.text}`}]);
         <div className="pp-toast" role="status">
           <span className="pp-toast-text">Added to {planToast.day===dateKey(startOfToday())?"today":planToast.day===dateKey(addDays(startOfToday(),1))?"tomorrow":keyToDate(planToast.day).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}</span>
           <button onClick={()=>{setPlanToast(null);if(tab==="search"&&status==="done")leaveRecipe();setTab("week");window.scrollTo({top:0});}}>View plan</button>
+        </div>
+      )}
+      {nameClash&&!planToast&&(
+        <div className="pp-toast" role="status">
+          <span className="pp-toast-text" style={{whiteSpace:"normal"}}>You already have a recipe called {nameClash.title}.</span>
+          {recipe?.id===nameClash.id&&status==="done"
+            ?<button onClick={()=>{setNameClash(null);setEditRecipe(JSON.parse(JSON.stringify(recipe)));setStepRewrite("idle");setStepsSyncedFor("");setShowEditPanel(true);}}>Rename</button>
+            :<button onClick={()=>setNameClash(null)}>OK</button>}
         </div>
       )}
       {showAccountSheet&&user&&(
@@ -4981,11 +5008,11 @@ ${tiktok.text}`}]);
                     setStepRewrite("idle");
                   }catch{setStepRewrite("error");return;}
                 }
-                const updated={...edited,grocery_items:syncGroceries(recipe,edited)};
+                const updated={...edited,_edited:true,grocery_items:syncGroceries(recipe,edited)};
                 setRecipe(updated);
                 if(isSaved(recipe))setSaved((l:any[])=>l.map((r:any)=>r.id===updated.id?updated:r));
                 // keep any planned copies of this recipe in step with the edit
-                setPlan((p:any)=>{let ch=false;const n={...p};for(const k in n){const r=n[k];if(r&&((updated.id!=null&&r.id===updated.id)||(r.title===recipe.title))){n[k]=updated;ch=true;}}return ch?n:p;});
+                setPlan((p:any)=>{let ch=false;const n={...p};for(const k in n){const r=n[k];if(r&&(updated.id!=null?r.id===updated.id:r.title===recipe.title)){n[k]=updated;ch=true;}}return ch?n:p;});
                 setShowEditPanel(false);setStepRewrite("idle");
               }}>{stepRewrite==="loading"?"Updating steps…":"Save changes"}</button>
             </div>

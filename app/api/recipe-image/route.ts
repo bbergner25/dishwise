@@ -26,8 +26,8 @@ export async function POST(req: NextRequest) {
   if (!imagesEnabled()) return NextResponse.json({ status: "off" });
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ status: "signed-out" }, { status: 401 });
-  let recipe: any;
-  try { recipe = (await req.json())?.recipe; } catch { return NextResponse.json({ error: "Invalid body" }, { status: 400 }); }
+  let recipe: any, key: string | undefined;
+  try { const b = await req.json(); recipe = b?.recipe; if (typeof b?.key === "string" && b.key.length < 200) key = b.key; } catch { return NextResponse.json({ error: "Invalid body" }, { status: 400 }); }
   if (!recipe?.title) return NextResponse.json({ error: "Missing recipe" }, { status: 400 });
 
   const dayKey = `dish-photo-user:${userId}:${new Date().toISOString().slice(0, 10)}`;
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   if (used === 1) await redis.expire(dayKey, 60 * 60 * 26);
   if (used > USER_DAILY_LIMIT) return NextResponse.json({ status: "daily-limit" });
 
-  const r = await ensurePhoto(recipe);
+  const r = await ensurePhoto(recipe, { key });
   if (r.status !== "created") await redis.decr(dayKey); // only count photos actually made
   return NextResponse.json({ status: r.status, url: r.url });
 }

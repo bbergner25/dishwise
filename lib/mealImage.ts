@@ -144,8 +144,9 @@ export async function spentCents(): Promise<number> {
 }
 
 // Makes (or returns) the photo for one recipe. `force` regenerates even if one exists (admin tests).
-export async function ensurePhoto(recipe: any, opts: { force?: boolean; skipBudget?: boolean; model?: string } = {}): Promise<{ url?: string; status: string; error?: string; prompt?: string }> {
-  const title = String(recipe?.title || "").trim();
+export async function ensurePhoto(recipe: any, opts: { force?: boolean; skipBudget?: boolean; model?: string; key?: string } = {}): Promise<{ url?: string; status: string; error?: string; prompt?: string }> {
+  // photos are stored under the dish name, or a recipe-specific name for edited recipes
+  const title = String(opts.key || recipe?.title || "").trim();
   if (!title) return { status: "no-title" };
   if (!opts.force) {
     const existing = await redis.get<DishPhoto>(photoKey(title));

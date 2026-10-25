@@ -59,7 +59,8 @@ async function needPhotos(): Promise<{ all: number; have: number; need: Map<stri
 const TIME_FAILED = "recipe-time-failed:v1";
 async function timesNeeded() {
   const all = await allDishes();
-  const keys = Array.from(all.keys()).filter((k) => !all.get(k)?.total_time && (all.get(k)?.steps || []).length);
+  const own = (r: any) => !!(r?._scanned || r?._imported || r?._edited || r?._author); // those keep their own times
+  const keys = Array.from(all.keys()).filter((k) => !all.get(k)?.total_time && !own(all.get(k)) && (all.get(k)?.steps || []).length);
   const done = new Set<string>();
   for (let i = 0; i < keys.length; i += 100) {
     const chunk = keys.slice(i, i + 100);
