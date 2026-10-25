@@ -1368,7 +1368,18 @@ const CSS = `
   .pp-day{width:100%;display:flex;align-items:center;gap:14px;min-height:60px;padding:10px 14px;background:#fff;border:1px solid #ECE6DD;border-radius:16px;text-align:left;cursor:pointer;font-family:'Figtree',sans-serif;color:#151210;}
   .pp-day:hover:not(:disabled){border-color:#1A1F2E;}
   .pp-day:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
-  .pp-day.same{background:#F5EFE4;border-color:transparent;cursor:default;}
+  .pp-day.same{background:#F5EFE4;border-color:transparent;cursor:default;opacity:.7;}
+  .pp-day.taken{background:#F5EFE4;border-color:transparent;}
+  .pp-day.taken .pp-dow,.pp-day.taken .pp-dnum{color:#8A7F78;}
+  .pp-day.open{border:1.5px solid #E7D3AE;}
+  .pp-day.open .pp-meta{color:#B36A00;font-weight:600;}
+  .pp-text{flex:1;}
+  .pp-thumb{width:44px;height:44px;border-radius:12px;overflow:hidden;flex-shrink:0;}
+  .pp-pic{width:100%;height:100%;}
+  .pp-tag{flex-shrink:0;font-size:13px;font-weight:600;padding:6px 12px;border-radius:14px;white-space:nowrap;}
+  .pp-day.open .pp-tag{background:#F4A021;color:#151210;}
+  .pp-day.taken .pp-tag{color:#6E635F;border:1px solid #DDD3C5;background:#fff;}
+  .pp-day.same .pp-tag{color:#6E635F;}
   .pp-date{width:40px;display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
   .pp-dow{font-size:12px;font-weight:600;letter-spacing:1px;color:#6E635F;}
   .pp-dnum{font-family:'Fraunces',serif;font-size:21px;font-weight:700;line-height:1.1;}
@@ -4629,12 +4640,14 @@ ${tiktok.text}`}]);
                   const d=keyToDate(k);
                   return(
                     <li key={k}>
-                      <button className={`pp-day${same?" same":""}`} disabled={same} onClick={()=>pick(k,planPick.sides.length>0)}>
+                      <button className={`pp-day${same?" same":cur?" taken":" open"}`} disabled={same} onClick={()=>pick(k,planPick.sides.length>0)}>
                         <span className="pp-date"><span className="pp-dow">{["SUN","MON","TUE","WED","THU","FRI","SAT"][d.getDay()]}</span><span className="pp-dnum">{d.getDate()}</span></span>
                         <span className="pp-text">
                           <span className="pp-label">{i===0?"Today":i===1?"Tomorrow":d.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"})}</span>
-                          <span className="pp-meta">{same?"Already planned":cur?`Replaces ${cur.title}`:"Nothing planned yet"}</span>
+                          <span className="pp-meta">{same?"Already planned":cur?cur.title:"Open"}</span>
                         </span>
+                        {cur&&!same&&<span className="pp-thumb"><DishPic title={cur.title} src={photosOn?photoFor(cur.title):null} className="pp-pic"/></span>}
+                        <span className="pp-tag">{same?"✓":cur?"Replace":"+ Add"}</span>
                       </button>
                     </li>
                   );
