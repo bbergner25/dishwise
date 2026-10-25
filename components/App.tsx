@@ -1377,7 +1377,8 @@ const CSS = `
   .pp-thumb{width:44px;height:44px;border-radius:12px;overflow:hidden;flex-shrink:0;}
   .pp-pic{width:100%;height:100%;}
   .pp-tag{flex-shrink:0;font-size:13px;font-weight:600;padding:6px 12px;border-radius:14px;white-space:nowrap;}
-  .pp-day.open .pp-tag{background:#F4A021;color:#151210;}
+  .pp-day.open .pp-tag{background:#fff;color:#B36A00;border:1.5px solid #F4A021;}
+  .pp-day.open:hover .pp-tag{background:#F4A021;color:#151210;}
   .pp-day.taken .pp-tag{color:#6E635F;border:1px solid #DDD3C5;background:#fff;}
   .pp-day.same .pp-tag{color:#6E635F;}
   .pp-date{width:40px;display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
