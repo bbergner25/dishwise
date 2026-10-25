@@ -44,15 +44,16 @@ function hash(s: string): number {
 }
 
 const PLACEMENTS = [
-  "the dish is large and runs off the left edge of the frame; the food itself stays fully in frame",
-  "the dish is large and runs off the top edge of the frame; the food itself stays fully in frame",
-  "the dish sits off-center to the right, with linen visible on the left",
-  "the dish is centered with generous space around it",
+  "the dish is large and sits toward the left, so part of its rim runs past the left edge of the frame",
+  "the dish is large and sits toward the right, so part of its rim runs past the right edge of the frame",
+  "the dish sits off-center to the right, fully in frame, with linen visible on the left",
+  "the dish is centered and fully in frame, with generous space around it",
 ];
 const EXTRAS = [
   "two or three loose ingredients from the recipe casually dropped on the linen",
   "a folded linen napkin with a thin navy stripe at one corner",
   "a small speckled ceramic dish holding one garnish from the recipe",
+  "nothing else on the table",
   "nothing else on the table",
 ];
 
@@ -78,6 +79,7 @@ export function buildPrompt(recipe: any): string {
 
 House style (always the same):
 - Shot from directly overhead
+- Every piece of food, including garnishes on the plate, is fully visible with clear space between it and all four edges of the image; only the rim of the plate or bowl may extend past an edge
 - Soft natural daylight from the upper left, gentle shadows, warm and appetizing
 - Warm cream linen tablecloth with subtle texture
 - Handmade ceramics with a slightly speckled matte glaze

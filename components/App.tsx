@@ -1374,6 +1374,25 @@ const CSS = `
   .pp-toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:250;display:flex;align-items:center;gap:14px;max-width:calc(100% - 32px);padding:10px 10px 10px 18px;background:#1A1F2E;color:#FDFAF5;border-radius:26px;font-family:'Figtree',sans-serif;font-size:15px;box-shadow:0 8px 24px rgba(26,31,46,.25);}
   .pp-toast button{min-height:40px;padding:0 14px;border:none;border-radius:20px;background:#F4A021;color:#151210;font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;}
 
+  /* Dish photos (with illustrated fallback underneath) */
+  .dish-pic{position:relative;overflow:hidden;background:#F5EFE4;}
+  .dish-pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .45s ease;}
+  .dish-pic img.in{opacity:1;}
+  @media (prefers-reduced-motion:reduce){.dish-pic img{transition:none;}}
+  .rx-hero{width:calc(100% - 40px);max-width:820px;height:240px;border-radius:20px;margin:14px auto 0;}
+  @media(min-width:768px){.rx-hero{height:340px;}}
+  .ck-trend-card.has-pic{height:auto;padding:0;overflow:hidden;justify-content:flex-start;}
+  .ck-trend-pic{width:100%;height:104px;flex-shrink:0;}
+  .ck-trend-card.has-pic .ck-trend-title{padding:10px 12px 0;font-size:16px;-webkit-line-clamp:2;}
+  .ck-trend-card.has-pic .ck-trend-tag{padding:4px 12px 12px;}
+  .recipe-card.has-pic{padding-top:0 !important;overflow:hidden;}
+  .lib-pic{height:124px;margin:0 -14px 10px;}
+  .pl-meal-top{align-items:center;}
+  .pl-thumb{width:56px;height:56px;flex-shrink:0;padding:0;border:none;border-radius:14px;overflow:hidden;cursor:pointer;background:none;}
+  .pl-pic{width:56px;height:56px;}
+  .fl-card.has-pic{padding-left:94px;min-height:96px;}
+  .fl-pic{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:68px;height:68px;border-radius:14px;}
+
 `;
 
 /* ── CONSTANTS (card pool + suggestions now live in lib/dishes.ts) ── */
@@ -1498,6 +1517,49 @@ function ingParts(ing: any){
   const item=(cut<0?name:name.slice(0,cut)).trim();
   const prep=(cut<0?"":name.slice(cut+1)).trim();
   return {amount:String(sp.amount||""),item,prep};
+}
+
+/* ── Meal art: simple illustrated cards used until (or instead of) a dish photo ── */
+function dishKind(title: string): string{
+  const t=(title||"").toLowerCase();
+  if(/soup|stew|chili|chowder|bisque|pho|ramen|broth|gumbo|congee|curry/.test(t))return "soup";
+  if(/pie|casserole|bake|lasagna|gratin|enchilada|cobbler|crumble|shepherd|cottage|mac and cheese|pot pie/.test(t))return "bake";
+  if(/taco|burrito|quesadilla|fajita|tostada/.test(t))return "taco";
+  if(/ravioli|gnocchi|tortellini|dumpling|gyoza|pierogi/.test(t))return "ravioli";
+  if(/noodle|pasta|spaghetti|linguine|udon|lo mein|pad thai|fettuccine|penne|rigatoni|orzo/.test(t))return "noodles";
+  if(/cake|brownie|cookie|tart|cheesecake|pudding|tiramisu|muffin|bread|pancake|waffle|crumb|latte/.test(t))return "sweet";
+  if(/salad|bowl|rice|quinoa|grain|poke|risotto|fried rice/.test(t))return "bowl";
+  return "plate";
+}
+const ART_BG=["#F3D6C7","#FBE7B5","#F7E3C2","#E9E2D6"];
+function artHash(s: string){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function MealArt({title}:{title:string}){
+  const k=dishKind(title), bg=ART_BG[artHash((title||"").toLowerCase())%ART_BG.length];
+  const shade="rgba(26,31,46,.08)";
+  return(
+    <svg aria-hidden="true" viewBox="0 0 360 240" preserveAspectRatio="xMidYMid slice" style={{width:"100%",height:"100%",display:"block"}}>
+      <rect width="360" height="240" fill={bg}/>
+      {k==="bake"&&<g><ellipse cx="186" cy="130" rx="112" ry="76" fill={shade}/><ellipse cx="180" cy="120" rx="112" ry="76" fill="#1A1F2E"/><ellipse cx="180" cy="120" rx="96" ry="62" fill="#F6DFA9"/><g fill="none" stroke="#E7BE6E" strokeWidth="7" strokeLinecap="round"><path d="M118 104c12-10 24-10 36 0"/><path d="M162 90c12-10 24-10 36 0"/><path d="M206 104c12-10 24-10 36 0"/><path d="M138 134c12-10 24-10 36 0"/><path d="M184 134c12-10 24-10 36 0"/></g></g>}
+      {k==="soup"&&<g><circle cx="186" cy="128" r="92" fill={shade}/><circle cx="180" cy="120" r="92" fill="#FDFAF5"/><circle cx="180" cy="120" r="74" fill="#C9401E"/><g fill="#F6D58A"><path d="M128 100c16-10 30 6 46-4s28 2 28 2c-6 12-20 14-30 10s-24 8-44-8z"/><path d="M166 144c16-10 30 6 46-4s22 0 22 0c-6 12-18 16-28 12s-22 8-40-8z"/></g><g fill="#FFFDF7"><circle cx="212" cy="96" r="12"/><circle cx="146" cy="134" r="10"/></g></g>}
+      {k==="noodles"&&<g><circle cx="186" cy="128" r="92" fill={shade}/><circle cx="180" cy="120" r="92" fill="#1A1F2E"/><circle cx="180" cy="120" r="74" fill="#A34A14"/><g fill="none" stroke="#F2C277" strokeWidth="8" strokeLinecap="round"><path d="M118 108c22-22 56-22 76-6s34 10 46-2"/><path d="M120 132c22-18 54-18 74-4s32 8 46-4"/><path d="M132 154c18-12 44-12 62-2s28 6 38-4"/></g><g fill="#D7261A"><circle cx="150" cy="96" r="6"/><circle cx="214" cy="140" r="6"/></g></g>}
+      {k==="taco"&&<g><ellipse cx="186" cy="188" rx="104" ry="14" fill={shade}/><path d="M84 180a96 96 0 0 1 192 0z" fill="#F3C77B"/><path d="M100 174c10-34 30-50 52-44 12-18 40-18 50-2 20-8 42 10 50 46z" fill="#8A4C9A"/><g fill="#E9A64A"><rect x="118" y="128" width="40" height="24" rx="11"/><rect x="160" y="118" width="42" height="24" rx="11"/><rect x="204" y="130" width="36" height="22" rx="10"/></g><path d="M118 134c16 10 32-6 48 2s30-6 46 2 24 4 30 0" fill="none" stroke="#FFFDF7" strokeWidth="6" strokeLinecap="round"/></g>}
+      {k==="ravioli"&&<g><circle cx="186" cy="128" r="94" fill={shade}/><circle cx="180" cy="120" r="94" fill="#FDFAF5"/><circle cx="180" cy="120" r="72" fill="#F2E3C3"/><g fill="#F4C46A"><rect x="128" y="80" width="46" height="46" rx="10"/><rect x="186" y="80" width="46" height="46" rx="10"/><rect x="128" y="126" width="46" height="46" rx="10"/><rect x="186" y="126" width="46" height="46" rx="10"/></g><g fill="#E39E3C"><circle cx="151" cy="103" r="8"/><circle cx="209" cy="103" r="8"/><circle cx="151" cy="149" r="8"/><circle cx="209" cy="149" r="8"/></g></g>}
+      {k==="bowl"&&<g><circle cx="186" cy="128" r="92" fill={shade}/><circle cx="180" cy="120" r="92" fill="#FDFAF5"/><circle cx="180" cy="120" r="74" fill="#EEDDB6"/><path d="M180 120V46a74 74 0 0 1 64 37z" fill="#8FB25A"/><path d="M180 120l64-37a74 74 0 0 1 0 74z" fill="#F4C430"/><g fill="none" stroke="#EF7E52" strokeWidth="12" strokeLinecap="round"><path d="M128 108a18 18 0 1 1 26 24"/><path d="M150 150a18 18 0 1 1 26 24"/></g></g>}
+      {k==="sweet"&&<g><circle cx="186" cy="128" r="94" fill={shade}/><circle cx="180" cy="120" r="94" fill="#FDFAF5"/><path d="M120 150 236 98v52z" fill="#E9B96A"/><path d="M120 150 236 98v14L120 162z" fill="#7A3E1C"/><path d="M120 150 236 98" stroke="#FFF4D6" strokeWidth="8" strokeLinecap="round"/><circle cx="214" cy="92" r="9" fill="#C9401E"/></g>}
+      {k==="plate"&&<g><circle cx="186" cy="128" r="94" fill={shade}/><circle cx="180" cy="120" r="94" fill="#FDFAF5"/><circle cx="180" cy="120" r="72" fill="#F2E3C3"/><ellipse cx="160" cy="114" rx="40" ry="28" fill="#B5652A"/><path d="M134 104c10 6 22 8 34 4M138 120c10 6 22 8 34 4" stroke="#8A4517" strokeWidth="4" fill="none" strokeLinecap="round"/><g fill="#8FB25A"><circle cx="214" cy="104" r="11"/><circle cx="226" cy="124" r="10"/><circle cx="208" cy="140" r="11"/></g><g fill="#F4C430"><circle cx="186" cy="150" r="7"/><circle cx="172" cy="156" r="6"/></g></g>}
+    </svg>
+  );
+}
+
+function DishPic({title,src,className}:{title:string;src?:string|null;className:string}){
+  const [loaded,setLoaded]=useState(false);
+  useEffect(()=>{setLoaded(false);},[src]);
+  return(
+    <div className={`dish-pic ${className}`}>
+      <MealArt title={title}/>
+      {src&&<img src={src} alt="" loading="lazy" className={loaded?"in":""} onLoad={()=>setLoaded(true)}/>}
+    </div>
+  );
 }
 
 function normalizeAmount(s: string): string {
@@ -1926,6 +1988,11 @@ export default function App(){
   const [editRecipe,setEditRecipe] = useState<any>(null);
   const [ingTextSize,setIngTextSize] = useState<"normal"|"large"|"xl">("normal");
   const [recipePhotos,setRecipePhotos] = useState<Record<number,string>>({});
+  const [dishPhotos,setDishPhotos] = useState<Record<string,string>>({});   // AI dish photos by normalized title
+  const [photosServerOn,setPhotosServerOn] = useState(false);               // photos switched on for everyone
+  const [photosPreview,setPhotosPreview] = useState(false);                 // ?photos=1 preview on this device
+  const photoAsked=useRef<Set<string>>(new Set());
+  const photoMaking=useRef<Set<string>>(new Set());
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   // Inspire Me
@@ -2340,6 +2407,56 @@ export default function App(){
     if(returnDayKey)setPlanSides(p=>({...p,[returnDayKey]:pairedSides}));
     setReturnTab(null);setStatus("idle");setRecipe(null);setQuery("");closePairedSide();setShowRecipeMenu(false);setShowAddSide(false);
   };
+
+  /* ── Dish photos ── */
+  const photosOn=photosServerOn||photosPreview;
+  const dishKey=(t:string)=>(t||"").toLowerCase().trim().replace(/\s+/g," ");
+  useEffect(()=>{
+    try{
+      const q=new URLSearchParams(window.location.search).get("photos");
+      if(q==="1")localStorage.setItem("dw-photos","1");
+      if(q==="0")localStorage.removeItem("dw-photos");
+      setPhotosPreview(localStorage.getItem("dw-photos")==="1");
+    }catch{}
+  },[]);
+  const fetchPhotos=(titles:string[])=>{
+    const need=Array.from(new Set(titles.filter(Boolean).map(dishKey))).filter(t=>!photoAsked.current.has(t));
+    if(!need.length)return;
+    need.forEach(t=>photoAsked.current.add(t));
+    for(let i=0;i<need.length;i+=50){
+      const qs=need.slice(i,i+50).map(t=>"t="+encodeURIComponent(t)).join("&");
+      fetch(`/api/recipe-image?${qs}`).then(r=>r.json()).then(d=>{
+        if(d.enabled)setPhotosServerOn(true);
+        if(d.photos&&Object.keys(d.photos).length)setDishPhotos(p=>({...p,...d.photos}));
+      }).catch(()=>{});
+    }
+  };
+  // look up photos for everything currently on screen
+  useEffect(()=>{
+    const titles=[
+      recipe?.title,...pairedSides.map(p=>p.title),...trendingDishes,
+      ...saved.map((r:any)=>r.title),...Object.values(plan).map((r:any)=>r?.title),
+      ...(tab==="community"?communityRecipes.map((r:any)=>r.title):[]),
+    ];
+    fetchPhotos(titles as string[]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[recipe?.title,pairedSides.length,trendingDishes.length,saved.length,plan,tab,communityRecipes.length]);
+  // make a photo for a recipe that doesn't have one yet (only when switched on for everyone)
+  const ensureDishPhoto=(r:any)=>{
+    if(!r?.title||!photosServerOn||!user)return;
+    const k=dishKey(r.title);
+    if(dishPhotos[k]||photoMaking.current.has(k))return;
+    photoMaking.current.add(k);
+    fetch("/api/recipe-image",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({recipe:r})})
+      .then(x=>x.json()).then(d=>{if(d.url)setDishPhotos(p=>({...p,[k]:d.url}));}).catch(()=>{});
+  };
+  useEffect(()=>{
+    if(status!=="done"||!recipe)return;
+    ensureDishPhoto(recipe);
+    pairedSides.forEach(p=>p.recipe&&ensureDishPhoto(p.recipe));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[status,recipe?.title,pairedSides.length,photosServerOn,dishPhotos]);
+  const photoFor=(title:string,userPhoto?:string|null)=>userPhoto||dishPhotos[dishKey(title)]||null;
 
   /* ── Back navigation ──
      Every screen you move to becomes a browser-history step, so Safari's edge swipe,
@@ -2932,7 +3049,8 @@ ${tiktok.text}`}]);
                       const off=Math.floor(Date.now()/86400000)%n;
                       return [...trendingDishes.slice(off),...trendingDishes.slice(0,off)];
                     })().map((dish,i)=>(
-                      <button key={dish} className="ck-trend-card" onClick={()=>{setQuery(dish);doSearch(dish);}}>
+                      <button key={dish} className={`ck-trend-card${photosOn?" has-pic":""}`} onClick={()=>{setQuery(dish);doSearch(dish);}}>
+                        {photosOn&&<DishPic title={dish} src={photoFor(dish)} className="ck-trend-pic"/>}
                         <span className="ck-trend-title">{dish}</span>
                         <span className="ck-trend-tag">Trending</span>
                       </button>
@@ -3446,7 +3564,7 @@ ${tiktok.text}`}]);
     return(
       <div className="recipe-page rx-page">
         <input ref={photoInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handlePhotoUpload}/>
-        {photo&&<img src={photo} className="rx-photo" alt={recipe.title}/>}
+        {photosOn?<DishPic title={recipe.title} src={photoFor(recipe.title,photo)} className="rx-hero"/>:photo&&<img src={photo} className="rx-photo" alt={recipe.title}/>}
         <header className="rx-head">
           <div className="rx-eyebrow">{recipe._author?`From @${recipe._author} on TikTok`:recipe._scanned?"Scanned recipe":recipe._imported?"Imported recipe":recipe._fromCache?"Community recipe":"Every Chef original"}</div>
           <h1 className="rx-title">{recipe.title}</h1>
@@ -3628,6 +3746,7 @@ ${tiktok.text}`}]);
     const ingFontSize=ingTextSize==="xl"?21:ingTextSize==="large"?19:17;
     return(
       <div className="recipe-page rx-page side-pane-page">
+        {photosOn&&<DishPic title={r.title||pane.title} src={photoFor(r.title||pane.title)} className="rx-hero"/>}
         <header className="rx-head">
           <div className="rx-eyebrow" style={{color:"#1A1F2E",display:"flex",alignItems:"center",gap:6}}>{Ic.leaf(13)} Side for {recipe.title}</div>
           <h1 className="rx-title">{r.title}</h1>
@@ -3764,7 +3883,8 @@ ${tiktok.text}`}]);
             ):(
               <div className="fl-grid">
                 {filtered.map((r:any,i:number)=>(
-                  <button key={r.title+i} className="fl-card" onClick={()=>openCommunityRecipe(r)}>
+                  <button key={r.title+i} className={`fl-card${photosOn?" has-pic":""}`} onClick={()=>openCommunityRecipe(r)}>
+                    {photosOn&&<DishPic title={r.title} src={photoFor(r.title)} className="fl-pic"/>}
                     <span className="fl-card-cat">{communityCategory(r.title)}</span>
                     <span className="fl-card-title">{r.title}</span>
                     {r.tagline&&<span className="fl-card-desc">{r.tagline}</span>}
@@ -3927,7 +4047,8 @@ ${tiktok.text}`}]);
                       const rating=ratings[r.id]||0;
                       const isConfirming=confirmRemove===r.id;
                       return(
-                        <div key={r.id} className="recipe-card" onClick={()=>{setReturnTab("library");setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
+                        <div key={r.id} className={`recipe-card${photosOn?" has-pic":""}`} onClick={()=>{setReturnTab("library");setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
+                          {photosOn&&<DishPic title={r.title} src={photoFor(r.title,recipePhotos[r.id])} className="lib-pic"/>}
                           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                             <div className="card-tag">{r._scanned?"Scanned":r._imported?"Imported":isSharedOnly?"Shared":r.seasonal_note?"Seasonal":"Saved"}</div>
                             {!isSharedOnly&&(
@@ -4067,6 +4188,7 @@ ${tiktok.text}`}]);
             ):r?(
               <>
                 <div className="pl-meal-top">
+                  {photosOn&&<button className="pl-thumb" tabIndex={-1} aria-hidden="true" onClick={()=>openMeal(k)}><DishPic title={r.title} src={photoFor(r.title)} className="pl-pic"/></button>}
                   <button className="pl-meal-title" onClick={()=>openMeal(k)}>{r.title}</button>
                   <button className="pl-remove" aria-label={`Remove ${r.title} from ${shortLabel(k)}`} onClick={()=>removeMeal(k)}>
                     <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
@@ -4226,7 +4348,8 @@ ${tiktok.text}`}]);
               {sharedRecipes.map((r:any)=>{
                 const mine=saved.some((x:any)=>x.id===r.id);
                 return(
-                  <div key={r.id} className="recipe-card" onClick={()=>{setReturnTab("family");setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
+                  <div key={r.id} className={`recipe-card${photosOn?" has-pic":""}`} onClick={()=>{setReturnTab("family");setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
+                    {photosOn&&<DishPic title={r.title} src={photoFor(r.title)} className="lib-pic"/>}
                     <div className="card-tag">Shared</div>
                     <div className="card-title">{r.title}</div>
                     {r.tagline&&<div className="card-desc">{r.tagline}</div>}
