@@ -122,16 +122,23 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL(`/api/image-admin?secret=${secret}`, req.url));
   }
 
-  const poll = (await currentBatch()) ? await pollAndContinue() : null;
+  const poll = (await currentBatch()) || (await redis.get(BACKFILL_ON)) ? await pollAndContinue() : null;
   const running = await currentBatch();
   const backfillOn = !!(await redis.get(BACKFILL_ON));
+  const nextErr = poll?.next?.error || "";
+  const outOfCredit = / 402|prepayment credits/i.test(nextErr);
   const spent = await spentCents();
   const batchHtml = running
     ? `<div style="padding:14px 16px;background:#FFF6E6;border:1px solid #F1D9A8;border-radius:14px;margin:12px 0"><strong>Backfill running</strong> · current group of ${running.keys.length} started ${esc(new Date(running.startedAt).toLocaleString("en-US",{timeZone:"America/Chicago"}))} (Central)<br>
        <span class="muted">Google status: ${esc(poll?.state || "checking")}${poll?.saved ? ` · ${poll.saved} photos saved just now` : ""}. This page checks again every minute while it's open.</span>
        ${backfillOn ? `<br><a href="?secret=${secret}&action=batch-stop">Stop after this group</a>` : ""}</div>`
-    : poll?.next?.error ? `<pre style="color:#B8340F">${esc(poll.next.error)}</pre>`
-    : backfillOn ? "" : "";
+    : backfillOn && nextErr ? `<div style="padding:14px 16px;background:#FDECE6;border:1px solid #F0C2B2;border-radius:14px;margin:12px 0"><strong>Backfill paused</strong> · ${outOfCredit
+        ? "Google says your prepaid Gemini credit has run out. Add credit in Google AI Studio (Billing), then tap Resume."
+        : "Google couldn't start the next group."}<br>
+       <a href="?secret=${secret}">Resume</a> · <a href="?secret=${secret}&action=batch-stop">Stop backfill</a>
+       <details><summary class="muted">Details</summary><pre style="color:#B8340F;white-space:pre-wrap">${esc(nextErr)}</pre></details></div>`
+    : nextErr ? `<pre style="color:#B8340F;white-space:pre-wrap">${esc(nextErr)}</pre>`
+    : "";
   return new NextResponse((await page("Dish photos", `<h1>Dish photos</h1>${batchHtml}
     <table><tr><td>Photos switched on for everyone</td><td><strong>${imagesEnabled() ? "Yes" : "No (only this admin page makes photos)"}</strong></td></tr>
     <tr><td>Model</td><td>${esc(IMAGE_MODEL)}</td></tr>
