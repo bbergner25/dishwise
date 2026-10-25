@@ -46,13 +46,17 @@ export async function GET(req: NextRequest) {
 
   if (action === "test") {
     const titles = (sp.get("dishes") || "Kung Pao Noodles|Cottage Pie|Fish Tacos").split("|").map((s) => s.trim()).filter(Boolean).slice(0, 4);
-    const results = await Promise.all(titles.map(async (t) => {
+    const model = sp.get("model") || IMAGE_MODEL;
+    const results: any[] = [];
+    for (const t of titles) { // one at a time, to stay under per-minute limits
       const cached = await redis.get<any>(`recipe-cache:v1:${normalizeDish(t)}`);
-      const r = await ensurePhoto(cached || { title: t }, { force: true, skipBudget: true });
-      return { t, fromRecipe: !!cached, ...r };
-    }));
-    return page("Dish photo test", `<h1>Dish photo test</h1><p class="muted">Model: ${esc(IMAGE_MODEL)} · these are now saved as each dish's photo.</p><div class="grid">${
-      results.map((r) => `<div class="card"><strong>${esc(r.t)}</strong>${r.url ? `<img src="${esc(r.url)}" alt="">` : `<p style="color:#B8340F">${esc(r.status)}: ${esc(r.error || "")}</p>`}
+      const r = await ensurePhoto(cached || { title: t }, { force: true, skipBudget: true, model });
+      results.push({ t, fromRecipe: !!cached, ...r });
+    }
+    const lite = "gemini-3.1-flash-lite-image";
+    return page("Dish photo test", `<h1>Dish photo test</h1><p class="muted">Model: ${esc(model)} · photos that worked are now saved as each dish's photo.</p>
+      <p><a href="?secret=${secret}&action=test&dishes=${encodeURIComponent(titles.join("|"))}${model === lite ? "" : `&model=${lite}`}">Try again${model === lite ? "" : " with the Lite model"}</a></p><div class="grid">${
+      results.map((r) => `<div class="card"><strong>${esc(r.t)}</strong>${r.url ? `<img src="${esc(r.url)}" alt="">` : `<pre style="color:#B8340F;font-size:12px">${esc(r.status)}: ${esc(r.error || "")}</pre>`}
       <p class="muted">${r.fromRecipe ? "Built from the saved recipe" : "No saved recipe found, built from the name only"}</p>
       ${r.prompt ? `<details><summary>Prompt used</summary><pre>${esc(r.prompt)}</pre></details>` : ""}</div>`).join("")
     }</div><p><a href="?secret=${secret}">← Back</a></p>`);

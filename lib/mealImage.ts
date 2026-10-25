@@ -99,10 +99,10 @@ Dish: ${desc}, served in ${vesselFor(title, h)}.${ings.length ? ` Main ingredien
 
 /* ── Generation ── */
 
-export async function callGemini(prompt: string): Promise<Buffer> {
+export async function callGemini(prompt: string, model: string = IMAGE_MODEL): Promise<Buffer> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error("GEMINI_API_KEY is not set");
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/${IMAGE_MODEL}:generateContent`, {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/${model}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": key },
     body: JSON.stringify({
@@ -112,7 +112,7 @@ export async function callGemini(prompt: string): Promise<Buffer> {
     signal: AbortSignal.timeout(55000),
   });
   const raw = await res.text();
-  if (!res.ok) throw new Error(`Gemini ${res.status}: ${raw.slice(0, 300)}`);
+  if (!res.ok) throw new Error(`Gemini ${res.status}: ${raw.slice(0, 2500)}`);
   const data = JSON.parse(raw);
   const parts: any[] = data?.candidates?.[0]?.content?.parts || [];
   const img = parts.find((p) => p.inlineData?.data || p.inline_data?.data);
@@ -142,7 +142,7 @@ export async function spentCents(): Promise<number> {
 }
 
 // Makes (or returns) the photo for one recipe. `force` regenerates even if one exists (admin tests).
-export async function ensurePhoto(recipe: any, opts: { force?: boolean; skipBudget?: boolean } = {}): Promise<{ url?: string; status: string; error?: string; prompt?: string }> {
+export async function ensurePhoto(recipe: any, opts: { force?: boolean; skipBudget?: boolean; model?: string } = {}): Promise<{ url?: string; status: string; error?: string; prompt?: string }> {
   const title = String(recipe?.title || "").trim();
   if (!title) return { status: "no-title" };
   if (!opts.force) {
@@ -154,10 +154,10 @@ export async function ensurePhoto(recipe: any, opts: { force?: boolean; skipBudg
   if (!got && !opts.force) return { status: "in-progress" };
   const prompt = buildPrompt(recipe);
   try {
-    const png = await callGemini(prompt);
+    const png = await callGemini(prompt, opts.model || IMAGE_MODEL);
     await addSpend(COST_TENTHS);
     const url = await storePhoto(title, png);
-    await redis.set(photoKey(title), { url, model: IMAGE_MODEL, at: new Date().toISOString(), prompt } satisfies DishPhoto);
+    await redis.set(photoKey(title), { url, model: opts.model || IMAGE_MODEL, at: new Date().toISOString(), prompt } satisfies DishPhoto);
     return { url, status: "created", prompt };
   } catch (e: any) {
     console.error("[dish-photo]", title, e?.message || e);
