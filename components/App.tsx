@@ -2483,6 +2483,7 @@ export default function App(){
     navStack.current.push(snap);
     navIdx.current=navStack.current.length-1;
     try{window.history.pushState({ecNav:navIdx.current},"");}catch{}
+    window.scrollTo(0,0);   // a new screen always opens at the top
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[screenKey,ready,pairedSides,activePane]);
   // remember where each screen was scrolled to
