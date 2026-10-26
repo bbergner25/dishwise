@@ -35,9 +35,26 @@ async function getRecipe(slug: string) {
   }
 }
 
+// The dish photo: an edited recipe's own photo first, then the shared photo for the dish name.
+async function getPhotoUrl(recipe: any): Promise<string | null> {
+  try {
+    const keys = [
+      ...(recipe?._edited && recipe?.id != null ? [`${recipe.title} #${recipe.id}`] : []),
+      String(recipe?.title || ""),
+    ].map(normalize).filter(Boolean).map((k) => `dish-photo:v1:${k}`);
+    if (!keys.length) return null;
+    const vals = await redis.mget<({ url?: string } | null)[]>(...keys);
+    return vals.find((v) => v?.url)?.url || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const recipe = await getRecipe(params.slug);
   if (!recipe) return { title: "Recipe not found — Every Chef" };
+  const photo = await getPhotoUrl(recipe);
+  const images = photo ? [{ url: photo, width: 1024, height: 1024, alt: recipe.title }] : undefined;
   return {
     title: `${recipe.title} — Every Chef`,
     description: recipe.tagline,
@@ -46,9 +63,11 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       description: recipe.tagline,
       siteName: "Every Chef",
       type: "website",
+      images,
     },
     twitter: {
-      card: "summary",
+      card: photo ? "summary_large_image" : "summary",
+      images: photo ? [photo] : undefined,
       title: recipe.title,
       description: recipe.tagline,
     },
@@ -113,7 +132,9 @@ export default async function PublicRecipePage({ params }: { params: { slug: str
   const eyebrow = recipe._author ? `From @${String(recipe._author).replace(/^@/,"")}` : "Shared recipe";
   let sourceHost = "";
   try { if (recipe._sourceUrl) sourceHost = new URL(recipe._sourceUrl).hostname.replace(/^www\./,""); } catch {}
-  const meta = [["Total",totalRange(recipe)],["Prep",recipe.prep_time],["Cook",recipe.cook_time],["Serves",recipe.servings]].filter(([,v])=>v&&v!=="—");
+  const meta = [["Total time",totalRange(recipe)],["Serves",recipe.servings]].filter(([,v])=>v&&v!=="—");
+  const timeLine = [recipe.prep_time&&recipe.prep_time!=="—"&&`Prep ${recipe.prep_time}`,recipe.cook_time&&recipe.cook_time!=="—"&&`Cook ${recipe.cook_time}`].filter(Boolean).join(" · ");
+  const photo = await getPhotoUrl(recipe);
 
   return (
     <>
@@ -136,6 +157,11 @@ export default async function PublicRecipePage({ params }: { params: { slug: str
         .pr-meta-item{flex:1;padding:8px 14px;display:flex;flex-direction:column;gap:2px;min-width:0;}
         .pr-meta-label{font-size:12px;color:#6E635F;}
         .pr-meta-value{font-size:16px;font-weight:600;color:#151210;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .pr-meta-item:first-child{flex:2.2;}
+        .pr-meta-item:first-child .pr-meta-value{white-space:normal;line-height:1.25;}
+        .pr-meta-sub{margin:8px 2px 0;font-size:13px;color:#6E635F;}
+        .pr-photo{display:block;width:calc(100% - 40px);max-width:820px;height:240px;margin:20px auto 0;border-radius:20px;object-fit:cover;background:#F5EFE4;}
+        @media(min-width:768px){.pr-photo{height:340px;}}
         .pr-meta-div{width:1px;height:32px;background:#ECE6DD;flex-shrink:0;}
 
         .pr-body{max-width:820px;margin:0 auto;padding:28px 20px 0;display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:48px;}
@@ -177,6 +203,7 @@ export default async function PublicRecipePage({ params }: { params: { slug: str
       </header>
 
       <main>
+        {photo && <img className="pr-photo" src={photo} alt={recipe.title}/>}
         <div className="pr-head">
           <div className="pr-eyebrow">{eyebrow}</div>
           <h1 className="pr-title">{recipe.title}</h1>
@@ -194,6 +221,7 @@ export default async function PublicRecipePage({ params }: { params: { slug: str
               ))}
             </div>
           )}
+          {timeLine && <p className="pr-meta-sub">{timeLine}</p>}
         </div>
 
         <div className="pr-body">
