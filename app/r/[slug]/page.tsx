@@ -39,7 +39,7 @@ async function getRecipe(slug: string) {
 async function getPhotoUrl(recipe: any): Promise<string | null> {
   try {
     const keys = [
-      ...(recipe?._edited && recipe?.id != null ? [`${recipe.title} #${recipe.id}`] : []),
+      ...(recipe?._photoName ? [String(recipe._photoName)] : recipe?._edited && recipe?.id != null ? [`${recipe.title} #${recipe.id}`] : []),
       String(recipe?.title || ""),
     ].map(normalize).filter(Boolean).map((k) => `dish-photo:v1:${k}`);
     if (!keys.length) return null;

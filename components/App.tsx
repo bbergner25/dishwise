@@ -1547,7 +1547,7 @@ const sameRecipe=(a:any,b:any)=>{
   return !!ta&&ta===tb&&!isOwnRecipe(a)&&!isOwnRecipe(b);
 };
 // an edited recipe gets its own photo; everything else shares the dish's photo
-const photoName=(r:any)=>r?._edited&&r.id!=null?`${r.title} #${r.id}`:(r?.title||"");
+const photoName=(r:any)=>r?._photoName?String(r._photoName):r?._edited&&r.id!=null?`${r.title} #${r.id}`:(r?.title||"");
 
 function DishPic({title,src,className}:{title:string;src?:string|null;className:string}){
   // remember WHICH image finished loading, so a cached image that loads instantly is never missed
@@ -2449,7 +2449,7 @@ export default function App(){
     const titles=[
       recipe?.title,...pairedSides.map(p=>p.title),...trendingDishes,
       ...saved.map((r:any)=>r.title),...Object.values(plan).map((r:any)=>r?.title),
-      ...[recipe,...saved,...Object.values(plan)].filter((r:any)=>r?._edited).map((r:any)=>photoName(r)),
+      ...[recipe,...saved,...Object.values(plan)].filter((r:any)=>r?._edited||r?._photoName).map((r:any)=>photoName(r)),
       ...(tab==="community"?communityRecipes.map((r:any)=>r.title):[]),
     ];
     fetchPhotos(titles as string[]);
@@ -5008,7 +5008,7 @@ ${tiktok.text}`}]);
                     setStepRewrite("idle");
                   }catch{setStepRewrite("error");return;}
                 }
-                const updated={...edited,_edited:true,grocery_items:syncGroceries(recipe,edited)};
+                const updated={...edited,_edited:true,_photoName:undefined,grocery_items:syncGroceries(recipe,edited)};
                 setRecipe(updated);
                 if(isSaved(recipe))setSaved((l:any[])=>l.map((r:any)=>r.id===updated.id?updated:r));
                 // keep any planned copies of this recipe in step with the edit
