@@ -1392,6 +1392,7 @@ const CSS = `
   .pp-toast button{min-height:40px;padding:0 14px;border:none;border-radius:20px;background:#F4A021;color:#151210;font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;}
 
   /* Dish photos (with illustrated fallback underneath) */
+  .edit-unused{margin:4px 0 10px;padding:10px 12px;border-radius:12px;background:#FFF6E6;border:1px solid #F1D9A8;font-size:14px;line-height:1.45;color:#5A4630;}
   .ck-hits{margin-top:12px;background:#fff;border-radius:18px;box-shadow:0 6px 24px rgba(26,31,46,.12);overflow:hidden;max-width:640px;}
   .ck-hits-label{padding:12px 16px 4px;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#6E635F;}
   .ck-hit{width:100%;display:flex;align-items:center;gap:12px;padding:10px 16px;background:none;border:none;text-align:left;cursor:pointer;font-family:'Figtree',sans-serif;color:#151210;min-height:64px;}
@@ -1666,6 +1667,11 @@ function ingredientsForStep(step: string, ings: any[]): any[]{
   const t=(step||"").toLowerCase();
   return ings.filter(i=>ingKeywords(i.name).some(k=>new RegExp(`\\b${k}`).test(t)));
 }
+// Listed ingredients that no step uses (salt/pepper/garnish "to taste" lines are often fine, so this is a hint, not an error).
+function unusedIngs(r: any, steps?: string[]): any[]{
+  const text=(steps||r?.steps||[]).join(" \n ").toLowerCase();
+  return flatIngs(r).filter((i:any)=>{const ks=ingKeywords(i.name);return ks.length&&!ks.some(k=>new RegExp(`\\b${k}`).test(text));});
+}
 /* ── Editing: keep steps and grocery list in line with the ingredient list ── */
 function flatIngs(r: any): any[]{
   const groups=r?.ingredient_groups||(r?.ingredients?[{items:r.ingredients}]:[]);
@@ -1730,8 +1736,22 @@ Ingredients the recipe still has: ${kept.join("; ")}
 Current steps (JSON array): ${JSON.stringify(edited.steps||[])}
 Reply with only JSON in this shape: {"tagline":"...","steps":["step one","step two"]}`}]);
   if(!Array.isArray(out?.steps)||!out.steps.length)throw new Error("no steps");
+  let steps=out.steps.map((x:any)=>String(x));
+  // Safety net: every ingredient still on the list that the old steps used must still be used.
+  const usedBefore=new Set(flatIngs(edited).filter((i:any)=>!unusedIngs({ingredient_groups:[{items:[i]}]},edited.steps||[]).length).map((i:any)=>i.name));
+  const dropped=()=>unusedIngs(edited,steps).filter((i:any)=>usedBefore.has(i.name)||addedNames.some(a=>normIng(a)===normIng((i.name||"").split(/[,(]/)[0])));
+  if(dropped().length){
+    const again=await callAPI([{role:"user",content:
+`These recipe steps no longer use ${dropped().map((i:any)=>i.name).join(", ")}, which are still in the ingredient list. Put them back where they belong (for example, browning meat before the liquids go in), changing nothing else.
+Recipe title: ${edited.title||""}
+Ingredients: ${kept.join("; ")}
+Steps (JSON array): ${JSON.stringify(steps)}
+Reply with only JSON: {"steps":["step one","step two"]}`}]);
+    if(Array.isArray(again?.steps)&&again.steps.length)steps=again.steps.map((x:any)=>String(x));
+    if(dropped().length)throw new Error("rewrite dropped an ingredient"); // Save then keeps the original steps
+  }
   const tagline=typeof out.tagline==="string"&&out.tagline.trim()&&edited.tagline?out.tagline.trim():undefined;
-  return {steps:out.steps.map((x:any)=>String(x)),tagline};
+  return {steps,tagline};
 }
 
 function playChime(ctx: any){
@@ -5012,6 +5032,11 @@ ${tiktok.text}`}]);
               ))}
               {/* Steps */}
               <div className="edit-section-label">Steps</div>
+              {(()=>{
+                const missing=unusedIngs(editRecipe).filter((i:any)=>!/^(salt|pepper|black pepper|kosher salt|sea salt|water)\b/i.test(i.name||"")&&!/to taste|garnish|for serving/i.test(`${i.amount||""} ${i.name||""}`));
+                if(!missing.length)return null;
+                return <div className="edit-unused" role="note">Not used in any step yet: <strong>{missing.map((i:any)=>(i.name||"").split(/[,(]/)[0].trim()).join(", ")}</strong>. Add a step so it doesn't get missed.</div>;
+              })()}
               {(()=>{
                 const removed=removedIngs(recipe,editRecipe);
                 if(!removed.length)return null;
