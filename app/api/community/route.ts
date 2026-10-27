@@ -1,3 +1,4 @@
+import { isCleanRecipe } from "../../../lib/guard";
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { Redis } from "@upstash/redis";
@@ -28,7 +29,7 @@ export async function GET() {
       }
       const keys = PROMOTED_DISHES.map((title) => `recipe-cache:${CACHE_VERSION}:${normalize(title)}`);
       const values = await redis.mget<any[]>(...keys);
-      const recipes = values.filter(Boolean).slice(0, 6);
+      const recipes = values.filter((r) => isCleanRecipe(r)).slice(0, 6);
       return NextResponse.json({ authenticated: false, recipes });
     }
 
@@ -38,7 +39,7 @@ export async function GET() {
       return NextResponse.json({ authenticated: true, recipes: [] });
     }
     const values = await redis.mget<any[]>(...keys);
-    const recipes = values.filter(Boolean).slice(0, 200);
+    const recipes = values.filter((r) => isCleanRecipe(r)).slice(0, 200);
     return NextResponse.json({ authenticated: true, recipes });
   } catch (err) {
     console.error("Community GET error:", err);

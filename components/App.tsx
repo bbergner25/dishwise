@@ -4,6 +4,7 @@ import { suggestSides, rankSides, SideDish } from "../lib/sides";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { CARD_POOL, SUGGESTIONS, type CardDef } from "../lib/dishes";
 import { buildPrompt } from "../lib/prompts";
+import { isRude } from "../lib/guard";
 import { TIME_RULE, totalRange, totalShort } from "../lib/times";
 import jsQR from "jsqr";
 
@@ -1907,7 +1908,9 @@ async function callAPI(messages: any[]): Promise<any>{
   if(!text.trim())throw new Error("Empty response");
   const s=text.indexOf("{"),e=text.lastIndexOf("}");
   if(s===-1)throw new Error("No JSON: "+text.slice(0,200));
-  return JSON.parse(text.slice(s,e+1));
+  const out=JSON.parse(text.slice(s,e+1));
+  if(out?.not_a_dish)throw new Error("NOT_A_DISH");
+  return out;
 }
 
 /* ── MAIN APP ── */
@@ -2397,6 +2400,7 @@ export default function App(){
   const doSearch=async(dish?: string)=>{
     const q=(dish||query).trim();if(!q)return;
     const mySeq=++searchSeq.current;
+    if(isRude(q)){setLoadingDish(q);setRecipe(null);setErrorMsg("NOT_A_DISH");setStatus("error");window.scrollTo({top:0});return;}
     setLoadingDish(q);setGenStart(Date.now());setShowScanMenu(false);
     setStatus("loading");setRecipe(null);setServings(null);setErrorMsg("");window.scrollTo({top:0});
     setReturnTab(null);setPairedSides([]);setActivePane(0);setReturnDayKey(null);
@@ -2993,7 +2997,9 @@ ${tiktok.text}`}]);
     return(
       <>
         {status==="error"&&(()=>{
-          const busy=/credit balance|billing|insufficient|overloaded|429|529/i.test(errorMsg);
+          const notDish=/NOT_A_DISH/.test(errorMsg);
+          const limited=/RATE_LIMIT/.test(errorMsg);
+          const busy=!limited&&/credit balance|billing|insufficient|overloaded|429|529/i.test(errorMsg);
           const slow=/timed? ?out|timeout|504/i.test(errorMsg);
           return(
             <div className="gen-page">
@@ -3004,19 +3010,21 @@ ${tiktok.text}`}]);
                 </button>
               </div>
               <div className="gen-body">
-                {loadingDish&&<h1 className="rx-title">{loadingDish}</h1>}
+                {loadingDish&&!notDish&&<h1 className="rx-title">{loadingDish}</h1>}
                 <div className="ui-notice" role="alert" style={{marginTop:8,maxWidth:560}}>
-                  <div className="ui-notice-title">{busy?"New recipes are paused for now":slow?"That took too long":"We couldn't make that recipe"}</div>
+                  <div className="ui-notice-title">{notDish?"That's not something we can cook":limited?"You're cooking fast":busy?"New recipes are paused for now":slow?"That took too long":"We couldn't make that recipe"}</div>
                   <div className="ui-notice-text">
-                    {busy?"We can't write brand-new recipes right now. Your saved recipes and Community recipes still open as usual. Please check back soon."
+                    {notDish?"Try the name of a dish, like \u201cchicken tikka masala\u201d or \u201clemon bars.\u201d"
+                      :limited?"You've made a lot of new recipes in a short time. Give it a few minutes, then try again. Saved and Community recipes still open as usual."
+                      :busy?"We can't write brand-new recipes right now. Your saved recipes and Community recipes still open as usual. Please check back soon."
                       :slow?"Writing this one took longer than usual. Trying again usually works."
                       :"Something went wrong on our end. Trying again usually works."}
                   </div>
                   <div className="ui-actions">
-                    {!busy&&<button className="ui-btn-primary" onClick={()=>doSearch()}>Try again</button>}
+                    {!busy&&!notDish&&<button className="ui-btn-primary" onClick={()=>doSearch()}>Try again</button>}
                     <button className="ui-btn-secondary" style={{marginTop:0}} onClick={()=>{setStatus("idle");setHomeMode("search");window.scrollTo({top:0});setTimeout(()=>inputRef.current?.focus(),50);}}>Search for something else</button>
                   </div>
-                  {errorMsg&&!busy&&(
+                  {errorMsg&&!busy&&!notDish&&!limited&&(
                     <details className="ui-details">
                       <summary>Details for support</summary>
                       <code>{errorMsg}</code>

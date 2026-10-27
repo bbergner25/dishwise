@@ -14,6 +14,7 @@ export function buildPrompt(dish: string, diets: string[], seasonal: boolean, lo
     ? ` Seasonal recipe for ${location} in ${monthYear}. Prioritize peak produce. Include a seasonal_note (one sentence).`
     : seasonal ? ` Prioritize ingredients in season (${monthYear}). Include a seasonal_note.` : "";
   return `Create a recipe for "${dish}".${d}${s}
+If "${dish}" isn't a real food or drink someone could cook or make (for example a joke, an insult, or something gross or offensive), reply with only {"not_a_dish":true} and nothing else.
 Use US imperial measurements only (cups, tbsp, tsp, oz, lbs, °F) — no grams, ml, or Celsius.
 Reply with ONLY valid JSON, no other text:
 {"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","total_time":"X–Y mins","servings":"4","ingredient_groups":[{"label":"For the Marinade","items":[{"amount":"2 tbsp","name":"soy sauce"}]},{"label":"","items":[{"amount":"1 cup","name":"rice"}]}],"steps":["Step one."],"grocery_items":["soy sauce","rice"],"sources":["AllRecipes","Serious Eats"],"source_note":"...","seasonal_note":"..."}

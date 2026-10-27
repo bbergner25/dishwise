@@ -1,3 +1,4 @@
+import { isCleanRecipe, overLimit, clientIp } from "../../../lib/guard";
 import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
 
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
   try {
     const key = `recipe-cache:${CACHE_VERSION}:${normalize(q)}`;
     const cached = await redis.get<any>(key);
-    if (cached) {
+    if (cached && isCleanRecipe(cached, q)) {
       return NextResponse.json({ found: true, recipe: cached });
     }
     return NextResponse.json({ found: false });
@@ -34,6 +35,13 @@ export async function POST(req: NextRequest) {
     const { dish, recipe } = await req.json();
     if (!dish || !recipe) {
       return NextResponse.json({ error: "Missing dish or recipe" }, { status: 400 });
+    }
+    // Only real, complete recipes with clean names join the Community library
+    if (typeof dish !== "string" || dish.length > 80 || !isCleanRecipe(recipe, dish)) {
+      return NextResponse.json({ ok: false, skipped: true });
+    }
+    if (await overLimit(redis, `cachew:${clientIp(req)}`, 40, 3600)) {
+      return NextResponse.json({ ok: false, skipped: true });
     }
     const key = `recipe-cache:${CACHE_VERSION}:${normalize(dish)}`;
     // No expiration — these recipes are the permanent Community inventory now, not a temporary cache
