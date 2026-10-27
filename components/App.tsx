@@ -1546,8 +1546,26 @@ const sameRecipe=(a:any,b:any)=>{
   const ta=(a.title||"").toLowerCase().trim(),tb=(b.title||"").toLowerCase().trim();
   return !!ta&&ta===tb&&!isOwnRecipe(a)&&!isOwnRecipe(b);
 };
-// an edited recipe gets its own photo; everything else shares the dish's photo
-const photoName=(r:any)=>r?._photoName?String(r._photoName):r?._edited&&r.id!=null?`${r.title} #${r.id}`:(r?.title||"");
+// A recipe gets its own photo only after an edit that changes how the dish looks (_ownPhoto holds that photo's name);
+// everything else shares the photo for the dish name.
+const photoName=(r:any)=>r?._ownPhoto?String(r._ownPhoto):(r?.title||"");
+const ingNames=(r:any)=>new Set((r?.ingredient_groups||[]).flatMap((g:any)=>(g.items||[]).map((i:any)=>String(i.name||"").toLowerCase().split(/[,(]/)[0].trim())).filter(Boolean));
+// would this edit change what the finished dish looks like in a photo?
+async function editChangesLook(before:any,after:any):Promise<boolean>{
+  const norm=(t:any)=>String(t||"").toLowerCase().trim().replace(/\s+/g," ");
+  if(norm(before?.title)!==norm(after?.title))return true;
+  const a=ingNames(before),b=ingNames(after);
+  const removed=Array.from(a).filter(x=>!b.has(x)),added=Array.from(b).filter(x=>!a.has(x));
+  if(!removed.length&&!added.length)return false;   // only amounts, notes or steps changed
+  try{
+    const j=await callAPI([{role:"user",content:`A recipe for "${after.title}" was edited.
+Ingredients removed: ${removed.join("; ")||"none"}
+Ingredients added: ${added.join("; ")||"none"}
+Would a photo of the finished dish look noticeably different? Renaming the same ingredient (e.g. "hamburger" to "ground beef"), brand changes, and seasoning or spice tweaks do NOT count. Swapping a main ingredient (e.g. chicken for tofu, rice for noodles) or adding/removing something visible DOES count.
+Reply with ONLY valid JSON: {"looks_different":true or false}`}]);
+    return j?.looks_different===true;
+  }catch{return false;}
+}
 
 function DishPic({title,src,className}:{title:string;src?:string|null;className:string}){
   // remember WHICH image finished loading, so a cached image that loads instantly is never missed
@@ -2449,7 +2467,7 @@ export default function App(){
     const titles=[
       recipe?.title,...pairedSides.map(p=>p.title),...trendingDishes,
       ...saved.map((r:any)=>r.title),...Object.values(plan).map((r:any)=>r?.title),
-      ...[recipe,...saved,...Object.values(plan)].filter((r:any)=>r?._edited||r?._photoName).map((r:any)=>photoName(r)),
+      ...[recipe,...saved,...Object.values(plan)].filter((r:any)=>r?._ownPhoto).map((r:any)=>photoName(r)),
       ...(tab==="community"?communityRecipes.map((r:any)=>r.title):[]),
     ];
     fetchPhotos(titles as string[]);
@@ -2469,7 +2487,7 @@ export default function App(){
     ensureDishPhoto(recipe);
     pairedSides.forEach(p=>p.recipe&&ensureDishPhoto(p.recipe));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[status,recipe?.title,pairedSides.length,photosServerOn,dishPhotos]);
+  },[status,recipe?.title,recipe?._ownPhoto,pairedSides.length,photosServerOn,dishPhotos]);
   // older recipes get their realistic re-estimated times; new ones already carry total_time
   const withTimes=(r:any)=>{if(!r||r.total_time||isOwnRecipe(r))return r;const f=dishTimes[dishKey(r.title)];return f?{...r,...f}:r;};
   const tt=(r:any)=>totalShort(withTimes(r));
@@ -5008,7 +5026,17 @@ ${tiktok.text}`}]);
                     setStepRewrite("idle");
                   }catch{setStepRewrite("error");return;}
                 }
-                const updated={...edited,_edited:true,_photoName:undefined,grocery_items:syncGroceries(recipe,edited)};
+                const updated={...edited,_edited:true,grocery_items:syncGroceries(recipe,edited)};
+                // in the background: if the edit changes how the dish looks, give this recipe its own photo
+                const before=recipe;
+                if(before.id!=null)editChangesLook(before,edited).then(looksNew=>{
+                  if(!looksNew)return;
+                  const own=`${edited.title} #${before.id}-${Date.now().toString(36)}`;
+                  const tag=(r:any)=>r&&r.id===before.id?{...r,_ownPhoto:own}:r;
+                  setRecipe((r:any)=>tag(r));
+                  setSaved((l:any[])=>l.map(tag));
+                  setPlan((p:any)=>{let ch=false;const m={...p};for(const k in m){if(m[k]?.id===before.id){m[k]=tag(m[k]);ch=true;}}return ch?m:p;});
+                });
                 setRecipe(updated);
                 if(isSaved(recipe))setSaved((l:any[])=>l.map((r:any)=>r.id===updated.id?updated:r));
                 // keep any planned copies of this recipe in step with the edit

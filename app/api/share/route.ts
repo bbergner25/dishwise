@@ -48,8 +48,6 @@ export async function POST(req: NextRequest) {
       _sourceUrl, _dish, _photo, photo, photoData,
       ...clean
     } = recipe;
-    // an edited recipe has its own photo, stored under "<title> #<id>"; keep that link after the id is dropped
-    if (recipe._edited && id != null && !clean._photoName) (clean as any)._photoName = `${recipe.title} #${id}`;
 
     // Safety check — if the cleaned recipe is still huge (e.g. base64 embedded
     // somewhere else), cap it rather than letting Redis reject it
