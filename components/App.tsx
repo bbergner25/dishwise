@@ -2671,14 +2671,24 @@ export default function App(){
   };
   const closePairedSide=()=>{setPairedSides([]);setActivePane(0);setReturnDayKey(null);};
 
-  /* share — works for the main dish or a paired side */
+  /* share — works for the main dish or a paired side. One recipe keeps one link; edits update it. */
+  const pushShare=async(r:any)=>{
+    const {_scanned,_imported,_fromCache,_ts,id,_sourceUrl,_shareSlug,_shareToken,...shareable}=r as any;
+    const res=await fetch("/api/share",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({recipe:shareable,slug:_shareSlug,token:_shareToken})});
+    return await res.json();
+  };
   const shareRecipe=async(r:any)=>{
     setShareTarget(r);setShowShare(true);setShareUrl(null);setShareLoading(true);
     try{
-      const {_scanned,_imported,_fromCache,_ts,id,_sourceUrl,...shareable}=r as any;
-      const res=await fetch("/api/share",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({recipe:shareable})});
-      const data=await res.json();
+      const data=await pushShare(r);
       setShareUrl(data.url||null);
+      // remember this recipe's link so re-sharing and later edits reuse it
+      if(data.shareId&&data.token&&r.id!=null&&(r._shareSlug!==data.shareId||r._shareToken!==data.token)){
+        const tag=(x:any)=>x&&x.id===r.id?{...x,_shareSlug:data.shareId,_shareToken:data.token}:x;
+        setRecipe((x:any)=>tag(x));setSaved((l:any[])=>l.map(tag));
+        setPlan((p:any)=>{let ch=false;const m={...p};for(const k in m){if(m[k]?.id===r.id){m[k]=tag(m[k]);ch=true;}}return ch?m:p;});
+        setPairedSides(p=>p.map(s=>s.recipe&&s.recipe.id===r.id?{...s,recipe:tag(s.recipe)}:s));
+      }
     }catch{
       const slug=(r.title||"recipe").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
       setShareUrl(`https://everychef.app/r/${slug}`);
@@ -5122,6 +5132,7 @@ ${tiktok.text}`}]);
                 if(isSaved(recipe))setSaved((l:any[])=>l.map((r:any)=>r.id===updated.id?updated:r));
                 // keep any planned copies of this recipe in step with the edit
                 setPlan((p:any)=>{let ch=false;const n={...p};for(const k in n){const r=n[k];if(r&&(updated.id!=null?r.id===updated.id:r.title===recipe.title)){n[k]=updated;ch=true;}}return ch?n:p;});
+                if(updated._shareSlug&&updated._shareToken)pushShare(updated).catch(()=>{}); // keep the shared link current
                 setShowEditPanel(false);setStepRewrite("idle");
               }}>{stepRewrite==="loading"?"Updating steps…":"Save changes"}</button>
             </div>

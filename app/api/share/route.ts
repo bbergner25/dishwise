@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     // would bloat the stored value or cause serialization issues
     const {
       _scanned, _imported, _fromCache, _ts, id,
-      _sourceUrl, _dish, _photo, photo, photoData,
+      _sourceUrl, _dish, _photo, photo, photoData, _shareSlug, _shareToken,
       ...clean
     } = recipe;
 
@@ -56,14 +56,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Recipe too large to share" }, { status: 413 });
     }
 
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://everychef.app";
+
+    // One recipe, one link: the person who made the link (holding its token) can update it,
+    // so edits show up on the link they already sent.
+    const existing = typeof body?.slug === "string" ? body.slug : "";
+    const token = typeof body?.token === "string" ? body.token : "";
+    if (existing && token && /^[a-z0-9-]{1,120}$/.test(existing)) {
+      const saved = await redis.get<string>(`recipe-share-token:${existing}`);
+      if (saved && saved === token) {
+        await redis.set(`recipe-share:${existing}`, clean);
+        return NextResponse.json({ shareId: existing, url: `${appUrl}/r/${existing}`, token, updated: true });
+      }
+    }
+
     const slug = toSlug(clean.title || "recipe");
     const suffix = crypto.randomBytes(4).toString("hex");
     const shareId = `${slug}-${suffix}`;
+    const newToken = crypto.randomBytes(16).toString("hex");
 
     await redis.set(`recipe-share:${shareId}`, clean);
+    await redis.set(`recipe-share-token:${shareId}`, newToken);
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://everychef.app";
-    return NextResponse.json({ shareId, url: `${appUrl}/r/${shareId}` });
+    return NextResponse.json({ shareId, url: `${appUrl}/r/${shareId}`, token: newToken });
   } catch (err) {
     console.error("Share POST error:", err);
     return NextResponse.json({ error: "Failed to create share link" }, { status: 500 });
