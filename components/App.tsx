@@ -1742,7 +1742,7 @@ Reply with only JSON in this shape: {"tagline":"...","steps":["step one","step t
   const dropped=()=>unusedIngs(edited,steps).filter((i:any)=>usedBefore.has(i.name)||addedNames.some(a=>normIng(a)===normIng((i.name||"").split(/[,(]/)[0])));
   if(dropped().length){
     const again=await callAPI([{role:"user",content:
-`These recipe steps no longer use ${dropped().map((i:any)=>i.name).join(", ")}, which are still in the ingredient list. Put them back where they belong (for example, browning meat before the liquids go in), changing nothing else.
+`These recipe steps no longer use ${dropped().map((i:any)=>i.name).join(", ")}, which are still in the ingredient list. Put them back where they belong (for example, ground meat is browned first, before the onions and garlic go in, and drained if needed), changing nothing else.
 Recipe title: ${edited.title||""}
 Ingredients: ${kept.join("; ")}
 Steps (JSON array): ${JSON.stringify(steps)}
