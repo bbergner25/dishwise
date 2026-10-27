@@ -1,5 +1,5 @@
 import { Redis } from "@upstash/redis";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { totalRange, getTimeFixes } from "../../../lib/times";
 
@@ -22,7 +22,9 @@ async function getRecipe(slug: string) {
   try {
     // 1) share permalinks: /r/<title-slug>-<8 hex>. app/api/share/route.ts stores
     //    the snapshot under recipe-share:<that exact slug>.
-    const shared = await redis.get<any>(`recipe-share:${slug}`);
+    // an old link can be pointed at a newer one (set on the admin page)
+    const to = await redis.get<string>(`recipe-share-redirect:${slug}`);
+    const shared = await redis.get<any>(`recipe-share:${to || slug}`);
     if (shared) return shared;
 
     // 2) legacy links: /r/<title-slug>  ->  dish cache
@@ -120,6 +122,8 @@ function renderAmount(s: string){
 }
 
 export default async function PublicRecipePage({ params }: { params: { slug: string } }) {
+  const movedTo = await redis.get<string>(`recipe-share-redirect:${params.slug}`).catch(() => null);
+  if (movedTo && movedTo !== params.slug) redirect(`/r/${movedTo}`);
   const loaded = await getRecipe(params.slug);
   if (!loaded) notFound();
   let recipe = loaded;

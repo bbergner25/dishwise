@@ -22,7 +22,8 @@ export async function GET(req: NextRequest) {
     if (!slug) {
       return NextResponse.json({ error: "Missing slug" }, { status: 400 });
     }
-    const recipe = await redis.get<any>(`recipe-share:${slug}`);
+    const to = await redis.get<string>(`recipe-share-redirect:${slug}`);
+    const recipe = await redis.get<any>(`recipe-share:${to || slug}`);
     if (!recipe) {
       return NextResponse.json({ found: false }, { status: 404 });
     }

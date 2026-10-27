@@ -138,6 +138,48 @@ export async function GET(req: NextRequest) {
       <p><a href="?secret=${secret}">← Back</a></p>`);
   }
 
+  if (action === "links" || action === "redirect") {
+    const slugOf = (v: string | null) => (v || "").trim().replace(/[?#].*$/, "").split("/").filter(Boolean).pop() || "";
+    let msg = "";
+    if (action === "redirect") {
+      const from = slugOf(sp.get("from")), to = slugOf(sp.get("to"));
+      if (sp.get("undo") === "1" && from) { await redis.del(`recipe-share-redirect:${from}`); msg = `Removed the redirect for ${from}.`; }
+      else if (!from || !to || from === to) msg = "Pick an old link and the link it should open instead.";
+      else if (!(await redis.get(`recipe-share:${to}`))) msg = `Couldn't find the link ${to}.`;
+      else { await redis.set(`recipe-share-redirect:${from}`, to); msg = `Done. ${from} now opens ${to}.`; }
+    }
+    const q = (sp.get("q") || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    let rows: { slug: string; title: string; current: boolean; to: string | null }[] = [];
+    if (q) {
+      const keys = (await redis.keys(`recipe-share:*${q}*`)).slice(0, 60);
+      const slugs = keys.map((k) => k.slice("recipe-share:".length));
+      if (slugs.length) {
+        const recs = await redis.mget<any[]>(...keys);
+        const toks = await redis.mget<(string | null)[]>(...slugs.map((s) => `recipe-share-token:${s}`));
+        const reds = await redis.mget<(string | null)[]>(...slugs.map((s) => `recipe-share-redirect:${s}`));
+        rows = slugs.map((s, i) => ({ slug: s, title: String(recs[i]?.title || s), current: !!toks[i], to: reds[i] }));
+      }
+    }
+    const currents = rows.filter((r) => r.current);
+    const body = `<h1>Shared links</h1>
+      <p class="muted">Links made before Oct 27 are snapshots that never update. Point an old one at a current link and anyone who opens it lands on the current recipe.</p>
+      ${msg ? `<p><strong>${esc(msg)}</strong></p>` : ""}
+      <form method="get"><input type="hidden" name="secret" value="${esc(sp.get("secret") || "")}"><input type="hidden" name="action" value="links">
+        <input name="q" value="${esc(sp.get("q") || "")}" placeholder="Dish name, e.g. lasagna soup" style="font-size:16px;padding:10px 12px;border:1px solid #DDD3C5;border-radius:10px;width:min(320px,100%)">
+        <button style="font-size:16px;padding:10px 16px;border-radius:10px;border:none;background:#F4A021;font-weight:600">Find links</button></form>
+      ${q && !rows.length ? "<p>No shared links found for that name.</p>" : ""}
+      ${rows.length ? `<table>${rows.map((r) => `<tr><td><a href="/r/${esc(r.slug)}" target="_blank">${esc(r.title)}</a><br><span class="muted">${esc(r.slug)}</span></td><td>${
+        r.current ? "<strong>Current link</strong> (updates with edits)"
+        : r.to ? `Opens <a href="/r/${esc(r.to)}" target="_blank">${esc(r.to)}</a> · <a href="?secret=${secret}&action=redirect&undo=1&from=${encodeURIComponent(r.slug)}&q=${encodeURIComponent(sp.get("q") || "")}">Undo</a>`
+        : currents.length ? `<form method="get" style="display:flex;gap:6px;flex-wrap:wrap"><input type="hidden" name="secret" value="${esc(sp.get("secret") || "")}"><input type="hidden" name="action" value="redirect"><input type="hidden" name="q" value="${esc(sp.get("q") || "")}"><input type="hidden" name="from" value="${esc(r.slug)}">
+            <select name="to" style="font-size:15px;padding:6px">${currents.map((c) => `<option value="${esc(c.slug)}">${esc(c.slug)}</option>`).join("")}</select>
+            <button style="font-size:15px;padding:6px 12px;border-radius:8px;border:1px solid #1A1F2E;background:#fff">Point here</button></form>`
+        : `<span class="muted">Old snapshot. Share the recipe again from the app to get a current link, then come back.</span>`
+      }</td></tr>`).join("")}</table>` : ""}
+      <p><a href="?secret=${secret}">← Back</a></p>`;
+    return page("Shared links", body);
+  }
+
   if (action === "times") {
     const run = sp.get("run") === "1" ? await fixTimes(35000) : null;
     const st = await timesNeeded();
@@ -209,7 +251,8 @@ export async function GET(req: NextRequest) {
     <tr><td>Spent this month</td><td>$${(spent / 100).toFixed(2)} of $${(MONTHLY_BUDGET_CENTS / 100).toFixed(2)} cap</td></tr></table>
     <ul><li><a href="?secret=${secret}&action=test&dishes=${encodeURIComponent("Kung Pao Noodles|Cottage Pie|Fish Tacos")}">Make test photos: Kung Pao Noodles, Cottage Pie, Fish Tacos</a> (about 10¢, takes up to a minute)</li>
     <li><a href="?secret=${secret}&action=count">Count dishes that need photos + cost estimate</a></li>
-    <li><a href="?secret=${secret}&action=times">Realistic cook times for older recipes</a></li></ul>`)).body, {
+    <li><a href="?secret=${secret}&action=times">Realistic cook times for older recipes</a></li>
+    <li><a href="?secret=${secret}&action=links">Shared links: point an old link at the current one</a></li></ul>`)).body, {
       headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", ...(running ? { Refresh: "60" } : {}) },
     });
 }
