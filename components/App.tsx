@@ -1716,12 +1716,14 @@ function syncGroceries(before: any, after: any): string[]{
 }
 
 // Ask the AI to rewrite a recipe's steps (and its one-line description) without the removed ingredients.
-async function rewriteStepsWithout(edited: any, removedNames: string[]): Promise<{steps:string[];tagline?:string}>{
+async function rewriteStepsWithout(edited: any, removedNames: string[], addedNames: string[]=[]): Promise<{steps:string[];tagline?:string}>{
   const kept=flatIngs(edited).map((i:any)=>`${i.amount||""} ${i.name}`.trim());
   const out=await callAPI([{role:"user",content:
-`You are editing a home recipe. The cook removed these ingredients: ${removedNames.join(", ")}.
-Rewrite the method steps so they no longer use or mention the removed ingredients. Keep everything else the same: same order, same voice, same times and temperatures. Only merge or drop a step if it no longer makes sense without the removed ingredients. If no step uses them, return the steps unchanged.
-Also rewrite the short description so it no longer mentions the removed ingredients. Keep its length, tone and wording otherwise; if it doesn't mention them, return it unchanged.
+`You are editing a home recipe. The cook took these ingredients off the list: ${removedNames.join(", ")}.${addedNames.length?`
+They also added: ${addedNames.join(", ")}.`:""}
+First decide, for each ingredient taken off, whether one of the added ingredients replaces it: the same thing under another name (e.g. "hamburger" and "ground beef"), or a swap the cook clearly intended (e.g. chicken thighs for chicken breasts). Where there's a replacement, keep the step exactly as it was and just use the new ingredient's name. Never drop a cooking step (like browning meat) because its ingredient was renamed or swapped.
+Only for ingredients that were truly removed with no replacement: rewrite the method steps so they no longer use or mention them. Keep everything else the same: same order, same voice, same times and temperatures. Only merge or drop a step if it no longer makes sense without the removed ingredients. If no step uses them, return the steps unchanged.
+Also update the short description the same way (new names for replaced ingredients, no mention of truly removed ones). Keep its length, tone and wording otherwise; if it doesn't mention them, return it unchanged.
 Recipe title: ${edited.title||""}
 Current description: ${JSON.stringify(edited.tagline||"")}
 Ingredients the recipe still has: ${kept.join("; ")}
@@ -5020,7 +5022,7 @@ ${tiktok.text}`}]);
                 const rewrite=async()=>{
                   setStepRewrite("loading");
                   try{
-                    const res=await rewriteStepsWithout(editRecipe,names);
+                    const res=await rewriteStepsWithout(editRecipe,names,removedIngs(editRecipe,recipe).map((r:any)=>(r.name||"").split(/[,(]/)[0].trim()).filter(Boolean));
                     setEditRecipe((r:any)=>({...r,steps:res.steps,...(res.tagline?{tagline:res.tagline}:{})}));
                     setStepsSyncedFor(key);setStepRewrite("idle");
                   }catch{setStepRewrite("error");}
@@ -5075,7 +5077,7 @@ ${tiktok.text}`}]);
                 if(names.length&&stepsSyncedFor!==key&&stepRewrite!=="error"&&(edited.steps||[]).length){
                   setStepRewrite("loading");
                   try{
-                    const res=await rewriteStepsWithout(edited,names);
+                    const res=await rewriteStepsWithout(edited,names,removedIngs(edited,recipe).map((r:any)=>(r.name||"").split(/[,(]/)[0].trim()).filter(Boolean));
                     edited={...edited,steps:res.steps,...(res.tagline?{tagline:res.tagline}:{})};
                     setStepRewrite("idle");
                   }catch{setStepRewrite("error");return;}
