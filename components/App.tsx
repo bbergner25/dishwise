@@ -1392,6 +1392,18 @@ const CSS = `
   .pp-toast button{min-height:40px;padding:0 14px;border:none;border-radius:20px;background:#F4A021;color:#151210;font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;}
 
   /* Dish photos (with illustrated fallback underneath) */
+  .ck-hits{margin-top:12px;background:#fff;border-radius:18px;box-shadow:0 6px 24px rgba(26,31,46,.12);overflow:hidden;max-width:640px;}
+  .ck-hits-label{padding:12px 16px 4px;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#6E635F;}
+  .ck-hit{width:100%;display:flex;align-items:center;gap:12px;padding:10px 16px;background:none;border:none;text-align:left;cursor:pointer;font-family:'Figtree',sans-serif;color:#151210;min-height:64px;}
+  .ck-hit:hover{background:#FBF7F0;}
+  .ck-hit:focus-visible{outline:3px solid #F4A021;outline-offset:-3px;}
+  .ck-hit-pic{width:52px;height:52px;border-radius:12px;flex-shrink:0;}
+  .ck-hit-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+  .ck-hit-text strong{font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .ck-hit-text span{font-size:14px;color:#6E635F;}
+  .ck-hit-free{flex-shrink:0;font-size:13px;font-weight:700;color:#2F6B3A;background:#E7F1E4;padding:5px 10px;border-radius:12px;}
+  .ck-hit-new{border-top:1px solid #ECE6DD;padding-top:12px;padding-bottom:12px;}
+  .ck-hit-plus{width:52px;height:52px;border-radius:12px;border:1.5px dashed #D6C7B0;display:flex;align-items:center;justify-content:center;font-size:24px;color:#B36A00;flex-shrink:0;}
   .dish-pic{position:relative;overflow:hidden;background:#F5EFE4;container-type:size;}
   .dish-pic-mark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-style:italic;font-weight:700;font-size:44px;font-size:clamp(16px,34cqmin,84px);color:#E5D8C4;user-select:none;}
   .dish-pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .45s ease;}
@@ -1974,7 +1986,8 @@ export default function App(){
   const [returnDayKey,setReturnDayKey] = useState<string|null>(null); // which day's sides to sync pairedSides back into, when returnTab is "week"
   const [planPick,setPlanPick] = useState<{recipe:any;sides:any[]}|null>(null); // recipe being added to the plan from its page
   const [planToast,setPlanToast] = useState<{day:string;title:string}|null>(null);
-  const [nameClash,setNameClash] = useState<{id:any;title:string}|null>(null);   // saved a second recipe with a name you already have
+  const [nameClash,setNameClash] = useState<{id:any;title:string}|null>(null);
+  const [communityHits,setCommunityHits] = useState<{q:string;results:{title:string;tagline:string;total:string}[]}>({q:"",results:[]}); // free matches while typing   // saved a second recipe with a name you already have
   useEffect(()=>{if(!planToast)return;const id=setTimeout(()=>setPlanToast(null),5000);return()=>clearTimeout(id);},[planToast]);
   const [pairedSides,setPairedSides] = useState<{title:string;status:string;recipe:any}[]>([]); // every side dish paired alongside the main dish (loading|done|error)
   const [activePane,setActivePane]   = useState(0); // 0 = main dish, 1..N = pairedSides[n-1]
@@ -2275,6 +2288,21 @@ export default function App(){
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[plan,planSides,planMade,ready,user?.id,planCloud]);
 
+  /* Community matches while typing: offer the free, instant recipe before making a new one */
+  useEffect(()=>{
+    const q=query.trim();
+    if(status!=="idle"||homeMode!=="search"||diets.length||seasonal||q.length<3||isRude(q)){setCommunityHits(h=>h.results.length?{q:"",results:[]}:h);return;}
+    const t=setTimeout(()=>{
+      fetch(`/api/community/search?q=${encodeURIComponent(q)}`).then(r=>r.json()).then(d=>{
+        const results=Array.isArray(d?.results)?d.results:[];
+        setCommunityHits({q,results});
+        if(results.length)fetchPhotos(results.map((r:any)=>r.title));
+      }).catch(()=>{});
+    },250);
+    return()=>clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[query,status,homeMode,diets.length,seasonal]);
+
   /* scroll-hide bottom nav */
   useEffect(()=>{
     // Hide on a deliberate scroll down, show on a deliberate scroll up, and always
@@ -2397,8 +2425,9 @@ export default function App(){
   };
 
   /* search */
-  const doSearch=async(dish?: string)=>{
+  const doSearch=async(dish?: string,opts?:{fresh?:boolean})=>{
     const q=(dish||query).trim();if(!q)return;
+    setCommunityHits({q:"",results:[]});
     const mySeq=++searchSeq.current;
     if(isRude(q)){setLoadingDish(q);setRecipe(null);setErrorMsg("NOT_A_DISH");setStatus("error");window.scrollTo({top:0});return;}
     setLoadingDish(q);setGenStart(Date.now());setShowScanMenu(false);
@@ -2410,7 +2439,7 @@ export default function App(){
       let fromCache=false;
 
       if(canCache){
-        const cacheData=await fetch(`/api/cache?q=${encodeURIComponent(q)}`)
+        const cacheData=opts?.fresh?{found:false}:await fetch(`/api/cache?q=${encodeURIComponent(q)}`)
           .then(r=>r.json()).catch(()=>({found:false}));
         if(cacheData.found&&cacheData.recipe){
           parsed=cacheData.recipe;
@@ -3066,6 +3095,23 @@ ${tiktok.text}`}]);
                   </div>
                 )}
               </div>
+
+              {communityHits.results.length>0&&communityHits.q===query.trim()&&(
+                <div className="ck-hits" role="region" aria-label="Already in the Community">
+                  <div className="ck-hits-label">Already in the Community</div>
+                  {communityHits.results.map(h=>(
+                    <button key={h.title} className="ck-hit" onClick={()=>{setQuery(h.title);doSearch(h.title);}}>
+                      <DishPic title={h.title} src={photosOn?photoFor(h.title):null} className="ck-hit-pic"/>
+                      <span className="ck-hit-text"><strong>{h.title}</strong><span>{h.total?`${h.total} · `:""}opens instantly</span></span>
+                      <span className="ck-hit-free">Free</span>
+                    </button>
+                  ))}
+                  <button className="ck-hit ck-hit-new" onClick={()=>doSearch(query,{fresh:true})}>
+                    <span className="ck-hit-plus" aria-hidden="true">+</span>
+                    <span className="ck-hit-text"><strong>Make a new version</strong><span>Written fresh for you, about 30 seconds</span></span>
+                  </button>
+                </div>
+              )}
 
               <div className="ck-chips" role="group" aria-label="Dietary filters">
                 {DIETS.map(d=>(

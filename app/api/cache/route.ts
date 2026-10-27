@@ -45,7 +45,8 @@ export async function POST(req: NextRequest) {
     }
     const key = `recipe-cache:${CACHE_VERSION}:${normalize(dish)}`;
     // No expiration — these recipes are the permanent Community inventory now, not a temporary cache
-    await redis.set(key, recipe);
+    // never overwrite a Community recipe someone already made; a fresh version stays with its maker
+    await redis.set(key, recipe, { nx: true });
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("Cache POST error:", err);
