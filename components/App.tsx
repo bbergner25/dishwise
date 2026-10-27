@@ -1987,7 +1987,7 @@ export default function App(){
   const [planPick,setPlanPick] = useState<{recipe:any;sides:any[]}|null>(null); // recipe being added to the plan from its page
   const [planToast,setPlanToast] = useState<{day:string;title:string}|null>(null);
   const [nameClash,setNameClash] = useState<{id:any;title:string}|null>(null);
-  const [communityHits,setCommunityHits] = useState<{q:string;results:{title:string;tagline:string;total:string}[]}>({q:"",results:[]}); // free matches while typing   // saved a second recipe with a name you already have
+  const [communityHits,setCommunityHits] = useState<{q:string;results:{title:string;tagline:string;total:string;key?:string}[]}>({q:"",results:[]}); // free matches while typing   // saved a second recipe with a name you already have
   useEffect(()=>{if(!planToast)return;const id=setTimeout(()=>setPlanToast(null),5000);return()=>clearTimeout(id);},[planToast]);
   const [pairedSides,setPairedSides] = useState<{title:string;status:string;recipe:any}[]>([]); // every side dish paired alongside the main dish (loading|done|error)
   const [activePane,setActivePane]   = useState(0); // 0 = main dish, 1..N = pairedSides[n-1]
@@ -3100,7 +3100,7 @@ ${tiktok.text}`}]);
                 <div className="ck-hits" role="region" aria-label="Already in the Community">
                   <div className="ck-hits-label">Already in the Community</div>
                   {communityHits.results.map(h=>(
-                    <button key={h.title} className="ck-hit" onClick={()=>{setQuery(h.title);doSearch(h.title);}}>
+                    <button key={h.title} className="ck-hit" onClick={()=>{setQuery(h.title);doSearch(h.key||h.title);}}>
                       <DishPic title={h.title} src={photosOn?photoFor(h.title):null} className="ck-hit-pic"/>
                       <span className="ck-hit-text"><strong>{h.title}</strong><span>{h.total?`${h.total} · `:""}opens instantly</span></span>
                       <span className="ck-hit-free">Free</span>

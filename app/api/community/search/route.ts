@@ -9,8 +9,9 @@ import { totalRange } from "../../../../lib/times";
 export const dynamic = "force-dynamic";
 
 const redis = new Redis({ url: process.env.KV_REST_API_URL!, token: process.env.KV_REST_API_TOKEN! });
-const INDEX_KEY = "community-index:v1";
-type Entry = { title: string; tagline: string; total: string; n: string };
+const INDEX_KEY = "community-index:v2";
+// key = what the recipe is filed under in the Community (often the original search, e.g. "lasagna")
+type Entry = { title: string; tagline: string; total: string; n: string; key: string };
 
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
 
@@ -23,11 +24,12 @@ async function index(): Promise<Entry[]> {
     list = [];
     const keys = await redis.keys("recipe-cache:v1:*");
     for (let i = 0; i < keys.length; i += 100) {
-      const vals = await redis.mget<any[]>(...keys.slice(i, i + 100));
-      for (const r of vals) {
-        if (!isCleanRecipe(r)) continue;
-        list.push({ title: String(r.title), tagline: String(r.tagline || "").slice(0, 140), total: totalRange(r), n: norm(String(r.title)) });
-      }
+      const chunk = keys.slice(i, i + 100);
+      const vals = await redis.mget<any[]>(...chunk);
+      vals.forEach((r, j) => {
+        if (!isCleanRecipe(r)) return;
+        list!.push({ title: String(r.title), tagline: String(r.tagline || "").slice(0, 140), total: totalRange(r), n: norm(String(r.title)), key: chunk[j].slice("recipe-cache:v1:".length) });
+      });
     }
     await redis.set(INDEX_KEY, list, { ex: 600 }); // rebuilt at most every 10 minutes
   }
@@ -49,7 +51,7 @@ export async function GET(req: NextRequest) {
       return { e, s: s ? s - e.n.length / 100 : 0 };
     }).filter((x) => x.s > 0).sort((a, b) => b.s - a.s).slice(0, 4);
     const seen = new Set<string>();
-    const results = scored.filter(({ e }) => !seen.has(e.n) && seen.add(e.n)).map(({ e }) => ({ title: e.title, tagline: e.tagline, total: e.total }));
+    const results = scored.filter(({ e }) => !seen.has(e.n) && seen.add(e.n)).map(({ e }) => ({ title: e.title, tagline: e.tagline, total: e.total, key: e.key }));
     return NextResponse.json({ results });
   } catch {
     return NextResponse.json({ results: [] });

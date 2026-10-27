@@ -23,6 +23,15 @@ export async function GET(req: NextRequest) {
     if (cached && isCleanRecipe(cached, q)) {
       return NextResponse.json({ found: true, recipe: cached });
     }
+    // Not filed under this name? It may be filed under the original search
+    // (e.g. "Classic Lasagna" lives under "lasagna"), so check the Community index by title.
+    const index = await redis.get<{ n: string; key: string }[]>("community-index:v2");
+    const t = normalize(q).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+    const hit = index?.find((e) => e.n === t);
+    if (hit) {
+      const byTitle = await redis.get<any>(`recipe-cache:${CACHE_VERSION}:${hit.key}`);
+      if (byTitle && isCleanRecipe(byTitle)) return NextResponse.json({ found: true, recipe: byTitle });
+    }
     return NextResponse.json({ found: false });
   } catch (err) {
     console.error("Cache GET error:", err);
