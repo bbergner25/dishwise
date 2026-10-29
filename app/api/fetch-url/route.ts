@@ -208,14 +208,15 @@ export async function POST(req: NextRequest) {
       try { return await importTikTok(url); }
       catch { return NextResponse.json({ error: "Couldn't reach TikTok just now. Try again in a moment." }, { status: 502 }); }
     }
-    if (PAYWALLED.some(d => hostname.includes(d))) {
-      return NextResponse.json({
-        error: "This site is paywalled and cannot be imported. Try AllRecipes, Serious Eats, Simply Recipes, Epicurious, or Food52."
-      }, { status: 422 });
-    }
   } catch {
     return NextResponse.json({ error: "Invalid URL format" }, { status: 400 });
   }
+
+  // Paywalled sites (NYT Cooking and friends) often still include the recipe as structured data,
+  // especially gift links, so try first and only give up if the recipe really isn't there.
+  let paywalled = false;
+  try { const h = new URL(url).hostname.replace("www.", ""); paywalled = PAYWALLED.some(d => h.includes(d)); } catch {}
+  const PAYWALL_MSG = "This site is behind a paywall, so we couldn't read the recipe. Take screenshots of the ingredients and steps and use Photograph a recipe card instead (up to 4 at once).";
 
   try {
     const res = await fetch(url, {
@@ -228,6 +229,7 @@ export async function POST(req: NextRequest) {
       signal: AbortSignal.timeout(12000),
     });
 
+    if (!res.ok && paywalled) return NextResponse.json({ error: PAYWALL_MSG }, { status: 422 });
     if (!res.ok) {
       return NextResponse.json({
         error: `Could not load this page (${res.status}). Try Serious Eats, Simply Recipes, or Epicurious.`
@@ -242,6 +244,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ text: jsonLdText });
     }
 
+    // Paywalled page with no structured recipe: the visible text is mostly the paywall itself
+    if (paywalled) return NextResponse.json({ error: PAYWALL_MSG }, { status: 422 });
+
     // Fall back to plain text
     const text = cleanHtml(html);
     if (text.length < 100) {
@@ -252,7 +257,7 @@ export async function POST(req: NextRequest) {
   } catch (e: any) {
     const msg = e?.name === "TimeoutError"
       ? "The site took too long to respond. Try again or a different URL."
-      : "Could not reach this site. Try Serious Eats, Simply Recipes, or Food52.";
+      : paywalled ? PAYWALL_MSG : "Could not reach this site. Try Serious Eats, Simply Recipes, or Food52.";
     return NextResponse.json({ error: msg }, { status: 502 });
   }
 }
