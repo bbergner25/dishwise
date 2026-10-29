@@ -1393,6 +1393,12 @@ const CSS = `
 
   /* Dish photos (with illustrated fallback underneath) */
   .edit-unused{margin:4px 0 10px;padding:10px 12px;border-radius:12px;background:#FFF6E6;border:1px solid #F1D9A8;font-size:14px;line-height:1.45;color:#5A4630;}
+  .scan-thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;}
+  .scan-thumb{position:relative;aspect-ratio:3/4;border-radius:10px;overflow:hidden;border:1px solid #ECE6DD;background:#F5EFE4;}
+  .scan-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .scan-thumb-n{position:absolute;left:5px;bottom:5px;min-width:20px;height:20px;border-radius:10px;background:rgba(26,31,46,.85);color:#FDFAF5;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .scan-thumb-x{position:absolute;right:3px;top:3px;width:28px;height:28px;border-radius:14px;border:none;background:rgba(253,250,245,.95);font-size:18px;line-height:1;cursor:pointer;color:#151210;}
+  .scan-add{display:block;margin:0 0 12px;font-size:15px;}
   .ck-hits{margin-top:12px;background:#fff;border-radius:18px;box-shadow:0 6px 24px rgba(26,31,46,.12);overflow:hidden;max-width:640px;}
   .ck-hits-label{padding:12px 16px 4px;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#6E635F;}
   .ck-hit{width:100%;display:flex;align-items:center;gap:12px;padding:10px 16px;background:none;border:none;text-align:left;cursor:pointer;font-family:'Figtree',sans-serif;color:#151210;min-height:64px;}
@@ -1990,7 +1996,8 @@ export default function App(){
   const [planAhead,setPlanAhead] = useState(14);         // Plan: how many days ahead are shown
   const [assignDay,setAssignDay] = useState<string|null>(null);
   const [modalSearch,setModalSearch] = useState("");
-  const [scanPreview,setScanPreview] = useState<string|null>(null);
+  const [scanImages,setScanImages] = useState<string[]>([]);   // up to 4 photos or screenshots of one recipe
+  const scanPreview=scanImages[0]||null;
   const [scanMime,setScanMime]   = useState("image/jpeg");
   const [scanStatus,setScanStatus] = useState("idle");
   const [scanMsg,setScanMsg]     = useState("");
@@ -2821,48 +2828,55 @@ export default function App(){
   };
 
   /* scan */
+  const MAX_SCAN=4;
   const onFileChange=(e: React.ChangeEvent<HTMLInputElement>)=>{
-    const file=e.target.files?.[0];if(!file)return;
+    const files=Array.from(e.target.files||[]);if(!files.length)return;
+    if(fileRef.current)fileRef.current.value="";   // so the same file can be picked again
     setScanStatus("idle");setScanMsg("");
-    if(file.size>10*1024*1024){
-      setScanStatus("error");setScanMsg("Image too large — please use a photo under 10MB.");
-      if(fileRef.current)fileRef.current.value="";return;
-    }
-    const objectUrl=URL.createObjectURL(file);
-    const img=new window.Image();
-    img.onload=()=>{
-      URL.revokeObjectURL(objectUrl);
-      const MAX=1600;
-      let w=img.width,h=img.height;
-      if(w>MAX||h>MAX){if(w>h){h=Math.round(h*(MAX/w));w=MAX;}else{w=Math.round(w*(MAX/h));h=MAX;}}
-      const canvas=document.createElement("canvas");
-      canvas.width=w;canvas.height=h;
-      const ctx=canvas.getContext("2d");
-      if(!ctx){setScanStatus("error");setScanMsg("Could not process image. Try a different file.");return;}
-      ctx.drawImage(img,0,0,w,h);
-      setScanMime("image/jpeg");
-      setScanPreview(canvas.toDataURL("image/jpeg",0.85));
-    };
-    img.onerror=()=>{
-      URL.revokeObjectURL(objectUrl);
-      setScanStatus("error");setScanMsg("Could not read this image. Try a screenshot or different photo.");
-    };
-    img.src=objectUrl;
+    const room=MAX_SCAN-scanImages.length;
+    if(room<=0){setScanStatus("error");setScanMsg(`Up to ${MAX_SCAN} images per recipe.`);return;}
+    if(files.length>room){setScanStatus("error");setScanMsg(`Up to ${MAX_SCAN} images per recipe, so we kept the first ${room}.`);}
+    // read them all, then add in the order they were picked (screenshot order matters)
+    const readOne=(file:File)=>new Promise<string|null>(res=>{
+      if(file.size>15*1024*1024){setScanStatus("error");setScanMsg("One image was too large. Please use photos under 15MB.");return res(null);}
+      const objectUrl=URL.createObjectURL(file);
+      const img=new window.Image();
+      img.onload=()=>{
+        URL.revokeObjectURL(objectUrl);
+        const MAX=1600;
+        let w=img.width,h=img.height;
+        if(w>MAX||h>MAX){if(w>h){h=Math.round(h*(MAX/w));w=MAX;}else{w=Math.round(w*(MAX/h));h=MAX;}}
+        const canvas=document.createElement("canvas");
+        canvas.width=w;canvas.height=h;
+        const ctx=canvas.getContext("2d");
+        if(!ctx)return res(null);
+        ctx.drawImage(img,0,0,w,h);
+        res(canvas.toDataURL("image/jpeg",0.82));
+      };
+      img.onerror=()=>{URL.revokeObjectURL(objectUrl);setScanStatus("error");setScanMsg("Could not read one of the images. Try a screenshot or a different photo.");res(null);};
+      img.src=objectUrl;
+    });
+    Promise.all(files.slice(0,room).map(readOne)).then(urls=>{
+      const ok=urls.filter(Boolean) as string[];
+      if(!ok.length)return;
+      setScanImages(l=>[...l,...ok].slice(0,MAX_SCAN));
+      setTimeout(()=>document.querySelector(".scan-actions")?.scrollIntoView({behavior:"smooth",block:"center"}),80);
+    });
   };
   const doScan=async()=>{
-    if(!scanPreview)return;setScanStatus("scanning");setScanMsg("");
+    if(!scanImages.length)return;setScanStatus("scanning");setScanMsg("");
     try{
-      const b64=scanPreview.split(",")[1];
+      const many=scanImages.length>1;
       const parsed=await callAPI([{role:"user",content:[
-        {type:"image",source:{type:"base64",media_type:scanMime,data:b64}},
-        {type:"text",text:buildScanPrompt()},
+        ...scanImages.map(u=>({type:"image",source:{type:"base64",media_type:"image/jpeg",data:u.split(",")[1]}})),
+        {type:"text",text:(many?`These ${scanImages.length} images are parts of ONE recipe (for example screenshots of a long page, in order). Combine them into a single recipe, and don't repeat ingredients or steps that show up on more than one image.\n`:"")+buildScanPrompt()},
       ]}]);
       const r={...parsed,id:Date.now(),_dish:parsed.title||"Scanned Recipe",_scanned:true};
       setSaved(l=>[r,...l]);setJustAdded(r);setScanStatus("done");setScanMsg(`"${r.title}" saved!`);
-      setScanPreview(null);if(fileRef.current)fileRef.current.value="";
-    }catch(e:any){setScanStatus("error");setScanMsg(e.message||String(e));}
+      setScanImages([]);
+    }catch(e:any){setScanStatus("error");setScanMsg(/NOT_A_DISH/.test(e?.message||"")?"We couldn't find a recipe in that. Try a clearer photo or screenshot.":(e.message||String(e)));}
   };
-  const clearScan=()=>{setScanPreview(null);setScanStatus("idle");setScanMsg("");if(fileRef.current)fileRef.current.value="";};
+  const clearScan=()=>{setScanImages([]);setScanStatus("idle");setScanMsg("");if(fileRef.current)fileRef.current.value="";};
 
   /* QR scanner — lets a signed-in user scan an Every Chef share code with their
      own camera, inside the app, instead of relying on the phone's native camera
@@ -3200,19 +3214,27 @@ ${tiktok.text}`}]);
 
               <section className="ck-section">
                 <h2 className="ck-section-label">Bring a recipe in</h2>
-                <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={onFileChange}/>
+                <input ref={fileRef} type="file" accept="image/*" multiple style={{display:"none"}} onChange={onFileChange}/>
                 <div className="ck-rows">
                   <button className="ck-row" onClick={()=>fileRef.current?.click()}>
                     <span className="ck-row-icon" aria-hidden="true">{Ic.camera(22)}</span>
-                    <span className="ck-row-text"><span className="ck-row-title">Photograph a recipe card</span><span className="ck-row-sub">Grandma's card or a magazine page</span></span>
+                    <span className="ck-row-text"><span className="ck-row-title">Photograph a recipe card</span><span className="ck-row-sub">Grandma's card, a magazine page or screenshots</span></span>
                     <span className="ck-row-chev" aria-hidden="true">›</span>
                   </button>
                   {scanPreview&&(
                     <div className="ck-row-panel">
-                      <img src={scanPreview} className="scan-preview" alt="Recipe card to digitize"/>
+                      {scanImages.length===1
+                        ?<img src={scanPreview} className="scan-preview" alt="Recipe to digitize"/>
+                        :<div className="scan-thumbs">{scanImages.map((u,i)=>(
+                          <div key={i} className="scan-thumb"><img src={u} alt={`Image ${i+1} of ${scanImages.length}`}/><span className="scan-thumb-n">{i+1}</span>
+                            {scanStatus!=="scanning"&&<button className="scan-thumb-x" aria-label={`Remove image ${i+1}`} onClick={()=>setScanImages(l=>l.filter((_,j)=>j!==i))}>×</button>}</div>
+                        ))}</div>}
+                      {scanImages.length<MAX_SCAN&&scanStatus!=="scanning"&&(
+                        <button className="ck-inline-link scan-add" onClick={()=>fileRef.current?.click()}>+ Add another photo or screenshot{scanImages.length===1?" of this recipe":""} ({scanImages.length} of {MAX_SCAN})</button>
+                      )}
                       <div className="scan-actions">
-                        <button className="scan-go-btn" onClick={doScan} disabled={scanStatus==="scanning"}>{scanStatus==="scanning"?"Reading the card…":"Turn into a recipe"}</button>
-                        <button className="scan-clear-btn" onClick={clearScan} disabled={scanStatus==="scanning"}>Choose another</button>
+                        <button className="scan-go-btn" onClick={doScan} disabled={scanStatus==="scanning"}>{scanStatus==="scanning"?(scanImages.length>1?`Reading ${scanImages.length} images…`:"Reading the card…"):"Turn into a recipe"}</button>
+                        <button className="scan-clear-btn" onClick={clearScan} disabled={scanStatus==="scanning"}>Start over</button>
                       </div>
                       {scanStatus==="scanning"&&(
                         <div className="import-progress" role="status">
