@@ -1401,6 +1401,7 @@ const CSS = `
   .scan-add{display:block;margin:0 0 12px;font-size:15px;}
   .ck-hits{margin-top:12px;background:#fff;border-radius:18px;box-shadow:0 6px 24px rgba(26,31,46,.12);overflow:hidden;max-width:640px;}
   .ck-hits-label{padding:12px 16px 4px;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#6E635F;}
+  .ck-hits-sep{border-top:1px solid #ECE6DD;margin-top:4px;padding-top:14px;}
   .ck-hit{width:100%;display:flex;align-items:center;gap:12px;padding:10px 16px;background:none;border:none;text-align:left;cursor:pointer;font-family:'Figtree',sans-serif;color:#151210;min-height:64px;}
   .ck-hit:hover{background:#FBF7F0;}
   .ck-hit:focus-visible{outline:3px solid #F4A021;outline-offset:-3px;}
@@ -1557,6 +1558,14 @@ function ingParts(ing: any){
 }
 
 /* ── Meal art: simple illustrated cards used until (or instead of) a dish photo ── */
+// Title matching for the search box (same rules as the Community search)
+const normTitle=(s:string)=>(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9 ]+/g," ").replace(/\s+/g," ").trim();
+function titleScore(title:string,q:string):number{
+  const n=normTitle(title);if(!n||!q)return 0;
+  if(n===q)return 100;if(n.startsWith(q))return 60;if(n.includes(q))return 40;
+  const words=q.split(" ").filter(w=>w.length>1);
+  return words.length&&words.every(w=>n.split(" ").some(t=>t.startsWith(w)))?20:0;
+}
 // Two recipes can share a name (an AI "Chicken Pot Pie" and Grandma's scanned one).
 // Your own versions are told apart by id; generic AI/community recipes of one name count as the same dish.
 const isOwnRecipe=(r:any)=>!!(r&&(r._scanned||r._imported||r._edited||r._author));
@@ -3142,22 +3151,38 @@ ${tiktok.text}`}]);
                 )}
               </div>
 
-              {communityHits.results.length>0&&communityHits.q===query.trim()&&(
-                <div className="ck-hits" role="region" aria-label="Already in the Community">
-                  <div className="ck-hits-label">Already in the Community</div>
-                  {communityHits.results.map(h=>(
-                    <button key={h.title} className="ck-hit" onClick={()=>{setQuery(h.title);doSearch(h.key||h.title);}}>
-                      <DishPic title={h.title} src={photosOn?photoFor(h.title):null} className="ck-hit-pic"/>
-                      <span className="ck-hit-text"><strong>{h.title}</strong><span>{h.total?`${h.total} · `:""}opens instantly</span></span>
-                      <span className="ck-hit-free">Free</span>
+              {(()=>{
+                const q=normTitle(query);
+                if(q.length<3||isRude(query))return null;
+                // your own recipes first: they're on this phone, so they show instantly
+                const mine=saved.map((r:any)=>({r,sc:titleScore(r.title,q)})).filter(x=>x.sc>0).sort((a,b)=>b.sc-a.sc).slice(0,3).map(x=>x.r);
+                const mineTitles=new Set(mine.map((r:any)=>normTitle(r.title)));
+                const comm=communityHits.q===query.trim()?communityHits.results.filter(h=>!mineTitles.has(normTitle(h.title))):[];
+                if(!mine.length&&!comm.length)return null;
+                return(
+                  <div className="ck-hits" role="region" aria-label="Matching recipes">
+                    {mine.length>0&&<div className="ck-hits-label">In your Library</div>}
+                    {mine.map((r:any)=>(
+                      <button key={"m"+r.id} className="ck-hit" onClick={()=>{setReturnTab(null);setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(r);setServings(null);setStatus("done");setTab("search");setCommunityHits({q:"",results:[]});window.scrollTo({top:0});}}>
+                        <DishPic title={r.title} src={photosOn?photoFor(r,recipePhotos[r.id]):null} className="ck-hit-pic"/>
+                        <span className="ck-hit-text"><strong>{r.title}</strong><span>{[tt(r),r._scanned?"Scanned":r._imported?"Imported":"Saved"].filter(Boolean).join(" · ")}</span></span>
+                      </button>
+                    ))}
+                    {comm.length>0&&<div className={`ck-hits-label${mine.length?" ck-hits-sep":""}`}>Already in the Community</div>}
+                    {comm.map(h=>(
+                      <button key={h.title} className="ck-hit" onClick={()=>{setQuery(h.title);doSearch(h.key||h.title);}}>
+                        <DishPic title={h.title} src={photosOn?photoFor(h.title):null} className="ck-hit-pic"/>
+                        <span className="ck-hit-text"><strong>{h.title}</strong><span>{h.total?`${h.total} · `:""}opens instantly</span></span>
+                        <span className="ck-hit-free">Free</span>
+                      </button>
+                    ))}
+                    <button className="ck-hit ck-hit-new" onClick={()=>doSearch(query,{fresh:true})}>
+                      <span className="ck-hit-plus" aria-hidden="true">+</span>
+                      <span className="ck-hit-text"><strong>Make a new version</strong><span>Written fresh for you, about 30 seconds</span></span>
                     </button>
-                  ))}
-                  <button className="ck-hit ck-hit-new" onClick={()=>doSearch(query,{fresh:true})}>
-                    <span className="ck-hit-plus" aria-hidden="true">+</span>
-                    <span className="ck-hit-text"><strong>Make a new version</strong><span>Written fresh for you, about 30 seconds</span></span>
-                  </button>
-                </div>
-              )}
+                  </div>
+                );
+              })()}
 
               <div className="ck-chips" role="group" aria-label="Dietary filters">
                 {DIETS.map(d=>(

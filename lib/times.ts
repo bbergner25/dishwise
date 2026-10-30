@@ -15,6 +15,7 @@ export function toMinutes(s: any): number {
   if (h) m += parseFloat(h[1]) * 60;
   const mi = str.match(/([\d.]+)\s*(?:m|min|mins|minute|minutes)\b/);
   if (mi) m += parseFloat(mi[1]);
+  else if (h) { const rest = str.match(/(?:h|hr|hrs|hour|hours)\b\s*([\d.]+)\s*$/); if (rest) m += parseFloat(rest[1]); } // "6 hr 20"
   if (!h && !mi) { const n = str.match(/^\s*([\d.]+)\s*$/); if (n) m = parseFloat(n[1]); }
   return Math.round(m);
 }
