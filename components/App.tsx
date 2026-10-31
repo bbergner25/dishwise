@@ -185,6 +185,8 @@ const CSS = `
   .account-sheet-btn{display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;border:none;background:transparent;font-family:'Figtree',sans-serif;font-size:15px;color:#151210;cursor:pointer;border-radius:12px;text-align:left;transition:background .12s;}
   .account-sheet-btn:hover{background:#F5F0EA;}
   .account-sheet-btn.danger{color:#E8431A;}
+  a.account-sheet-btn,a.account-dropdown-item{text-decoration:none;color:#151210;display:flex;}
+  .account-sheet-btn.account-delete{margin-top:6px;border-top:1px solid #EDE8E0;border-radius:0 0 12px 12px;}
   .account-sheet-btn.danger:hover{background:#FEF2F0;}
   .account-sheet-cancel{width:calc(100% - 32px);margin:0 16px 8px;padding:14px;background:#fff;border:1.5px solid #EDE8E0;border-radius:12px;font-family:'Figtree',sans-serif;font-size:15px;font-weight:600;color:#151210;cursor:pointer;text-align:center;}
   .signout-confirm-overlay{position:fixed;inset:0;background:rgba(26,31,46,.6);z-index:400;display:flex;align-items:center;justify-content:center;padding:24px;}
@@ -2134,6 +2136,9 @@ export default function App(){
   const [showAccountDropdown,setShowAccountDropdown] = useState(false);
   const [showAccountSheet,setShowAccountSheet]       = useState(false);
   const [showSignOutConfirm,setShowSignOutConfirm]   = useState(false);
+  const [reportFor,setReportFor] = useState<any|null>(null);          // recipe being reported
+  const [reportState,setReportState] = useState<"idle"|"sending"|"sent">("idle");
+  const [deleteStage,setDeleteStage] = useState<"closed"|"confirm"|"deleting"|"error">("closed"); // delete account
   const [navHidden,setNavHidden]                     = useState(false);
 
   const inputRef    = useRef<HTMLInputElement>(null);
@@ -2157,7 +2162,7 @@ export default function App(){
         const res=await fetch(`/api/share?slug=${encodeURIComponent(slug)}`);
         const data=await res.json().catch(()=>({found:false}));
         if(!data?.found||!data.recipe)return;
-        const r={...data.recipe,id:Date.now(),_dish:data.recipe.title||slug,_ts:Date.now(),_fromCache:true};
+        const r={...data.recipe,id:Date.now(),_dish:data.recipe.title||slug,_ts:Date.now(),_fromCache:true,_shareFrom:slug};
         setReturnTab(null);setPairedSides([]);setActivePane(0);setReturnDayKey(null);
         setRecipe(r);setServings(null);setStatus("done");setTab("search");
         window.scrollTo({top:0});
@@ -2412,6 +2417,18 @@ export default function App(){
   const userInitial=user?(user.firstName||user.emailAddresses?.[0]?.emailAddress||"U")[0].toUpperCase():"";
   const doSignOut=()=>{setShowSignOutConfirm(true);setShowAccountDropdown(false);setShowAccountSheet(false);};
   const confirmSignOut=()=>{signOut();setShowSignOutConfirm(false);};
+  const openDeleteAccount=()=>{setShowAccountSheet(false);setShowAccountDropdown(false);setDeleteStage("confirm");};
+  const confirmDeleteAccount=async()=>{
+    setDeleteStage("deleting");
+    try{
+      const res=await fetch("/api/account",{method:"DELETE"});
+      if(!res.ok)throw new Error();
+      try{Object.keys(localStorage).filter(k=>k.startsWith("dw-")).forEach(k=>localStorage.removeItem(k));}catch{}
+      setDeleteStage("closed");
+      await signOut();
+      window.location.href="/";
+    }catch{setDeleteStage("error");}
+  };
 
   /* family code helpers */
   const loadShared=async(code: string)=>{
@@ -2966,7 +2983,7 @@ export default function App(){
         const res=await fetch(`/api/share?slug=${encodeURIComponent(slug)}`);
         const data=await res.json().catch(()=>({found:false}));
         if(data&&data.found&&data.recipe){
-          const r={...data.recipe,id:Date.now(),_dish:data.recipe.title||slug,_ts:Date.now(),_fromCache:true};
+          const r={...data.recipe,id:Date.now(),_dish:data.recipe.title||slug,_ts:Date.now(),_fromCache:true,_shareFrom:slug};
           setShowQrScanner(false);setQrStatus("idle");
           setReturnTab(null);setPairedSides([]);setActivePane(0);setReturnDayKey(null);
           setRecipe(r);setServings(null);setStatus("done");setTab("search");
@@ -3578,6 +3595,12 @@ ${tiktok.text}`}]);
                           </button>
                           {!recipe._scanned&&!recipe._imported&&(
                             <button role="menuitem" className="rx-menu-item" onClick={()=>{setShowRecipeMenu(false);setTimeout(()=>document.getElementById("rx-remix")?.scrollIntoView({behavior:"smooth",block:"start"}),60);}}>{Ic.refresh(17)} Remix</button>
+                          )}
+                          {(recipe._fromCache||recipe._shareFrom)&&!recipe._edited&&(
+                            <button role="menuitem" className="rx-menu-item rx-menu-danger" onClick={()=>{setShowRecipeMenu(false);setReportState("idle");setReportFor(recipe);}}>
+                              <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 21V4h11l-1.5 4L16 12H5"/></svg>
+                              Report this recipe
+                            </button>
                           )}
                           <button role="menuitem" className="rx-menu-item" onClick={()=>setIngTextSize(s=>s==="normal"?"large":s==="large"?"xl":"normal")}>
                             <span className="rx-menu-aa" aria-hidden="true">Aa</span>
@@ -4766,6 +4789,10 @@ ${tiktok.text}`}]);
                     <div className="account-dropdown-email">{user.emailAddresses?.[0]?.emailAddress||""}</div>
                   </div>
                   <button className="account-dropdown-item danger" onClick={doSignOut}>Sign out</button>
+                  <a className="account-dropdown-item" href="/privacy">Privacy policy</a>
+                  <a className="account-dropdown-item" href="/terms">Terms of use</a>
+                  <a className="account-dropdown-item" href="/support">Help & support</a>
+                  <button className="account-dropdown-item danger" onClick={openDeleteAccount}>Delete account</button>
                 </div>
               )}
             </div>
@@ -4885,8 +4912,53 @@ ${tiktok.text}`}]);
             </div>
             <div className="account-sheet-actions">
               <button className="account-sheet-btn danger" onClick={doSignOut}>Sign out</button>
+              <a className="account-sheet-btn" href="/privacy">Privacy policy</a>
+              <a className="account-sheet-btn" href="/terms">Terms of use</a>
+              <a className="account-sheet-btn" href="/support">Help & support</a>
+              <button className="account-sheet-btn danger account-delete" onClick={openDeleteAccount}>Delete account</button>
             </div>
             <button className="account-sheet-cancel" onClick={()=>setShowAccountSheet(false)}>Cancel</button>
+          </div>
+        </div>
+      )}
+      {reportFor&&(
+        <div className="account-sheet-overlay" onClick={()=>reportState!=="sending"&&setReportFor(null)}>
+          <div className="account-sheet" role="dialog" aria-modal="true" aria-labelledby="rp-title" onClick={e=>e.stopPropagation()}>
+            <div className="ui-handle" aria-hidden="true"/>
+            {reportState==="sent"?(
+              <>
+                <h2 id="rp-title" className="signout-confirm-title" style={{margin:"8px 16px 4px"}}>Thanks for letting us know</h2>
+                <p className="signout-confirm-sub" style={{margin:"0 16px 12px"}}>We'll take a look at {reportFor.title} and remove it if it breaks our rules.</p>
+                <button className="account-sheet-cancel" onClick={()=>setReportFor(null)}>Done</button>
+              </>
+            ):(
+              <>
+                <h2 id="rp-title" className="signout-confirm-title" style={{margin:"8px 16px 4px"}}>What's wrong with this recipe?</h2>
+                <div className="account-sheet-actions">
+                  {["Offensive or inappropriate","Not a real recipe","Unsafe or wrong instructions","Copied without permission","Something else"].map(reason=>(
+                    <button key={reason} className="account-sheet-btn" disabled={reportState==="sending"} onClick={async()=>{
+                      setReportState("sending");
+                      const share=reportFor._shareFrom;
+                      await fetch("/api/report",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({kind:share?"share":"community",target:share||reportFor._dish||reportFor.title,title:reportFor.title,reason})}).catch(()=>{});
+                      setReportState("sent");
+                    }}>{reason}</button>
+                  ))}
+                </div>
+                <button className="account-sheet-cancel" onClick={()=>setReportFor(null)}>Cancel</button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+      {deleteStage!=="closed"&&(
+        <div className="signout-confirm-overlay" onClick={()=>deleteStage!=="deleting"&&setDeleteStage("closed")}>
+          <div className="signout-confirm" role="alertdialog" aria-modal="true" aria-labelledby="da-title" aria-describedby="da-desc" onClick={e=>e.stopPropagation()}>
+            <h2 id="da-title" className="signout-confirm-title">Delete your account?</h2>
+            <p id="da-desc" className="signout-confirm-sub">This permanently deletes your account, saved recipes, meal plan and any links you've shared. It can't be undone.{deleteStage==="error"&&<><br/><strong style={{color:"#B8340F"}}>Something went wrong. Please try again.</strong></>}</p>
+            <div className="signout-confirm-btns">
+              <button className="signout-confirm-cancel" disabled={deleteStage==="deleting"} onClick={()=>setDeleteStage("closed")}>Cancel</button>
+              <button className="signout-confirm-go" disabled={deleteStage==="deleting"} onClick={confirmDeleteAccount}>{deleteStage==="deleting"?"Deleting…":"Delete account"}</button>
+            </div>
           </div>
         </div>
       )}

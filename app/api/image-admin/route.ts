@@ -138,6 +138,34 @@ export async function GET(req: NextRequest) {
       <p><a href="?secret=${secret}">← Back</a></p>`);
   }
 
+  if (action === "reports" || action === "report-remove" || action === "report-dismiss") {
+    let msg = "";
+    const all = (await redis.hgetall<Record<string, any>>("reports:v1")) || {};
+    const list = Object.values(all).map((v: any) => (typeof v === "string" ? JSON.parse(v) : v)).sort((a: any, b: any) => (a.at < b.at ? 1 : -1));
+    const id = sp.get("id") || "";
+    const rep = list.find((r: any) => r.id === id);
+    if (rep && action === "report-remove") {
+      const norm = (t: string) => t.toLowerCase().trim().replace(/\s+/g, " ");
+      if (rep.kind === "community") await redis.del(`recipe-cache:v1:${norm(rep.target)}`, "community-index:v2");
+      else await redis.del(`recipe-share:${rep.target}`, `recipe-share-token:${rep.target}`, `recipe-share-redirect:${rep.target}`);
+      const same = list.filter((r: any) => r.kind === rep.kind && r.target === rep.target).map((r: any) => r.id);
+      if (same.length) await redis.hdel("reports:v1", ...same);
+      msg = `Removed "${rep.title || rep.target}".`;
+    } else if (rep && action === "report-dismiss") {
+      await redis.hdel("reports:v1", id);
+      msg = "Dismissed.";
+    }
+    const open = action === "reports" ? list : list.filter((r: any) => !(rep && (r.id === id || (action === "report-remove" && r.kind === rep.kind && r.target === rep.target))));
+    const body = `<h1>Reported recipes</h1>
+      <p class="muted">People can report Community recipes and shared links. Remove takes the recipe down for everyone; Dismiss keeps it.</p>
+      ${msg ? `<p><strong>${esc(msg)}</strong></p>` : ""}
+      ${open.length ? `<table>${open.map((r: any) => `<tr><td><strong>${esc(r.title || r.target)}</strong><br><span class="muted">${r.kind === "share" ? `Shared link · <a href="/r/${esc(r.target)}" target="_blank">open</a>` : "Community recipe"} · ${esc(new Date(r.at).toLocaleString("en-US", { timeZone: "America/Chicago" }))}</span></td>
+        <td>${esc(r.reason)}${r.note ? `<br><span class="muted">${esc(r.note)}</span>` : ""}</td>
+        <td><a href="?secret=${secret}&action=report-remove&id=${esc(r.id)}">Remove</a> · <a href="?secret=${secret}&action=report-dismiss&id=${esc(r.id)}">Dismiss</a></td></tr>`).join("")}</table>` : "<p>No reports. Nice.</p>"}
+      <p><a href="?secret=${secret}">← Back</a></p>`;
+    return page("Reported recipes", body);
+  }
+
   if (action === "links" || action === "redirect") {
     const slugOf = (v: string | null) => (v || "").trim().replace(/[?#].*$/, "").split("/").filter(Boolean).pop() || "";
     let msg = "";
@@ -228,6 +256,7 @@ export async function GET(req: NextRequest) {
   const nextErr = poll?.next?.error || "";
   const outOfCredit = / 402|prepayment credits/i.test(nextErr);
   const spent = await spentCents();
+  const reportCount = await redis.hlen("reports:v1").catch(() => 0);
   let me: string | null = null;
   try { me = (await auth()).userId; } catch {}
   const mePreview = me ? !!(await redis.sismember(PREVIEW_USERS, me)) : false;
@@ -252,6 +281,7 @@ export async function GET(req: NextRequest) {
     <ul><li><a href="?secret=${secret}&action=test&dishes=${encodeURIComponent("Kung Pao Noodles|Cottage Pie|Fish Tacos")}">Make test photos: Kung Pao Noodles, Cottage Pie, Fish Tacos</a> (about 10¢, takes up to a minute)</li>
     <li><a href="?secret=${secret}&action=count">Count dishes that need photos + cost estimate</a></li>
     <li><a href="?secret=${secret}&action=times">Realistic cook times for older recipes</a></li>
+    <li><a href="?secret=${secret}&action=reports">Reported recipes${reportCount ? ` (${reportCount} waiting)` : ""}</a></li>
     <li><a href="?secret=${secret}&action=links">Shared links: point an old link at the current one</a></li></ul>`)).body, {
       headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", ...(running ? { Refresh: "60" } : {}) },
     });

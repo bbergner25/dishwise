@@ -1,4 +1,5 @@
 
+import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
 import crypto from "crypto";
@@ -78,6 +79,8 @@ export async function POST(req: NextRequest) {
 
     await redis.set(`recipe-share:${shareId}`, clean);
     await redis.set(`recipe-share-token:${shareId}`, newToken);
+    // remember who made it, so deleting an account also removes their links
+    try { const { userId } = await auth(); if (userId) await redis.sadd(`user-shares:${userId}`, shareId); } catch {}
 
     return NextResponse.json({ shareId, url: `${appUrl}/r/${shareId}`, token: newToken });
   } catch (err) {

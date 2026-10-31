@@ -1,6 +1,7 @@
 import { Redis } from "@upstash/redis";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
+import ShareReport from "../../../components/ShareReport";
 import { totalRange, getTimeFixes } from "../../../lib/times";
 
 const redis = new Redis({
@@ -142,7 +143,7 @@ export default async function PublicRecipePage({ params }: { params: { slug: str
 
   return (
     <>
-      <style>{`
+      <style dangerouslySetInnerHTML={{__html:`
         *{box-sizing:border-box;margin:0;padding:0;}
         body{background:#FDFAF5;font-family:'Figtree',sans-serif;color:#151210;-webkit-font-smoothing:antialiased;}
         a{color:inherit;text-decoration:none;}
@@ -198,7 +199,7 @@ export default async function PublicRecipePage({ params }: { params: { slug: str
         .pr-open{flex:1;min-height:52px;border-radius:26px;background:#F4A021;color:#151210;font-size:17px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;}
         .pr-open:hover{background:#E8941A;}
         .pr-open:focus-visible{outline:3px solid #1A1F2E;outline-offset:2px;}
-      `}</style>
+      `}}/>
 
       <header className="pr-header">
         <a href={appUrl} aria-label="Every Chef home">
@@ -274,7 +275,9 @@ export default async function PublicRecipePage({ params }: { params: { slug: str
         </div>
       </main>
 
-      <footer className="pr-footer">Shared from <a href={appUrl}>everychef.app</a></footer>
+      <footer className="pr-footer">Shared from <a href={appUrl}>everychef.app</a>
+        <ShareReport slug={params.slug} title={String(recipe.title || "")}/>
+      </footer>
 
       <div className="pr-actionbar">
         <div className="pr-actionbar-inner">
