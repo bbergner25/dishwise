@@ -45,8 +45,11 @@ export async function POST(req: NextRequest) {
 
     // Strip internal app flags and any embedded binary/photo data that
     // would bloat the stored value or cause serialization issues
+    // Imported recipes are someone else's published work, and scans need the sharer to say they're theirs
+    if (recipe._imported) return NextResponse.json({ error: "Imported recipes can't be shared. Share the original link instead." }, { status: 403 });
+    if (recipe._scanned && !recipe._shareOK) return NextResponse.json({ error: "Confirm this is your own recipe to share it." }, { status: 403 });
     const {
-      _scanned, _fromCache, _ts, id,
+      _scanned, _shareOK, _imported, _fromCache, _ts, id,
       _dish, _photo, photo, photoData, _shareSlug, _shareToken,
       ...clean
     } = recipe;

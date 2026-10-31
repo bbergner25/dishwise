@@ -1403,6 +1403,12 @@ const CSS = `
   .scan-add{display:block;margin:0 0 12px;font-size:15px;}
   .ai-note{margin:18px 0 0;padding:10px 12px;border-radius:12px;background:#F5EFE4;font-size:13px;line-height:1.45;color:#5A504B;}
   .cook-ai-note{margin-top:20px;}
+  .share-ask-sub{font-size:15px;line-height:1.5;color:#4F4744;margin:6px 0 14px;}
+  .share-ask{display:flex;flex-direction:column;gap:10px;}
+  .share-ask-opt{display:flex;flex-direction:column;gap:3px;text-align:left;padding:14px 16px;border-radius:14px;border:1.5px solid #DDD3C5;background:#fff;cursor:pointer;font-family:'Figtree',sans-serif;color:#151210;min-height:56px;}
+  .share-ask-opt:hover{border-color:#1A1F2E;}
+  .share-ask-opt strong{font-size:16px;font-weight:600;}
+  .share-ask-opt span{font-size:14px;color:#6E635F;}
   .ck-hits{margin-top:12px;background:#fff;border-radius:18px;box-shadow:0 6px 24px rgba(26,31,46,.12);overflow:hidden;max-width:640px;}
   .ck-hits-label{padding:12px 16px 4px;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#6E635F;}
   .ck-hits-sep{border-top:1px solid #ECE6DD;margin-top:4px;padding-top:14px;}
@@ -2092,7 +2098,8 @@ export default function App(){
   const [showRecipeMenu,setShowRecipeMenu] = useState(false); // the ⋯ menu on the recipe page
   const [stepRewrite,setStepRewrite] = useState<"idle"|"loading"|"error">("idle"); // edit panel: AI step rewrite
   const [stepsSyncedFor,setStepsSyncedFor] = useState("");  // removal set the steps were last rewritten for
-  const [shareTarget,setShareTarget] = useState<any>(null);     // the recipe the share sheet is for (main dish or a side)
+  const [shareTarget,setShareTarget] = useState<any>(null);
+  const [shareMode,setShareMode] = useState<"link"|"original"|"ask"|"private">("link"); // imports share the original; scans ask first     // the recipe the share sheet is for (main dish or a side)
   const [cookRecipe,setCookRecipe]   = useState<any>(null);     // recipe open in cooking mode
   const [cookStep,setCookStep]       = useState(0);             // 0 = gather ingredients, 1..N = steps
   const [cookTimers,setCookTimers]   = useState<Record<number,{end:number;dur:number;done?:boolean}>>({});
@@ -2752,15 +2759,27 @@ export default function App(){
 
   /* share — works for the main dish or a paired side. One recipe keeps one link; edits update it. */
   const pushShare=async(r:any)=>{
-    const {_scanned,_fromCache,_ts,id,_shareSlug,_shareToken,...shareable}=r as any; // _sourceUrl/_imported/_author stay so shares credit the original
+    const {_fromCache,_ts,id,_shareSlug,_shareToken,...shareable}=r as any; // _scanned/_shareOK go along so the server can check them
     const res=await fetch("/api/share",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({recipe:shareable,slug:_shareSlug,token:_shareToken})});
     return await res.json();
   };
-  const shareRecipe=async(r:any)=>{
-    setShareTarget(r);setShowShare(true);setShareUrl(null);setShareLoading(true);
+  const shareRecipe=async(r:any,opts?:{confirmedOwn?:boolean})=>{
+    setShareTarget(r);setShowShare(true);setShareUrl(null);
+    // Recipes imported from a link are someone else's published work: share their original link instead.
+    if(r?._imported){setShareMode(r._sourceUrl?"original":"private");setShareUrl(r._sourceUrl||null);setShareLoading(false);return;}
+    // Scans could be Grandma's card or a cookbook page: ask once before making a public link.
+    if(r?._scanned&&!r._shareOK&&!opts?.confirmedOwn){setShareMode("ask");setShareLoading(false);return;}
+    if(r?._scanned&&opts?.confirmedOwn){
+      const tag=(x:any)=>x&&r.id!=null&&x.id===r.id?{...x,_shareOK:true}:x;
+      r={...r,_shareOK:true};setShareTarget(r);
+      setRecipe((x:any)=>tag(x));setSaved((l:any[])=>l.map(tag));
+      setPlan((p:any)=>{let ch=false;const m={...p};for(const k in m){if(m[k]?.id===r.id){m[k]=tag(m[k]);ch=true;}}return ch?m:p;});
+    }
+    setShareMode("link");setShareLoading(true);
     try{
       const data=await pushShare(r);
-      setShareUrl(data.url||null);
+      if(!data.url){setShareMode("private");return;}
+      setShareUrl(data.url);
       // remember this recipe's link so re-sharing and later edits reuse it
       if(data.shareId&&data.token&&r.id!=null&&(r._shareSlug!==data.shareId||r._shareToken!==data.token)){
         const tag=(x:any)=>x&&x.id===r.id?{...x,_shareSlug:data.shareId,_shareToken:data.token}:x;
@@ -5103,15 +5122,32 @@ ${tiktok.text}`}]);
         };
         const doNativeShare=()=>{
           if(!shareUrl||!navigator.share)return;
-          navigator.share({title:sr.title,text:`Check out this recipe on Every Chef: ${sr.title}`,url:shareUrl}).catch(()=>{});
+          navigator.share({title:sr.title,text:shareMode==="original"?sr.title:`Check out this recipe on Every Chef: ${sr.title}`,url:shareUrl}).catch(()=>{});
         };
         return(
           <div className="share-overlay" onClick={()=>setShowShare(false)}>
             <div className="share-sheet" role="dialog" aria-modal="true" aria-labelledby="share-title" onClick={e=>e.stopPropagation()}>
               <div className="ui-handle" aria-hidden="true"/>
               <button className="ui-close" aria-label="Close" onClick={()=>setShowShare(false)}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
-              <h2 id="share-title" className="share-sheet-title">Share recipe</h2>
+              {shareMode==="ask"?(
+                <>
+                  <h2 id="share-title" className="share-sheet-title">Is this your own or a family recipe?</h2>
+                  <p className="share-ask-sub">Shared recipes get a public link, so only share recipes that are yours to share.</p>
+                  <div className="share-ask">
+                    <button className="share-ask-opt" onClick={()=>shareRecipe(sr,{confirmedOwn:true})}><strong>Yes, it's mine to share</strong><span>I wrote it, or it's a family recipe</span></button>
+                    <button className="share-ask-opt" onClick={()=>setShareMode("private")}><strong>It's from a cookbook, magazine or website</strong><span>Keep it in my Library</span></button>
+                  </div>
+                </>
+              ):shareMode==="private"?(
+                <>
+                  <h2 id="share-title" className="share-sheet-title">This one stays in your Library</h2>
+                  <p className="share-ask-sub">{sr._imported?"We couldn't find the original link for this recipe, so it can't be shared from Every Chef.":"Recipes from cookbooks, magazines and websites belong to their authors, so Every Chef keeps them private to you. You can still cook, plan and add it to a family collection."}</p>
+                  <button className="share-native-btn" onClick={()=>setShowShare(false)}>Got it</button>
+                </>
+              ):(<>
+              <h2 id="share-title" className="share-sheet-title">{shareMode==="original"?"Share the original":"Share recipe"}</h2>
               <div className="share-sheet-dish">{sr.title}</div>
+              {shareMode==="original"&&<p className="share-ask-sub">{(()=>{let h="";try{h=new URL(sr._sourceUrl).hostname.replace(/^www\./,"");}catch{}return sr._author?`This recipe is by @${String(sr._author).replace(/^@/,"")}, so we'll share their original post.`:`This recipe is from ${h||"another site"}, so we'll share the original link. That way the creator gets the credit.`;})()}</p>}
               <div className="share-url-row">
                 <div className="share-url-text" style={{color:shareLoading?"#9A8F88":"#151210"}}>{displayUrl}</div>
                 <button id="share-copy-btn" className="share-copy-btn" onClick={doCopy} disabled={!shareUrl||shareLoading}>
@@ -5134,6 +5170,7 @@ ${tiktok.text}`}]);
                   {Ic.share(18)} Share with…
                 </button>
               )}
+              </>)}
             </div>
           </div>
         );
