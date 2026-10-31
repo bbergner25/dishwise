@@ -1401,6 +1401,8 @@ const CSS = `
   .scan-thumb-n{position:absolute;left:5px;bottom:5px;min-width:20px;height:20px;border-radius:10px;background:rgba(26,31,46,.85);color:#FDFAF5;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;}
   .scan-thumb-x{position:absolute;right:3px;top:3px;width:28px;height:28px;border-radius:14px;border:none;background:rgba(253,250,245,.95);font-size:18px;line-height:1;cursor:pointer;color:#151210;}
   .scan-add{display:block;margin:0 0 12px;font-size:15px;}
+  .ai-note{margin:18px 0 0;padding:10px 12px;border-radius:12px;background:#F5EFE4;font-size:13px;line-height:1.45;color:#5A504B;}
+  .cook-ai-note{margin-top:20px;}
   .ck-hits{margin-top:12px;background:#fff;border-radius:18px;box-shadow:0 6px 24px rgba(26,31,46,.12);overflow:hidden;max-width:640px;}
   .ck-hits-label{padding:12px 16px 4px;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#6E635F;}
   .ck-hits-sep{border-top:1px solid #ECE6DD;margin-top:4px;padding-top:14px;}
@@ -2750,7 +2752,7 @@ export default function App(){
 
   /* share — works for the main dish or a paired side. One recipe keeps one link; edits update it. */
   const pushShare=async(r:any)=>{
-    const {_scanned,_imported,_fromCache,_ts,id,_sourceUrl,_shareSlug,_shareToken,...shareable}=r as any;
+    const {_scanned,_fromCache,_ts,id,_shareSlug,_shareToken,...shareable}=r as any; // _sourceUrl/_imported/_author stay so shares credit the original
     const res=await fetch("/api/share",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({recipe:shareable,slug:_shareSlug,token:_shareToken})});
     return await res.json();
   };
@@ -3883,6 +3885,7 @@ ${tiktok.text}`}]);
                 </li>
               ))}
             </ol>
+            {!recipe._scanned&&!recipe._imported&&!recipe._author&&<p className="ai-note">Written with AI. Check for allergens, and cook meat, poultry, fish and eggs to safe temperatures.</p>}
           </div>
         </div>
 
@@ -5039,6 +5042,7 @@ ${tiktok.text}`}]);
                       </li>
                     ))}
                   </ul>
+                  {!r._scanned&&!r._imported&&!r._author&&<p className="ai-note cook-ai-note">Written with AI. Check for allergens, and cook meat, poultry, fish and eggs to safe temperatures.</p>}
                 </>
               ):(
                 <>

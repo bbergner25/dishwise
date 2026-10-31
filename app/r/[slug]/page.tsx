@@ -154,6 +154,8 @@ export default async function PublicRecipePage({ params }: { params: { slug: str
         .pr-wordmark span:last-child{color:#F4A021;font-style:italic;margin-left:2px;}
 
         .pr-head{max-width:820px;margin:0 auto;padding:28px 20px 0;display:flex;flex-direction:column;gap:10px;}
+        .pr-credit{align-self:flex-start;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:8px 14px;border-radius:18px;background:#F5EFE4;font-size:14px;color:#151210;text-decoration:none;}
+        .pr-credit-go{font-weight:600;color:#1A1F2E;text-decoration:underline;}
         .pr-eyebrow{font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#6E635F;}
         .pr-title{font-family:'Fraunces',serif;font-size:34px;line-height:1.06;font-weight:700;letter-spacing:-.6px;color:#151210;}
         @media(min-width:768px){.pr-title{font-size:44px;}}
@@ -212,6 +214,12 @@ export default async function PublicRecipePage({ params }: { params: { slug: str
         <div className="pr-head">
           <div className="pr-eyebrow">{eyebrow}</div>
           <h1 className="pr-title">{recipe.title}</h1>
+          {(sourceHost || recipe._author) && (
+            <a className="pr-credit" href={recipe._sourceUrl || undefined} target="_blank" rel="noopener noreferrer">
+              <span>{recipe._author ? <>Recipe by <strong>@{String(recipe._author).replace(/^@/,"")}</strong>{sourceHost ? ` on ${sourceHost.includes("tiktok") ? "TikTok" : sourceHost}` : ""}</> : <>Originally from <strong>{sourceHost}</strong></>}</span>
+              {recipe._sourceUrl && <span className="pr-credit-go">View original →</span>}
+            </a>
+          )}
           {recipe.tagline && <p className="pr-tagline">{recipe.tagline}</p>}
           {meta.length > 0 && (
             <div className="pr-meta">
@@ -275,7 +283,7 @@ export default async function PublicRecipePage({ params }: { params: { slug: str
         </div>
       </main>
 
-      <footer className="pr-footer">Shared from <a href={appUrl}>everychef.app</a>
+      <footer className="pr-footer">Shared from <a href={appUrl}>everychef.app</a> · <a href="/copyright">Copyright</a>
         <ShareReport slug={params.slug} title={String(recipe.title || "")}/>
       </footer>
 

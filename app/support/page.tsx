@@ -21,7 +21,7 @@ export default function Support() {
       <h2>Still need help?</h2>
       <p>Contact us at <Contact/>.</p>
 
-      <p style={{ marginTop: 24 }}><a href="/privacy">Privacy policy</a> · <a href="/terms">Terms of use</a></p>
+      <p style={{ marginTop: 24 }}><a href="/privacy">Privacy policy</a> · <a href="/terms">Terms of use</a> · <a href="/copyright">Copyright</a></p>
     </InfoPage>
   );
 }

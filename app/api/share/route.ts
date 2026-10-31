@@ -46,10 +46,12 @@ export async function POST(req: NextRequest) {
     // Strip internal app flags and any embedded binary/photo data that
     // would bloat the stored value or cause serialization issues
     const {
-      _scanned, _imported, _fromCache, _ts, id,
-      _sourceUrl, _dish, _photo, photo, photoData, _shareSlug, _shareToken,
+      _scanned, _fromCache, _ts, id,
+      _dish, _photo, photo, photoData, _shareSlug, _shareToken,
       ...clean
     } = recipe;
+    // keep the credit for imported recipes: where it came from stays on the shared page
+    if (typeof clean._sourceUrl !== "string" || !/^https?:\/\//.test(clean._sourceUrl)) delete (clean as any)._sourceUrl;
 
     // Safety check — if the cleaned recipe is still huge (e.g. base64 embedded
     // somewhere else), cap it rather than letting Redis reject it

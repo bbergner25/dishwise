@@ -15,7 +15,7 @@ export default function Terms() {
       <p>You're responsible for activity on your account. You can delete it any time from the account menu.</p>
 
       <h2>Your recipes</h2>
-      <p>Recipes and photos you add stay yours. When you share a recipe or add it to a family collection, you let us store and show it to the people who can open it. Recipes made from searches may join the shared Community library without your name. Only import or share recipes you have the right to use; imported recipes are for your personal use.</p>
+      <p>Recipes and photos you add stay yours. When you share a recipe or add it to a family collection, you let us store and show it to the people who can open it. Recipes made from searches may join the shared Community library without your name. Only import or share recipes you have the right to use; imported recipes are for your personal use, and shared ones credit the original. To report a copyright concern, see our <a href="/copyright">copyright page</a>.</p>
 
       <h2>Fair use</h2>
       <p>Don't use Every Chef to post offensive, harmful or illegal content, to harass anyone, or to overload, copy or misuse the service or its AI. We may limit usage, remove content that breaks these rules, and suspend accounts that misuse the app.</p>
