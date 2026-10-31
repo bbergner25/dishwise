@@ -1678,9 +1678,53 @@ function ingKeywords(name: string): string[]{
   return base.split(/[^a-z]+/).filter(w=>w.length>=3&&!COOK_STOP.has(w)).map(w=>w.replace(/(?:es|s)$/,"")).filter(w=>w.length>=3);
 }
 // Ingredients whose key words appear in the step text (word-start match, so "oil" doesn't match "boil").
-function ingredientsForStep(step: string, ings: any[]): any[]{
-  const t=(step||"").toLowerCase();
-  return ings.filter(i=>ingKeywords(i.name).some(k=>new RegExp(`\\b${k}`).test(t)));
+// The recipe's ingredients in display order; step_ingredients indexes into this list.
+const ingList=(r:any):any[]=>(r?.ingredient_groups||(r?.ingredients?[{items:r.ingredients}]:[])).flatMap((g:any)=>g.items||[]);
+// Which ingredients go in at each step, as indexes into ingList. Each ingredient appears once,
+// on the step where it's added. Uses the AI's own list when the recipe has a valid one,
+// otherwise a careful guess: every key word must match, the more specific ingredient wins,
+// and an ingredient only shows the first time it's used.
+function stepIngredientMap(r:any):number[][]{
+  const steps:string[]=r?.steps||[],ings=ingList(r);
+  const given=r?.step_ingredients;
+  if(Array.isArray(given)&&given.length===steps.length&&given.every((a:any)=>Array.isArray(a)&&a.every((n:any)=>Number.isInteger(n)&&n>=0&&n<ings.length))){
+    const seen=new Set<number>();
+    return given.map((a:number[])=>a.filter(n=>!seen.has(n)&&(seen.add(n),true)));
+  }
+  const kws=ings.map((i:any)=>ingKeywords(i?.name||""));
+  const freq=new Map<string,number>();kws.forEach(k=>new Set(k).forEach(w=>freq.set(w,(freq.get(w)||0)+1)));
+  const used=new Set<number>();
+  return steps.map(st=>{
+    const t=(st||"").toLowerCase();
+    const has=(w:string)=>new RegExp(`\\b${w}`).test(t);
+    // a match needs the main word (usually the last: "onion", "pepper", "stock") or a word no other ingredient uses ("mozzarella")
+    const hits=kws.map((k,i)=>({i,k,core:k[k.length-1],score:k.filter(has).length}))
+      .filter(h=>!used.has(h.i)&&h.k.length&&(has(h.core)||h.k.some(w=>freq.get(w)===1&&has(w))));
+    // ingredients sharing a main word compete: the one with more of its words in the step wins ("bell pepper" vs "black pepper")
+    // and a lone word that's part of a fuller match belongs to that match ("tomato" in "tomato paste" isn't the canned tomatoes)
+    const keep=hits.filter(a=>!hits.some(b=>b!==a&&((b.core===a.core&&b.score>a.score)||(a.score===1&&b.score>=2&&a.k.some(w=>has(w)&&b.k.includes(w))))));
+    keep.forEach(({i})=>used.add(i));
+    return keep.map(({i})=>i);
+  });
+}
+// Ask the AI (cheap model) which ingredients go in at each step, for recipes made before it said so itself.
+async function tagStepIngredients(r:any):Promise<number[][]|null>{
+  const ings=ingList(r),steps:string[]=r?.steps||[];
+  if(!ings.length||!steps.length)return null;
+  try{
+    const out=await callAPI([{role:"user",content:
+`For each cooking step, list which ingredients are ADDED or first used in that step, by number.
+Each ingredient goes on exactly one step: the step where it actually goes in (not where it's prepped ahead of time unless that's its only mention, and not where it's merely referred to again, like "return the beef to the pot"). A step can have no ingredients.
+Ingredients:
+${ings.map((i:any,n:number)=>`${n}. ${`${i.amount||""} ${i.name||""}`.trim()}`).join("\n")}
+Steps:
+${steps.map((st,n)=>`${n}. ${st}`).join("\n")}
+Reply with ONLY valid JSON: {"step_ingredients":[[numbers for step 0],[numbers for step 1],...]} with exactly ${steps.length} lists.`}],"claude-haiku-5-5");
+    const m=out?.step_ingredients;
+    if(!Array.isArray(m)||m.length!==steps.length)return null;
+    if(!m.every((a:any)=>Array.isArray(a)&&a.every((n:any)=>Number.isInteger(n)&&n>=0&&n<ings.length)))return null;
+    return m;
+  }catch{return null;}
 }
 // Listed ingredients that no step uses (salt/pepper/garnish "to taste" lines are often fine, so this is a hint, not an error).
 function unusedIngs(r: any, steps?: string[]): any[]{
@@ -1855,7 +1899,7 @@ ${TIME_RULE}`;
 
 function buildScanPrompt(): string{
   return `Extract the recipe from this image. Use US imperial measurements only (cups, tbsp, tsp, oz, lbs, °F). Each ingredient's "amount" holds only the quantity, unit and size (e.g. "1", "2 cups", "1 large"); the ingredient itself and any prep notes go in "name" (amount "1", name "red bell pepper, cored and diced"). Reply with ONLY valid JSON:
-{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","total_time":"X–Y mins","servings":"4","ingredient_groups":[{"label":"","items":[{"amount":"2 tbsp","name":"olive oil"}]}],"steps":["Full step."],"grocery_items":["olive oil"],"sources":[],"source_note":"Digitized from a recipe card."}\nIf the source lists times, keep them unless they are clearly unrealistic for a home cook; total_time is always your own realistic estimate. ${TIME_RULE}`;
+{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","total_time":"X–Y mins","servings":"4","ingredient_groups":[{"label":"","items":[{"amount":"2 tbsp","name":"olive oil"}]}],"steps":["Full step."],"step_ingredients":[[0]],"grocery_items":["olive oil"],"sources":[],"source_note":"Digitized from a recipe card."}\nstep_ingredients: one list per step, in step order, holding the numbers of the ingredients added in that step (count through every ingredient_groups item in order, starting at 0). Each ingredient appears in exactly one list: the step where it goes in, not later steps that mention it again.\nIf the source lists times, keep them unless they are clearly unrealistic for a home cook; total_time is always your own realistic estimate. ${TIME_RULE}`;
 }
 
 function buildRemixPrompt(dish: string, diets: string[], seasonal: boolean, location: string, tweaks: string[]): string{
@@ -1868,8 +1912,8 @@ function buildRemixPrompt(dish: string, diets: string[], seasonal: boolean, loca
 
 function buildUrlPrompt(): string{
   return `Extract the recipe from the text content of this webpage. Ignore navigation, ads, comments, and all other non-recipe content. Use US imperial measurements only (cups, tbsp, tsp, oz, lbs, °F) — convert any metric amounts. Each ingredient's "amount" holds only the quantity, unit and size (e.g. "1", "2 cups", "1 large"); the ingredient itself and any prep notes go in "name" (amount "1", name "red bell pepper, cored and diced"). Reply with ONLY valid JSON:
-{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","total_time":"X–Y mins","servings":"4","ingredient_groups":[{"label":"","items":[{"amount":"2 tbsp","name":"olive oil"}]}],"steps":["Full detailed step."],"grocery_items":["olive oil"],"sources":[],"source_note":"Extracted from [site name]."}
-Group ingredients by component if applicable. Write full clear steps.\nIf the source lists times, keep them unless they are clearly unrealistic for a home cook; total_time is always your own realistic estimate. ${TIME_RULE}`;
+{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","total_time":"X–Y mins","servings":"4","ingredient_groups":[{"label":"","items":[{"amount":"2 tbsp","name":"olive oil"}]}],"steps":["Full detailed step."],"step_ingredients":[[0]],"grocery_items":["olive oil"],"sources":[],"source_note":"Extracted from [site name]."}
+Group ingredients by component if applicable. Write full clear steps.\nstep_ingredients: one list per step, in step order, holding the numbers of the ingredients added in that step (count through every ingredient_groups item in order, starting at 0). Each ingredient appears in exactly one list: the step where it goes in, not later steps that mention it again.\nIf the source lists times, keep them unless they are clearly unrealistic for a home cook; total_time is always your own realistic estimate. ${TIME_RULE}`;
 }
 
 // Parse JSON-LD Recipe schema — the legal, structured data sites publish for Google
@@ -1944,10 +1988,10 @@ const LogoMark = ({size=32}:{size?:number}) => (
   </div>
 );
 
-async function callAPI(messages: any[]): Promise<any>{
+async function callAPI(messages: any[], model:string="claude-sonnet-4-6"): Promise<any>{
   const res=await fetch("/api/recipe",{
     method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:2048,messages}),
+    body:JSON.stringify({model,max_tokens:2048,messages}),
   });
   const raw=await res.text();
   if(!res.ok)throw new Error("HTTP "+res.status+": "+raw.slice(0,300));
@@ -2712,10 +2756,21 @@ export default function App(){
   };
 
   /* cooking mode */
-  const openCookMode=(r:any)=>{setCookRecipe(r);setCookStep(0);setCookTimers({});setShowRecipeMenu(false);};
+  const openCookMode=(r:any)=>{
+    setCookRecipe(r);setCookStep(0);setCookTimers({});setShowRecipeMenu(false);
+    // older recipes: ask once which ingredients go in at each step, then keep the answer with the recipe
+    const steps=r?.steps||[];
+    const valid=Array.isArray(r?.step_ingredients)&&r.step_ingredients.length===steps.length;
+    if(!valid&&steps.length)tagStepIngredients(r).then(m=>{
+      if(!m)return;
+      const tag=(x:any)=>x&&(x===r||(r.id!=null&&x.id===r.id))?{...x,step_ingredients:m}:x;
+      setCookRecipe((c:any)=>tag(c));setRecipe((x:any)=>tag(x));setSaved((l:any[])=>l.map(tag));
+      setPlan((p:any)=>{let ch=false;const n={...p};for(const k in n){if(r.id!=null&&n[k]?.id===r.id){n[k]=tag(n[k]);ch=true;}}return ch?n:p;});
+    });
+  };
   const closeCookMode=()=>{setCookRecipe(null);setCookTimers({});};
   const finishCookMode=()=>{
-    if(returnDayKey&&cookRecipe===recipe&&returnDayKey<=dateKey(startOfToday()))
+    if(returnDayKey&&(cookRecipe===recipe||(cookRecipe?.id!=null&&cookRecipe.id===recipe?.id))&&returnDayKey<=dateKey(startOfToday()))
       setPlanMade(p=>({...p,[returnDayKey]:true}));
     closeCookMode();
   };
@@ -4856,12 +4911,12 @@ ${tiktok.text}`}]);
         const steps:string[]=r.steps||[];
         const groups=r.ingredient_groups||(r.ingredients?[{label:"",items:r.ingredients}]:[]);
         const allIngs:any[]=groups.flatMap((g:any)=>g.items||[]);
-        const rr=r===recipe?ratio:1;
+        const rr=(r===recipe||(r?.id!=null&&r.id===recipe?.id))?ratio:1;
         const amt=(a:string)=>renderAmount(normalizeAmount(rr===1?(a||""):scaleAmt(a||"",rr)));
         const idx=cookStep;
         const last=steps.length;
         const stepText=idx>0?steps[idx-1]:"";
-        const stepIngs=idx>0?ingredientsForStep(stepText,allIngs):[];
+        const stepIngs=idx>0?(stepIngredientMap(r)[idx-1]||[]).map(n=>allIngs[n]).filter(Boolean):[];
         const secs=idx>0?stepTimerSeconds(stepText):null;
         const timer=cookTimers[idx];
         const now=Date.now();
@@ -5165,6 +5220,8 @@ ${tiktok.text}`}]);
                   }catch{setStepRewrite("error");return;}
                 }
                 const updated={...edited,_edited:true,grocery_items:syncGroceries(recipe,edited)};
+                // ingredients or steps changed: the step-by-step ingredient list gets redone next time cook mode opens
+                if(JSON.stringify(recipe.ingredient_groups)!==JSON.stringify(edited.ingredient_groups)||JSON.stringify(recipe.steps)!==JSON.stringify(edited.steps))delete (updated as any).step_ingredients;
                 // in the background: if the edit changes how the dish looks, give this recipe its own photo
                 const before=recipe;
                 if(before.id!=null)editChangesLook(before,edited).then(looksNew=>{

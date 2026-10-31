@@ -8,6 +8,7 @@ import { overLimit, clientIp } from "../../../lib/guard";
 export const maxDuration = 60;
 
 const MODEL = "claude-sonnet-4-6";
+const ALLOWED_MODELS = new Set([MODEL, "claude-haiku-5-5"]); // Haiku for small helper jobs
 const MAX_TOKENS = 2048;
 const DAILY_CAP = Number(process.env.ANTHROPIC_DAILY_CALL_CAP || 5000); // all users together
 // Keeps this connection to Every Chef's own job, so it's useless as a free general-purpose AI.
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
         "x-api-key": apiKey,
         "anthropic-version": "2023-06-01",
       },
-      body: JSON.stringify({ model: MODEL, max_tokens: Math.min(Number(body.max_tokens) || MAX_TOKENS, MAX_TOKENS), system: SYSTEM, messages }),
+      body: JSON.stringify({ model: ALLOWED_MODELS.has(body.model) ? body.model : MODEL, max_tokens: Math.min(Number(body.max_tokens) || MAX_TOKENS, MAX_TOKENS), system: SYSTEM, messages }),
     });
 
     const data = await response.json();
