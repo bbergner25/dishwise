@@ -140,6 +140,76 @@ export async function GET(req: NextRequest) {
       <p><a href="?secret=${secret}">← Back</a></p>`);
   }
 
+  if (action === "brands" || action === "brands-apply") {
+    // One-time cleanup: Community and Trending titles with brand, store, restaurant or creator names get cookbook names.
+    const PROPOSAL = "brand-cleanup:proposal";
+    const norm = (t: string) => String(t || "").toLowerCase().trim().replace(/\s+/g, " ");
+    type Rename = { key: string; old: string; title: string; oldTagline?: string; tagline?: string };
+    if (action === "brands-apply") {
+      const list = (await redis.get<Rename[]>(PROPOSAL)) || [];
+      let done = 0;
+      for (const r of list) {
+        const rec = await redis.get<any>(`recipe-cache:v1:${r.key}`);
+        if (!rec) continue;
+        await redis.set(`recipe-cache:v1:${r.key}`, { ...rec, title: r.title, ...(r.tagline ? { tagline: r.tagline } : {}) });
+        // keep the dish's photo and cook-time estimate under its new name
+        for (const prefix of ["dish-photo:v1:", "recipe-time:v1:"]) {
+          const old = await redis.get(prefix + norm(r.old));
+          if (old && !(await redis.get(prefix + norm(r.title)))) await redis.set(prefix + norm(r.title), old);
+        }
+        done++;
+      }
+      const tr = await redis.get<any>("trending:current");
+      if (tr?.dishes?.length) {
+        const map = new Map(list.flatMap((r) => [[norm(r.old), r.title], [norm(r.key), r.title]] as [string, string][]));
+        const seen = new Set<string>();
+        const dishes = tr.dishes.map((d: string) => map.get(norm(d)) || d).filter((d: string) => !seen.has(norm(d)) && seen.add(norm(d)));
+        await redis.set("trending:current", { ...tr, dishes });
+      }
+      await redis.del("community-index:v2", PROPOSAL);
+      return page("Brand cleanup", `<h1>Done</h1><p>Renamed ${done} recipes. Trending and the Community search now use the new names, and duplicates of the same dish show once.</p><p><a href="?secret=${secret}">← Back</a></p>`);
+    }
+    // Preview: ask the cheap model which titles need a new name
+    const keys = await redis.keys("recipe-cache:v1:*");
+    const items: { key: string; title: string; tagline: string }[] = [];
+    for (let i = 0; i < keys.length; i += 100) {
+      const vals = await redis.mget<any[]>(...keys.slice(i, i + 100));
+      vals.forEach((v, j) => { if (v?.title) items.push({ key: keys[i + j].slice("recipe-cache:v1:".length), title: String(v.title), tagline: String(v.tagline || "") }); });
+    }
+    const renames: Rename[] = [];
+    let error = "";
+    for (let i = 0; i < items.length; i += 120) {
+      const chunk = items.slice(i, i + 120);
+      try {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY!, "anthropic-version": "2023-06-01" },
+          body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 4000, messages: [{ role: "user", content:
+`These are recipe titles and taglines from a cooking app. Find the ones whose title or tagline uses a brand, store, restaurant, chain or creator name (e.g. Trader Joe's, Chick-fil-A, Olive Garden, Costco, Starbucks, Taco Bell, a TikTok creator) or hype words like "viral", "TikTok" or "famous".
+For each one, give a cookbook-style title that names the dish itself (e.g. "Trader Joe's Dumpling Bake" -> "Frozen Dumpling Bake", "Copycat Chick-fil-A Sandwich" -> "Crispy Pickle-Brined Chicken Sandwich"), and a cleaned tagline if the tagline needs it. Leave everything else out. Generic words like "Cajun", "Buffalo", "Philly", "Caesar" or "Marry Me" aren't brands.
+${chunk.map((x, n) => `${n}. ${x.title} | ${x.tagline}`).join("\n")}
+Reply with ONLY valid JSON: {"renames":[{"i":0,"title":"...","tagline":"... or empty if fine"}]}` }] }),
+        });
+        const data = await res.json();
+        if (!res.ok) { error = `${res.status}: ${JSON.stringify(data).slice(0, 300)}`; break; }
+        const text = (data.content || []).map((c: any) => c.text || "").join("");
+        const j = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1));
+        for (const r of j.renames || []) {
+          const it = chunk[r.i];
+          if (!it || !r.title || norm(r.title) === norm(it.title) && !r.tagline) continue;
+          renames.push({ key: it.key, old: it.title, title: String(r.title).slice(0, 120), oldTagline: it.tagline, tagline: r.tagline ? String(r.tagline).slice(0, 200) : undefined });
+        }
+      } catch (e: any) { error = String(e?.message || e); break; }
+    }
+    await redis.set(PROPOSAL, renames, { ex: 86400 });
+    return page("Brand cleanup", `<h1>Brand names in recipe titles</h1>
+      <p class="muted">Checked ${items.length} Community recipes. These would get cookbook-style names. Nothing changes until you tap Apply.</p>
+      ${error ? `<pre style="color:#B8340F">${esc(error)}</pre>` : ""}
+      ${renames.length ? `<table>${renames.map((r) => `<tr><td>${esc(r.old)}${r.tagline ? `<br><span class="muted">${esc(r.oldTagline || "")}</span>` : ""}</td><td>→</td><td><strong>${esc(r.title)}</strong>${r.tagline ? `<br><span class="muted">${esc(r.tagline)}</span>` : ""}</td></tr>`).join("")}</table>
+        <p><a href="?secret=${secret}&action=brands-apply" style="display:inline-block;padding:12px 20px;border-radius:24px;background:#F4A021;color:#151210;font-weight:600;text-decoration:none">Apply ${renames.length} renames</a></p>` : error ? "" : "<p><strong>Nothing to rename.</strong></p>"}
+      <p><a href="?secret=${secret}">← Back</a></p>`);
+  }
+
   if (action === "taste") {
     // Blind taste test: the same dishes written by both models, shown as A and B in random order.
     const MODELS = [
@@ -341,6 +411,7 @@ export async function GET(req: NextRequest) {
     <ul><li><a href="?secret=${secret}&action=test&dishes=${encodeURIComponent("Kung Pao Noodles|Cottage Pie|Fish Tacos")}">Make test photos: Kung Pao Noodles, Cottage Pie, Fish Tacos</a> (about 10¢, takes up to a minute)</li>
     <li><a href="?secret=${secret}&action=count">Count dishes that need photos + cost estimate</a></li>
     <li><a href="?secret=${secret}&action=times">Realistic cook times for older recipes</a></li>
+    <li><a href="?secret=${secret}&action=brands">Brand names in Community titles: check and clean up</a></li>
     <li><a href="?secret=${secret}&action=taste">Recipe taste test: Sonnet vs Haiku</a></li>
     <li><a href="?secret=${secret}&action=reports">Reported recipes${reportCount ? ` (${reportCount} waiting)` : ""}</a></li>
     <li><a href="?secret=${secret}&action=links">Shared links: point an old link at the current one</a></li></ul>`)).body, {

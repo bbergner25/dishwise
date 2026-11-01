@@ -19,6 +19,7 @@ Use US imperial measurements only (cups, tbsp, tsp, oz, lbs, °F) — no grams, 
 Reply with ONLY valid JSON, no other text:
 {"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","total_time":"X–Y mins","servings":"4","ingredient_groups":[{"label":"For the Marinade","items":[{"amount":"2 tbsp","name":"soy sauce"}]},{"label":"","items":[{"amount":"1 cup","name":"rice"}]}],"steps":["Step one."],"step_ingredients":[[0,1]],"grocery_items":["soy sauce","rice"],"sources":["AllRecipes","Serious Eats"],"source_note":"...","seasonal_note":"..."}
 Rules: group ingredients by component when useful; single group with empty label for simple recipes. 6-10 steps. grocery_items: flat names only. sources: 2-3 real sites. seasonal_note only if seasonal requested.
+title: the dish's own name, the way a cookbook would put it. Never use brand, store, restaurant or creator names, or words like "viral" or "TikTok", in the title or tagline (a copycat of a restaurant dish gets a descriptive name instead). A brand may appear only inside an ingredient, as "(such as Trader Joe's)", when it genuinely helps the cook.
 step_ingredients: one list per step, in step order, holding the numbers of the ingredients added in that step (count through every ingredient_groups item in order, starting at 0). Each ingredient appears in exactly one list: the step where it goes in, not later steps that mention it again.
 ${TIME_RULE}`;
 }

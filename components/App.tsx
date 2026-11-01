@@ -1903,7 +1903,7 @@ function buildInspirePrompt(time: string,vibe: string,serves: string,diets: stri
   return `Suggest 4 distinct recipe ideas for someone who wants: time available: "${time}", vibe: "${vibe}", serving size: "${serves}".${d}${f}${x}
 Reply with ONLY valid JSON, no other text:
 {"suggestions":[{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","total_time":"X–Y mins","servings":"2","why":"One sentence on why this fits their request perfectly."},{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","total_time":"X–Y mins","servings":"2","why":"..."},{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","total_time":"X–Y mins","servings":"2","why":"..."},{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","total_time":"X–Y mins","servings":"2","why":"..."}]}
-Make each suggestion meaningfully different from the others. Keep titles concise and appetizing. Only suggest dishes whose realistic total_time fits the time available.
+Make each suggestion meaningfully different from the others. Keep titles concise and appetizing, with no brand, store, restaurant or creator names. Only suggest dishes whose realistic total_time fits the time available.
 ${TIME_RULE}`;
 }
 
