@@ -3971,7 +3971,7 @@ ${tiktok.text}`}]);
                 <a key={i} href={getSiteUrl(s,dish)} target="_blank" rel="noopener noreferrer" className="source-link">{s} ↗</a>
               ))}
             </div>
-            {recipe.source_note&&<div className="source-note">{recipe.source_note}</div>}
+            {recipe.source_note&&!(!recipe._scanned&&!recipe._imported&&!recipe._author&&sources.some((x:string)=>x&&recipe.source_note.toLowerCase().includes(String(x).toLowerCase())))&&<div className="source-note">{recipe.source_note}</div>}
             {!recipe._scanned&&!recipe._imported&&!recipe._author&&<div className="source-note ai-source-note">Written with AI. Check for allergens, and cook meat, poultry, fish and eggs to safe temperatures.</div>}
           </div>
         )}
