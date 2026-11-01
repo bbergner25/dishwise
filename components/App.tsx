@@ -1403,6 +1403,7 @@ const CSS = `
   .scan-add{display:block;margin:0 0 12px;font-size:15px;}
   .ai-note{margin:18px 0 0;padding:10px 12px;border-radius:12px;background:#F5EFE4;font-size:13px;line-height:1.45;color:#5A504B;}
   .cook-ai-note{margin-top:20px;}
+  .ai-source-note{margin-top:10px;}
   .share-ask-sub{font-size:15px;line-height:1.5;color:#4F4744;margin:6px 0 14px;}
   .share-ask{display:flex;flex-direction:column;gap:10px;}
   .share-ask-opt{display:flex;flex-direction:column;gap:3px;text-align:left;padding:14px 16px;border-radius:14px;border:1.5px solid #DDD3C5;background:#fff;cursor:pointer;font-family:'Figtree',sans-serif;color:#151210;min-height:56px;}
@@ -3904,7 +3905,6 @@ ${tiktok.text}`}]);
                 </li>
               ))}
             </ol>
-            {!recipe._scanned&&!recipe._imported&&!recipe._author&&<p className="ai-note">Written with AI. Check for allergens, and cook meat, poultry, fish and eggs to safe temperatures.</p>}
           </div>
         </div>
 
@@ -3972,7 +3972,11 @@ ${tiktok.text}`}]);
               ))}
             </div>
             {recipe.source_note&&<div className="source-note">{recipe.source_note}</div>}
+            {!recipe._scanned&&!recipe._imported&&!recipe._author&&<div className="source-note ai-source-note">Written with AI. Check for allergens, and cook meat, poultry, fish and eggs to safe temperatures.</div>}
           </div>
+        )}
+        {sources.length===0&&!recipe._scanned&&!recipe._imported&&!recipe._author&&(
+          <div className="source-section"><div className="source-note ai-source-note">Written with AI. Check for allergens, and cook meat, poultry, fish and eggs to safe temperatures.</div></div>
         )}
         </div>{/* recipe-body */}
       </div>
