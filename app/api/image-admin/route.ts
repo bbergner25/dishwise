@@ -3,7 +3,9 @@ import { auth } from "@clerk/nextjs/server";
 //   /api/image-admin?secret=WARM_SECRET                         → status + links
 //   /api/image-admin?secret=WARM_SECRET&action=test&dishes=Kung Pao Noodles|Cottage Pie|Fish Tacos
 //   /api/image-admin?secret=WARM_SECRET&action=count             → how many dishes still need photos + est. cost
-import { estimateTimes, TIME_KEY } from "../../../lib/times";
+import { estimateTimes, TIME_KEY, totalRange } from "../../../lib/times";
+import { buildPrompt } from "../../../lib/prompts";
+import { RECIPE_SYSTEM } from "../../../lib/guard";
 import { NextRequest, NextResponse } from "next/server";
 import {
   redis, ensurePhoto, normalizeDish, spentCents, imagesEnabled,
@@ -136,6 +138,64 @@ export async function GET(req: NextRequest) {
       <p class="muted">Runs in groups of ${BATCH_SIZE}. Each group takes up to a day (usually much less). Leave the status page open to speed it along; a daily check also keeps it going.</p>` : ""}
       <details><summary>Dishes that still need a photo</summary><pre>${esc(Array.from(need.keys()).join("\n"))}</pre></details>
       <p><a href="?secret=${secret}">← Back</a></p>`);
+  }
+
+  if (action === "taste") {
+    // Blind taste test: the same dishes written by both models, shown as A and B in random order.
+    const MODELS = [
+      { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6 (current)", inPer: 3, outPer: 15 },
+      { id: "claude-haiku-5-5", name: "Claude Haiku 5.5", inPer: 0.10, outPer: 0.50 },
+    ];
+    const dishes = (sp.get("dishes") || "Chicken Tikka Masala|Lasagna Soup|Shakshuka|Lemon Bars|Beef Pho|Senate Bean Soup")
+      .split("|").map((d) => d.trim()).filter(Boolean).slice(0, 6);
+    if (sp.get("run") !== "1") {
+      return page("Taste test", `<h1>Recipe taste test</h1>
+        <p class="muted">Writes each dish with both models and shows them side by side as A and B, in random order, so you judge the recipe and not the name. Each dish has a reveal at the bottom. Costs about ${(dishes.length * 2.5).toFixed(0)}¢ in total and takes up to a minute.</p>
+        <form method="get"><input type="hidden" name="secret" value="${esc(sp.get("secret") || "")}"><input type="hidden" name="action" value="taste"><input type="hidden" name="run" value="1">
+          <p><label>Dishes, separated by | (up to 6)<br><input name="dishes" value="${esc(dishes.join("|"))}" style="width:min(640px,100%);font-size:16px;padding:10px;border:1px solid #DDD3C5;border-radius:10px"></label></p>
+          <button style="font-size:16px;padding:12px 20px;border-radius:24px;border:none;background:#F4A021;font-weight:600">Run the taste test</button></form>
+        <p><a href="?secret=${secret}">← Back</a></p>`);
+    }
+    const key = process.env.ANTHROPIC_API_KEY!;
+    const write = async (dish: string, m: typeof MODELS[number]) => {
+      const t0 = Date.now();
+      try {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
+          body: JSON.stringify({ model: m.id, max_tokens: 2048, system: RECIPE_SYSTEM, messages: [{ role: "user", content: buildPrompt(dish, [], false, "") }] }),
+          signal: AbortSignal.timeout(50000),
+        });
+        const data = await res.json();
+        if (!res.ok) return { m, secs: (Date.now() - t0) / 1000, error: `${res.status}: ${JSON.stringify(data).slice(0, 300)}` };
+        const text = (data.content || []).map((c: any) => c.text || "").join("");
+        const cents = ((data.usage?.input_tokens || 0) * m.inPer + (data.usage?.output_tokens || 0) * m.outPer) / 1e6 * 100;
+        let r: any = null;
+        try { r = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1)); } catch {}
+        return { m, secs: (Date.now() - t0) / 1000, cents, r, error: r ? "" : "Didn't return a readable recipe" };
+      } catch (e: any) { return { m, secs: (Date.now() - t0) / 1000, error: String(e?.message || e) }; }
+    };
+    const results = await Promise.all(dishes.map(async (d) => ({ d, out: await Promise.all(MODELS.map((m) => write(d, m))) })));
+    const card = (label: string, o: any) => {
+      const r = o.r;
+      if (!r) return `<div class="card"><h3>${label}</h3><p style="color:#B8340F">${esc(o.error || "No recipe")}</p></div>`;
+      const ings = (r.ingredient_groups || []).map((g: any) => `${g.label ? `<p style="margin:10px 0 4px;font-weight:600">${esc(g.label)}</p>` : ""}<ul style="margin:0;padding-left:18px">${(g.items || []).map((i: any) => `<li>${esc(`${i.amount || ""} ${i.name || ""}`.trim())}</li>`).join("")}</ul>`).join("");
+      const steps = `<ol style="padding-left:20px">${(r.steps || []).map((x: string) => `<li style="margin-bottom:6px">${esc(x)}</li>`).join("")}</ol>`;
+      const checks = [Array.isArray(r.step_ingredients) && r.step_ingredients.length === (r.steps || []).length ? "step ingredients ✓" : "step ingredients missing", r.total_time ? "total time ✓" : "no total time"].join(" · ");
+      return `<div class="card"><h3 style="margin:4px 0">${label}: ${esc(r.title || "")}</h3><p class="muted">${esc(r.tagline || "")}</p>
+        <p><strong>${esc(totalRange(r) || "")}</strong> <span class="muted">· prep ${esc(r.prep_time || "?")} · cook ${esc(r.cook_time || "?")} · serves ${esc(r.servings || "?")}</span></p>
+        ${ings}<p style="margin:12px 0 4px;font-weight:600">Method</p>${steps}<p class="muted">${checks}</p></div>`;
+    };
+    const body = results.map(({ d, out }) => {
+      const flip = Math.random() < 0.5;
+      const [a, b] = flip ? [out[1], out[0]] : [out[0], out[1]];
+      return `<h2 style="margin-top:34px">${esc(d)}</h2><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">${card("A", a)}${card("B", b)}</div>
+        <details><summary style="font-size:15px;cursor:pointer">Reveal which is which</summary><p>A was <strong>${esc(a.m.name)}</strong> (${a.secs.toFixed(0)} sec, ${a.cents != null ? a.cents.toFixed(2) + "¢" : "n/a"}) · B was <strong>${esc(b.m.name)}</strong> (${b.secs.toFixed(0)} sec, ${b.cents != null ? b.cents.toFixed(2) + "¢" : "n/a"})</p></details>`;
+    }).join("");
+    const tot = (id: string) => results.reduce((n, x) => n + (x.out.find((o: any) => o.m.id === id)?.cents || 0), 0);
+    return page("Taste test", `<h1>Recipe taste test</h1><p class="muted">Read A and B for each dish as a cook would: does it make sense, would it taste good, is anything missing? Then open the reveal.</p>${body}
+      <h2 style="margin-top:34px">Cost of this run</h2><p>Sonnet: ${tot("claude-sonnet-4-6").toFixed(2)}¢ · Haiku: ${tot("claude-haiku-5-5").toFixed(2)}¢</p>
+      <p><a href="?secret=${secret}&action=taste">Try other dishes</a> · <a href="?secret=${secret}">← Back</a></p>`);
   }
 
   if (action === "reports" || action === "report-remove" || action === "report-dismiss") {
@@ -281,6 +341,7 @@ export async function GET(req: NextRequest) {
     <ul><li><a href="?secret=${secret}&action=test&dishes=${encodeURIComponent("Kung Pao Noodles|Cottage Pie|Fish Tacos")}">Make test photos: Kung Pao Noodles, Cottage Pie, Fish Tacos</a> (about 10¢, takes up to a minute)</li>
     <li><a href="?secret=${secret}&action=count">Count dishes that need photos + cost estimate</a></li>
     <li><a href="?secret=${secret}&action=times">Realistic cook times for older recipes</a></li>
+    <li><a href="?secret=${secret}&action=taste">Recipe taste test: Sonnet vs Haiku</a></li>
     <li><a href="?secret=${secret}&action=reports">Reported recipes${reportCount ? ` (${reportCount} waiting)` : ""}</a></li>
     <li><a href="?secret=${secret}&action=links">Shared links: point an old link at the current one</a></li></ul>`)).body, {
       headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", ...(running ? { Refresh: "60" } : {}) },

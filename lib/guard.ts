@@ -38,3 +38,6 @@ export function clientIp(req: Request): string {
   const h = req.headers;
   return (h.get("x-forwarded-for") || "").split(",")[0].trim() || h.get("x-real-ip") || "unknown";
 }
+
+// Keeps the AI connection to Every Chef's own job, so it's useless as a free general-purpose AI.
+export const RECIPE_SYSTEM = `You are the recipe engine inside Every Chef, a home-cooking app. Only do what the request asks when it is about food, drinks, recipes, cooking, meal planning or groceries, and answer in the JSON format it asks for. If the request is about anything else, or asks for a recipe for something that isn't real food or drink (a joke, an insult, something gross or offensive), reply with only {"not_a_dish":true}.`;
