@@ -23,7 +23,7 @@ function resolveBaseUrl(req: NextRequest): string {
 }
 
 // Step 1 — Ask Claude (with web search) what's trending in food right now
-async function fetchTrendingDishes(): Promise<string[]> {
+async function fetchTrendingDishes(avoid: string[] = []): Promise<string[]> {
   const now = new Date();
   const month = now.toLocaleString("en-US", { month: "long" });
   const year = now.getFullYear();
@@ -46,6 +46,9 @@ async function fetchTrendingDishes(): Promise<string[]> {
 Check food blogs, social media trends (TikTok food trends, Instagram food), and culinary publications like Bon Appétit, Food52, and NYT Cooking.
 Return ONLY a valid JSON array of exactly ${DISH_COUNT} dish names — no explanation, no markdown, just the JSON array.
 Choose dishes that are genuinely trending socially right now, not just classics.
+Name each one the way a cookbook would: the dish itself, with no brand, store, restaurant or creator names and no words like "viral", "TikTok" or "famous" (for example "Frozen Dumpling Bake", not "Trader Joe's Dumpling Bake" or "Viral Dumpling Bake").
+Each dish must be different from the others in the list.${avoid.length ? `
+These were already featured recently. Don't include any of them again, or the same dish under a different name: ${avoid.join("; ")}.` : ""}
 Example format: ["Birria Tacos","Smash Burgers","Cottage Cheese Ice Cream","Marry Me Chicken","Pistachio Latte Cake","Chamoy Pickles"]`,
       }],
     }),
@@ -120,7 +123,14 @@ export async function GET(req: NextRequest) {
 
   try {
     // 1. Get trending dishes from Claude + web search
-    const dishes = await fetchTrendingDishes();
+    // remember recent picks so the same dish doesn't come back under a new name
+    const history = ((await redis.get<string[]>("trending:history")) || []).slice(0, 40);
+    const prev = await redis.get<any>(TRENDING_KEY);
+    const avoid = Array.from(new Set([...(prev?.dishes || []), ...history]));
+    const raw = await fetchTrendingDishes(avoid);
+    const seen = new Set<string>();
+    const dishes = raw.filter((d) => { const k = normalize(d); if (!k || seen.has(k)) return false; seen.add(k); return true; });
+    await redis.set("trending:history", [...dishes, ...avoid].slice(0, 40));
 
     // Save the new list right away, so a timeout while pre-generating recipes below
     // can't leave last month's list in place (uncached dishes are generated on tap).
