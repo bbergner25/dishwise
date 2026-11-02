@@ -2018,7 +2018,7 @@ async function callAPI(messages: any[], model:string="claude-sonnet-4-6"): Promi
 }
 
 /* ── MAIN APP ── */
-export default function App(){
+export default function App({onReady}:{onReady?:()=>void}={}){
   const {user,isLoaded}          = useUser();
   const {signOut,openSignIn}     = useClerk();
   const [tab,setTab]             = useState("search");
@@ -2069,6 +2069,8 @@ export default function App(){
   const [qrStatus,setQrStatus]   = useState("idle"); // idle|starting|scanning|error
   const [qrErr,setQrErr]         = useState("");
   const [ready,setReady]         = useState(false);
+  // let the opening screen know it can fade away (after the first paint with saved data)
+  useEffect(()=>{if(ready)requestAnimationFrame(()=>onReady?.());},[ready]); // eslint-disable-line react-hooks/exhaustive-deps
   const [cloudSynced,setCloudSynced] = useState(false); // true only after the cloud copy has been read
   const [planCloud,setPlanCloud] = useState(false);       // plan: true once this device has read the account copy
   const planLastSent=useRef("");                          // last plan payload sent to / read from the account
@@ -4799,7 +4801,7 @@ ${tiktok.text}`}]);
 
   return(
     <>
-      <style>{CSS}</style>
+      <style dangerouslySetInnerHTML={{__html:CSS}}/>
       {/* Desktop top nav */}
       <nav className="nav">
         <div className="nav-left">
