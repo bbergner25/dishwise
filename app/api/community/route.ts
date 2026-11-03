@@ -33,13 +33,16 @@ export async function GET() {
       return NextResponse.json({ authenticated: false, recipes });
     }
 
-    const pattern = `recipe-cache:${CACHE_VERSION}:*`;
-    const keys = await redis.keys(pattern);
-    if (keys.length === 0) {
-      return NextResponse.json({ authenticated: true, recipes: [] });
+    // The Community list is the same for everyone, so build it at most every 5 minutes
+    // instead of scanning the whole database on every visit.
+    const LIST_KEY = "community-list:v1";
+    let recipes = await redis.get<any[]>(LIST_KEY);
+    if (!recipes) {
+      const keys = await redis.keys(`recipe-cache:${CACHE_VERSION}:*`);
+      const values = keys.length ? await redis.mget<any[]>(...keys) : [];
+      recipes = values.filter((r) => isCleanRecipe(r)).slice(0, 200);
+      await redis.set(LIST_KEY, recipes, { ex: 300 });
     }
-    const values = await redis.mget<any[]>(...keys);
-    const recipes = values.filter((r) => isCleanRecipe(r)).slice(0, 200);
     return NextResponse.json({ authenticated: true, recipes });
   } catch (err) {
     console.error("Community GET error:", err);

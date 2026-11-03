@@ -166,7 +166,7 @@ export async function GET(req: NextRequest) {
         const dishes = tr.dishes.map((d: string) => map.get(norm(d)) || d).filter((d: string) => !seen.has(norm(d)) && seen.add(norm(d)));
         await redis.set("trending:current", { ...tr, dishes });
       }
-      await redis.del("community-index:v2", PROPOSAL);
+      await redis.del("community-index:v2", "community-list:v1", PROPOSAL);
       return page("Brand cleanup", `<h1>Done</h1><p>Renamed ${done} recipes. Trending and the Community search now use the new names, and duplicates of the same dish show once.</p><p><a href="?secret=${secret}">← Back</a></p>`);
     }
     // Preview: ask the cheap model which titles need a new name
@@ -276,7 +276,7 @@ Reply with ONLY valid JSON: {"renames":[{"i":0,"title":"...","tagline":"... or e
     const rep = list.find((r: any) => r.id === id);
     if (rep && action === "report-remove") {
       const norm = (t: string) => t.toLowerCase().trim().replace(/\s+/g, " ");
-      if (rep.kind === "community") await redis.del(`recipe-cache:v1:${norm(rep.target)}`, "community-index:v2");
+      if (rep.kind === "community") await redis.del(`recipe-cache:v1:${norm(rep.target)}`, "community-index:v2", "community-list:v1");
       else await redis.del(`recipe-share:${rep.target}`, `recipe-share-token:${rep.target}`, `recipe-share-redirect:${rep.target}`);
       const same = list.filter((r: any) => r.kind === rep.kind && r.target === rep.target).map((r: any) => r.id);
       if (same.length) await redis.hdel("reports:v1", ...same);

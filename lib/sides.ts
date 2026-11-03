@@ -162,9 +162,3 @@ export function rankSides(recipe: any): SideDish[] {
     .map((s) => s.side);
 }
 
-// Returns up to `count` suggested sides for a given main recipe. Never calls
-// an API — pure lookup/scoring over SIDES. Convenience wrapper over rankSides
-// for callers that just want the top matches (e.g. a one-shot preview).
-export function suggestSides(recipe: any, count = 3): SideDish[] {
-  return rankSides(recipe).slice(0, count);
-}
