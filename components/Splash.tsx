@@ -8,15 +8,10 @@ const CSS = `
 .ecs-tile{animation-delay:.45s}.ecs-tile:nth-child(2){animation-delay:.57s}.ecs-tile:nth-child(3){animation-delay:.69s}.ecs-tile:nth-child(4){animation-delay:.81s}
 .ecs-tile img{width:100%;height:100%;object-fit:cover;display:block}
 .ecs-wm{width:244px;height:auto;opacity:0;animation:ecs-rise .5s .95s ease-out forwards}
-.ecs-lines{position:relative;height:20px;width:100%;opacity:0;animation:ecs-in .4s 1.9s forwards;font-family:'Figtree',system-ui,sans-serif;font-size:14px;color:#8F8A84;text-align:center}
-.ecs-lines span{position:absolute;left:0;right:0;opacity:0;animation:ecs-line 9s 1.9s infinite}
-.ecs-lines span:nth-child(2){animation-delay:4.9s}.ecs-lines span:nth-child(3){animation-delay:7.9s}
 @keyframes ecs-pop{from{opacity:0;transform:scale(.8) rotate(-4deg)}to{opacity:1;transform:none}}
 @keyframes ecs-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @keyframes ecs-in{to{opacity:1}}
-@keyframes ecs-line{0%{opacity:0;transform:translateY(6px)}6%,28%{opacity:1;transform:none}34%,100%{opacity:0;transform:translateY(-6px)}}
-@media (prefers-reduced-motion:reduce){#ec-splash{animation:ecs-in .01s .4s forwards}.ecs-tile,.ecs-wm{animation:none;opacity:1}.ecs-lines span{animation:none}.ecs-lines span:first-child{opacity:1}}
-`;
+@media (prefers-reduced-motion:reduce){#ec-splash{animation:ecs-in .01s .4s forwards}.ecs-tile,.ecs-wm{animation:none;opacity:1}`;
 
 export default function Splash({ leaving }: { leaving: boolean }) {
   return (
@@ -29,7 +24,6 @@ export default function Splash({ leaving }: { leaving: boolean }) {
         <div className="ecs-tile"><img src="/splash/e.webp" alt="" width={170} height={170} /></div>
       </div>
       <img className="ecs-wm" src="/splash/wordmark.webp" alt="Every Chef" width={244} height={70} />
-      <div className="ecs-lines" aria-hidden="true"><span>Preheating the oven…</span><span>Sharpening the knives…</span><span>Tasting for salt…</span></div>
     </div>
   );
 }
