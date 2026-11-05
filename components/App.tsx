@@ -617,6 +617,11 @@ const CSS = `
   .cook-ings ul{list-style:none;margin:0;padding:0;}
   .cook-ings li{display:grid;grid-template-columns:92px minmax(0,1fr);gap:8px;padding:8px 0;font-size:18px;border-bottom:1px solid #F1EBE2;}
   .cook-ings li:last-child{border-bottom:none;}
+  .cook-timers{display:flex;flex-direction:column;gap:10px;align-items:flex-start;}
+  .cook-timers.stacked{align-items:stretch;}
+  .cook-timers.stacked .cook-timer-start{align-self:stretch;height:auto;min-height:56px;padding:10px 18px;border-radius:18px;}
+  .cook-timer-text{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;min-width:0;}
+  .cook-timer-for{font-size:13px;font-weight:500;opacity:.75;line-height:1.3;}
   .cook-timer-start{align-self:flex-start;height:52px;padding:0 20px;border-radius:26px;border:1.5px solid #1A1F2E;background:#fff;color:#151210;font-family:'Figtree',sans-serif;font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;cursor:pointer;}
   .cook-timer{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#1A1F2E;color:#FDFAF5;border-radius:18px;padding:14px 14px 14px 22px;}
   .cook-timer.done{background:#E8431A;animation:rxPulse 1.2s ease-in-out infinite;}
@@ -1228,20 +1233,27 @@ function renderAmount(s: string){
   return <>{m[1]}<span style={{marginLeft:"0.34em"}}>{m[2]}</span>{m[3]}</>;
 }
 /* ── Cooking mode helpers ── */
-// Finds the first duration in a step ("simmer for 10 minutes", "bake 1 hour") and returns seconds.
-// Ignores the "/2" half of fractions like "1 1/2 hours" by skipping matches preceded by "/".
-function stepTimerSeconds(step: string): number|null{
-  const re=/(\d+(?:\.\d+)?)(?:\s*(?:-|–|to)\s*\d+(?:\.\d+)?)?\s*(hours?|hrs?|minutes?|mins?|seconds?|secs?)\b/gi;
+// Every timer in a step, each labeled from the words around it:
+// "Cook for 2 minutes, ... simmer for 8–10 minutes until thick" → two timers.
+function stepTimers(step: string): {secs:number;label:string}[]{
+  // whole numbers, decimals and fractions: "10", "1.5", "1 1/2", "1/2", plus ranges like "8–10"
+  const re=/(?:(\d+(?:\.\d+)?)(?:\s+(\d+)\/(\d+))?|(\d+)\/(\d+))(?:\s*(?:-|–|to)\s*\d+(?:\.\d+)?(?:\s+\d+\/\d+)?)?\s*(hours?|hrs?|minutes?|mins?|seconds?|secs?)\b/gi;
+  const out:{secs:number;label:string}[]=[];
   let m: RegExpExecArray|null;
   while((m=re.exec(step))){
-    if(m.index>0&&step[m.index-1]==="/")continue;
-    const n=parseFloat(m[1]);
-    const unit=m[2].toLowerCase();
-    const mult=unit.startsWith("h")?3600:unit.startsWith("m")?60:1;
-    const secs=Math.round(n*mult);
-    if(secs>=10&&secs<=12*3600)return secs;
+    const n=m[1]?parseFloat(m[1])+(m[2]?Number(m[2])/Number(m[3]):0):Number(m[4])/Number(m[5]);
+    const unit=m[6].toLowerCase();
+    const secs=Math.round(n*(unit.startsWith("h")?3600:unit.startsWith("m")?60:1));
+    if(secs<10||secs>12*3600)continue;
+    // the clause it sits in: back to the last comma/period/semicolon, forward to the next one
+    const startCut=Math.max(step.lastIndexOf(",",m.index),step.lastIndexOf(".",m.index-1),step.lastIndexOf(";",m.index))+1;
+    const endRel=step.slice(m.index+m[0].length).search(/[,.;]/);
+    let clause=step.slice(startCut,endRel<0?step.length:m.index+m[0].length+endRel).trim();
+    clause=clause.replace(/^(and|then|and then)\s+/i,"").replace(/\s+/g," ");
+    if(clause.length>60)clause=clause.slice(0,58).replace(/\s+\S*$/,"")+"…";
+    out.push({secs,label:clause.charAt(0).toUpperCase()+clause.slice(1)});
   }
-  return null;
+  return out;
 }
 function fmtClock(total: number): string{
   const h=Math.floor(total/3600),m=Math.floor((total%3600)/60),s=total%60;
@@ -1659,7 +1671,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
   const [shareMode,setShareMode] = useState<"link"|"original"|"ask"|"private">("link"); // imports share the original; scans ask first     // the recipe the share sheet is for (main dish or a side)
   const [cookRecipe,setCookRecipe]   = useState<any>(null);     // recipe open in cooking mode
   const [cookStep,setCookStep]       = useState(0);             // 0 = gather ingredients, 1..N = steps
-  const [cookTimers,setCookTimers]   = useState<Record<number,{end:number;dur:number;done?:boolean}>>({});
+  const [cookTimers,setCookTimers]   = useState<Record<string,{end:number;dur:number;done?:boolean}>>({}); // key "step.timer"
   const [,setCookTick]               = useState(0);             // forces a re-render each second while a timer runs
   const cookSwipeX = useRef<number|null>(null);
   const audioCtxRef = useRef<any>(null);
@@ -1775,10 +1787,10 @@ export default function App({onReady}:{onReady?:()=>void}={}){
     const id=setInterval(()=>{
       const now=Date.now();
       let finished=false;
-      const next:Record<number,{end:number;dur:number;done?:boolean}>={};
+      const next:Record<string,{end:number;dur:number;done?:boolean}>={};
       for(const [k,t] of Object.entries(cookTimers)){
-        if(!t.done&&now>=t.end){ next[Number(k)]={...t,done:true}; finished=true; }
-        else next[Number(k)]=t;
+        if(!t.done&&now>=t.end){ next[k]={...t,done:true}; finished=true; }
+        else next[k]=t;
       }
       if(finished){
         setCookTimers(next);
@@ -2368,7 +2380,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
       setPlanMade(p=>({...p,[returnDayKey]:true}));
     closeCookMode();
   };
-  const startCookTimer=(step:number,secs:number)=>{
+  const startCookTimer=(key:string,secs:number)=>{
     // Create/resume audio on this tap so the chime is allowed to play later (iOS needs a user gesture).
     try{
       if(!audioCtxRef.current){
@@ -2377,9 +2389,9 @@ export default function App({onReady}:{onReady?:()=>void}={}){
       }
       audioCtxRef.current?.resume?.();
     }catch{}
-    setCookTimers(t=>({...t,[step]:{end:Date.now()+secs*1000,dur:secs}}));
+    setCookTimers(t=>({...t,[key]:{end:Date.now()+secs*1000,dur:secs}}));
   };
-  const clearCookTimer=(step:number)=>setCookTimers(t=>{const n={...t};delete n[step];return n;});
+  const clearCookTimer=(key:string)=>setCookTimers(t=>{const n={...t};delete n[key];return n;});
 
   /* week plan — sides paired to a specific day's main dish */
   const addPlanSide=async(dayKey: string, sideTitle: string, recipeOverride?: any)=>{
@@ -4563,11 +4575,9 @@ ${tiktok.text}`}]);
         const last=steps.length;
         const stepText=idx>0?steps[idx-1]:"";
         const stepIngs=idx>0?(stepIngredientMap(r)[idx-1]||[]).map(n=>allIngs[n]).filter(Boolean):[];
-        const secs=idx>0?stepTimerSeconds(stepText):null;
-        const timer=cookTimers[idx];
+        const timers=idx>0?stepTimers(stepText):[];
         const now=Date.now();
-        const remaining=timer?Math.max(0,Math.ceil((timer.end-now)/1000)):0;
-        const otherTimers=Object.entries(cookTimers).filter(([k])=>Number(k)!==idx).map(([k,t])=>({step:Number(k),t,left:Math.max(0,Math.ceil((t.end-now)/1000))}));
+        const otherTimers=Object.entries(cookTimers).filter(([k])=>Number(k.split(".")[0])!==idx).map(([k,t])=>({key:k,step:Number(k.split(".")[0]),t,left:Math.max(0,Math.ceil((t.end-now)/1000))}));
         const go=(n:number)=>setCookStep(Math.max(0,Math.min(last,n)));
         return(
           <div className="cook-overlay" role="dialog" aria-modal="true" aria-label={`Cooking ${r.title}`}
@@ -4590,7 +4600,7 @@ ${tiktok.text}`}]);
             {otherTimers.length>0&&(
               <div className="cook-timer-strip">
                 {otherTimers.map(o=>(
-                  <button key={o.step} className={`cook-timer-pill${o.t.done?" done":""}`} onClick={()=>go(o.step)}>
+                  <button key={o.key} className={`cook-timer-pill${o.t.done?" done":""}`} onClick={()=>go(o.step)}>
                     {o.t.done?`Step ${o.step}: time's up`:`Step ${o.step} · ${fmtClock(o.left)}`}
                   </button>
                 ))}
@@ -4619,23 +4629,30 @@ ${tiktok.text}`}]);
                 <>
                   <div className="cook-eyebrow">Step {idx}</div>
                   <p className="cook-step-text">{stepText}</p>
-                  {secs!=null&&(
-                    !timer?(
-                      <button className="cook-timer-start" onClick={()=>startCookTimer(idx,secs)}>
-                        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
-                        Start {fmtDuration(secs)} timer
-                      </button>
-                    ):timer.done?(
-                      <div className="cook-timer done" role="status">
-                        <span className="cook-timer-time">Time's up</span>
-                        <button className="cook-timer-btn" onClick={()=>clearCookTimer(idx)}>Dismiss</button>
-                      </div>
-                    ):(
-                      <div className="cook-timer" role="timer" aria-live="off">
-                        <span className="cook-timer-time">{fmtClock(remaining)}</span>
-                        <button className="cook-timer-btn" onClick={()=>clearCookTimer(idx)}>Cancel</button>
-                      </div>
-                    )
+                  {timers.length>0&&(
+                    <div className={`cook-timers${timers.length>1?" stacked":""}`}>
+                      {timers.map((tm,ti)=>{
+                        const key=`${idx}.${ti}`,timer=cookTimers[key];
+                        const remaining=timer?Math.max(0,Math.ceil((timer.end-now)/1000)):0;
+                        const label=timers.length>1&&<span className="cook-timer-for">{tm.label}</span>;
+                        return !timer?(
+                          <button key={key} className="cook-timer-start" onClick={()=>startCookTimer(key,tm.secs)}>
+                            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>
+                            <span className="cook-timer-text"><span>Start {fmtDuration(tm.secs)} timer</span>{label}</span>
+                          </button>
+                        ):timer.done?(
+                          <div key={key} className="cook-timer done" role="status">
+                            <span className="cook-timer-text"><span className="cook-timer-time">Time's up</span>{label}</span>
+                            <button className="cook-timer-btn" onClick={()=>clearCookTimer(key)}>Dismiss</button>
+                          </div>
+                        ):(
+                          <div key={key} className="cook-timer" role="timer" aria-live="off">
+                            <span className="cook-timer-text"><span className="cook-timer-time">{fmtClock(remaining)}</span>{label}</span>
+                            <button className="cook-timer-btn" onClick={()=>clearCookTimer(key)}>Cancel</button>
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                   {stepIngs.length>0&&(
                     <div className="cook-ings">
