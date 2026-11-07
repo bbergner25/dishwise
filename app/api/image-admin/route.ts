@@ -257,6 +257,8 @@ Reply with ONLY valid JSON: {"renames":[{"i":0,"title":"...","tagline":"... or e
       <p>${DISH_TITLES.length - starterMissing.length} of ${DISH_TITLES.length} dishes from the starter list are in the Community.${starterMissing.length ? ` ${starterMissing.length} were never made.` : " It's complete."}</p>
       ${starterMissing.length ? `<details><summary class="muted">See the ${starterMissing.length} missing dishes</summary><p>${starterMissing.map(esc).join(" · ")}</p></details>
         <p><a href="?secret=${secret}&action=fill-starter">Queue the ${starterMissing.length} missing starter dishes</a> <span class="muted">(about $${(starterMissing.length * 0.025).toFixed(2)}; you approve on the next page). Many are desserts, sides and starters, which help the Community but not "Plan my week".</span></p>` : ""}
+      <h2>Grow the Community</h2>
+      <p>${c.total} recipes now. <a href="?secret=${secret}&action=fill-suggest&to=500">Suggest dishes to reach 500</a> <span class="muted">(fills the planner's gaps first, then a balanced mix of mains, soups, salads, brunch, appetizers and desserts; up to 250 per round; you approve before anything is made)</span></p>
       ${g.length ? `<h2>Filling the gaps</h2><p>About <strong>${missing}</strong> more dinners would fill every gap. Step one suggests dish names for each gap (about 1¢, nothing is made yet). You review the list, then approve making them.</p>
         <p><a href="?secret=${secret}&action=fill-suggest" style="display:inline-block;padding:12px 20px;border-radius:24px;background:#F4A021;color:#151210;font-weight:600;text-decoration:none">Suggest dishes for the gaps</a></p>` : `<p><strong>Every cell has enough dinners.</strong></p>`}
       <p><a href="?secret=${secret}">← Back</a></p>`);
@@ -269,41 +271,64 @@ Reply with ONLY valid JSON: {"renames":[{"i":0,"title":"...","tagline":"... or e
     const taken = new Set(existing.map(normTitle));
     const plan: { dish: string; diet: string; level: string }[] = [];
     let error = "";
-    const MAX_TOTAL = 150;
-    for (const gap of g) {
-      if (plan.length >= MAX_TOTAL) break;
-      const n = Math.min(gap.need, 30, MAX_TOTAL - plan.length);
-      // a dinner added for one gap often fills another (a quick vegetarian dinner also counts for everyone)
-      const already = plan.filter((p) => p.level === gap.level && (gap.diet === "All" || p.diet === gap.diet)).length;
-      const want = n - already;
-      if (want <= 0) continue;
+    const growTo = Math.min(1000, Math.max(0, parseInt(sp.get("to") || "0", 10) || 0));
+    const MAX_TOTAL = growTo ? 250 : 150;
+    // Ask for every group at once (in parallel) so the page answers in seconds, then drop repeats
+    const askNames = async (n: number, words: string): Promise<string[]> => {
       try {
         const res = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY!, "anthropic-version": "2023-06-01" },
-          body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 1500, messages: [{ role: "user", content:
-`List ${want + 6} different, well-known dinners a home cook would make on a ${gap.level === "long" ? "weekend" : "weeknight"}, each ${LEVEL_WORDS[gap.level]}${gap.diet === "All" ? "" : `, and ${gap.diet.toLowerCase()}`}. Main dishes only (no sides, salads served as a side, desserts, breakfast or snacks). Mix cuisines and main ingredients. Use plain cookbook names with no brand, restaurant or creator names and no words like "viral" or "best".
-Don't include any of these, which we already have: ${[...existing, ...plan.map((p) => p.dish)].slice(0, 600).join("; ")}
+          body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 3000, messages: [{ role: "user", content:
+`List ${n} different, well-known ${words}. Mix cuisines and main ingredients. Use plain cookbook names with no brand, restaurant or creator names and no words like "viral" or "best".
+Don't include any of these, which we already have: ${existing.slice(0, 700).join("; ")}
 Reply with ONLY valid JSON: {"dishes":["..."]}` }] }),
+          signal: AbortSignal.timeout(45000),
         });
         const data = await res.json();
-        if (!res.ok) { error = `${res.status}: ${JSON.stringify(data).slice(0, 300)}`; break; }
+        if (!res.ok) { error = `${res.status}: ${JSON.stringify(data).slice(0, 300)}`; return []; }
         const text = (data.content || []).map((c: any) => c.text || "").join("");
         const j = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1));
-        let added = 0;
-        for (const dish of (j.dishes || []).map((x: any) => String(x).trim().slice(0, 80))) {
-          if (added >= want || !dish || taken.has(normTitle(dish))) continue;
-          taken.add(normTitle(dish));
-          plan.push({ dish, diet: gap.diet, level: gap.level });
-          added++;
-        }
-      } catch (e: any) { error = String(e?.message || e); break; }
-    }
+        return (j.dishes || []).map((x: any) => String(x).trim().slice(0, 80)).filter(Boolean);
+      } catch (e: any) { error = String(e?.message || e); return []; }
+    };
+    const gapAsks = g.map((gap) => ({ gap, want: Math.min(gap.need, 30) }));
+    const MIX: [string, number, string][] = [
+      ["Mains", 0.4, "main-course dinners home cooks search for (chicken, beef, pork, seafood, vegetarian, pasta, one-pot meals)"],
+      ["Soups & Stews", 0.14, "soups, stews and chilis home cooks search for"],
+      ["Salads", 0.1, "main-course or hearty salads home cooks search for"],
+      ["Brunch", 0.1, "breakfast and brunch dishes home cooks search for"],
+      ["Appetizers & Snacks", 0.12, "appetizers, snacks and party foods home cooks search for"],
+      ["Desserts", 0.14, "desserts and baked treats home cooks search for"],
+    ];
+    const gapTotal = gapAsks.reduce((n, x) => n + x.want, 0);
+    const short = growTo ? Math.max(0, Math.min(growTo - pool.length, MAX_TOTAL) - gapTotal) : 0;
+    const mixAsks = MIX.map(([cat, share, words]) => ({ cat, words, want: Math.round(short * share) })).filter((x) => x.want > 0);
+    const [gapNames, mixNames] = await Promise.all([
+      Promise.all(gapAsks.map((x) => askNames(x.want + 8, `dinners a home cook would make on a ${x.gap.level === "long" ? "weekend" : "weeknight"}, each ${LEVEL_WORDS[x.gap.level]}${x.gap.diet === "All" ? "" : `, and ${x.gap.diet.toLowerCase()}`}. Main dishes only (no sides, side salads, desserts, breakfast or snacks)`))),
+      Promise.all(mixAsks.map((x) => askNames(Math.min(70, x.want + 10), x.words))),
+    ]);
+    gapAsks.forEach((x, i) => {
+      // a dinner added for one gap often fills another (a quick vegetarian dinner also counts for everyone)
+      const already = plan.filter((p) => p.level === x.gap.level && (x.gap.diet === "All" || p.diet === x.gap.diet)).length;
+      let got = 0;
+      for (const dish of gapNames[i]) {
+        if (got >= x.want - already || plan.length >= MAX_TOTAL || taken.has(normTitle(dish))) continue;
+        taken.add(normTitle(dish)); plan.push({ dish, diet: x.gap.diet, level: x.gap.level }); got++;
+      }
+    });
+    mixAsks.forEach((x, i) => {
+      let got = 0;
+      for (const dish of mixNames[i]) {
+        if (got >= x.want || plan.length >= MAX_TOTAL || taken.has(normTitle(dish))) continue;
+        taken.add(normTitle(dish)); plan.push({ dish, diet: x.cat, level: "" }); got++;
+      }
+    });
     await redis.set("community-fill:proposal", plan, { ex: 86400 });
     const cents = Math.ceil(plan.length * 2.5);
     const byGap: Record<string, string[]> = {};
-    for (const p of plan) (byGap[`${p.diet === "All" ? "Everyone" : p.diet} · ${LEVEL_NAME[p.level]}`] ||= []).push(p.dish);
-    return page("Fill the gaps", `<h1>Dishes to add</h1>
+    for (const p of plan) (byGap[p.level ? `Dinners · ${p.diet === "All" ? "Everyone" : p.diet} · ${LEVEL_NAME[p.level]}` : p.diet] ||= []).push(p.dish);
+    return page("Fill the gaps", `<h1>Dishes to add</h1>${growTo ? `<p>Growing the Community from ${pool.length} toward ${growTo} recipes: the planner's gaps first, then a balanced mix.${pool.length + plan.length < growTo ? ` This round adds ${plan.length}; run it again for the rest.` : ""}</p>` : ""}
       <p class="muted">Nothing has been made yet. Each one is written with the same recipe rules as the app (realistic times, no brand names) and joins the Community only if it passes the same checks. Photos come later through the normal photo backfill.</p>
       ${error ? `<pre style="color:#B8340F;white-space:pre-wrap">${esc(error)}</pre>` : ""}
       ${Object.entries(byGap).map(([k, v]) => `<h3 style="margin:18px 0 4px">${esc(k)} (${v.length})</h3><p>${v.map(esc).join(" · ")}</p>`).join("")}
@@ -367,7 +392,7 @@ Reply with ONLY valid JSON: {"dishes":["..."]}` }] }),
           const res = await fetch("https://api.anthropic.com/v1/messages", {
             method: "POST",
             headers: { "Content-Type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY!, "anthropic-version": "2023-06-01" },
-            body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 2048, system: RECIPE_SYSTEM, messages: [{ role: "user", content: buildPrompt(q.dish, q.diet === "All" ? [] : [q.diet], false, "") }] }),
+            body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 2048, system: RECIPE_SYSTEM, messages: [{ role: "user", content: buildPrompt(q.dish, q.level && q.diet !== "All" ? [q.diet] : [], false, "") }] }),
             signal: AbortSignal.timeout(52000 - (Date.now() - t0)),
           });
           const data = await res.json();
