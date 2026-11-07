@@ -1182,7 +1182,8 @@ const CSS = `
   .fl-pic{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:68px;height:68px;border-radius:14px;}
   /* ═══ Depth: frosted floating layers, lifted cards, glossy primary buttons ═══ */
   /* Text stays on solid surfaces; glass is only for things that float over content. */
-  .mobile-header{background:rgba(26,31,46,.95);-webkit-backdrop-filter:blur(20px) saturate(160%);backdrop-filter:blur(20px) saturate(160%);border-bottom:1px solid rgba(255,255,255,.08);box-shadow:0 -100vh 0 100vh #1A1F2E,0 6px 20px rgba(21,18,16,.12);}
+  /* solid on purpose: iOS tints the status bar from a solid top bar, and falls back to cream if it's see-through */
+  .mobile-header{background:#1A1F2E;border-bottom:1px solid rgba(255,255,255,.08);box-shadow:0 -100vh 0 100vh #1A1F2E,0 6px 20px rgba(21,18,16,.12);}
   @media(max-width:767px){
     body{padding-bottom:calc(104px + env(safe-area-inset-bottom,0px));}
     .bottom-nav{left:14px;right:14px;bottom:calc(max(env(safe-area-inset-bottom,0px) - 10px,10px) + 4px);height:64px;padding:6px;gap:4px;align-items:stretch;border-radius:32px;border:1px solid rgba(255,255,255,.7);
