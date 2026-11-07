@@ -5,7 +5,7 @@ import { auth } from "@clerk/nextjs/server";
 //   /api/image-admin?secret=WARM_SECRET&action=count             → how many dishes still need photos + est. cost
 import { estimateTimes, TIME_KEY, totalRange, getTimeFixes } from "../../../lib/times";
 import { coverage, gaps, COVER_DIETS, COVER_LEVELS, targetFor } from "../../../lib/coverage";
-import { levelOf } from "../../../lib/quickplan";
+import { levelOf, isDinner, maxMinutes, minMinutes } from "../../../lib/quickplan";
 import { DISH_TITLES } from "../../../lib/dishes";
 import { buildPrompt } from "../../../lib/prompts";
 import { RECIPE_SYSTEM, isCleanRecipe } from "../../../lib/guard";
@@ -231,7 +231,8 @@ Reply with ONLY valid JSON: {"renames":[{"i":0,"title":"...","tagline":"... or e
   }
 
   if (action === "coverage") {
-    const c = coverage(await communityPool());
+    const pool = await communityPool();
+    const c = coverage(pool);
     const g = gaps(c);
     // the original starter list of dishes, warmed in batches a while back
     const starterKeys = DISH_TITLES.map((t) => `recipe-cache:v1:${t.toLowerCase().trim().replace(/\s+/g, " ")}`);
@@ -253,6 +254,18 @@ Reply with ONLY valid JSON: {"renames":[{"i":0,"title":"...","tagline":"... or e
       <table style="border-spacing:6px;border-collapse:separate"><tr><td></td>${COVER_LEVELS.map((l) => `<td style="text-align:center"><strong>${l.name}</strong><br><span class="muted">${l.range}</span></td>`).join("")}</tr>
       ${COVER_DIETS.map((d) => `<tr><td><strong>${d === "All" ? "Everyone" : d}</strong></td>${COVER_LEVELS.map((l) => cell(d, l.id)).join("")}</tr>`).join("")}</table>
       <p class="muted">Diets are judged from ingredients, so vegetarian and dairy-free are reliable and gluten-free and low-carb are best-effort.</p>
+      ${(() => {
+        // How long the dinners take, to check where the Quick / Normal / Take my time lines should sit
+        const dinners = pool.filter(isDinner);
+        const B = [20, 30, 40, 45, 60, 75, 90, 120, 180, Infinity];
+        const label = (i: number) => i === 0 ? "≤ 20" : B[i] === Infinity ? `over ${B[i - 1]}` : `${B[i - 1] + 1}–${B[i]}`;
+        const count = (f: (r: any) => number) => B.map((_, i) => dinners.filter((r) => { const m = f(r); return m && m <= B[i] && (i === 0 || m > B[i - 1]); }).length);
+        const lo = count(minMinutes), hi = count(maxMinutes);
+        return `<h2>How long the dinners take</h2><p class="muted">Minutes, start to finish, using the realistic home-cook times. "Shortest" is the low end of each recipe's range ("45–55 min" counts as 45), "longest" the high end.</p>
+          <table style="border-spacing:4px;border-collapse:separate"><tr><td></td>${B.map((_, i) => `<td style="text-align:center"><strong>${label(i)}</strong></td>`).join("")}</tr>
+          <tr><td>Shortest</td>${lo.map((n) => `<td style="text-align:center">${n}</td>`).join("")}</tr>
+          <tr><td>Longest</td>${hi.map((n) => `<td style="text-align:center">${n}</td>`).join("")}</tr></table>`;
+      })()}
       <h2>The original starter list</h2>
       <p>${DISH_TITLES.length - starterMissing.length} of ${DISH_TITLES.length} dishes from the starter list are in the Community.${starterMissing.length ? ` ${starterMissing.length} were never made.` : " It's complete."}</p>
       ${starterMissing.length ? `<details><summary class="muted">See the ${starterMissing.length} missing dishes</summary><p>${starterMissing.map(esc).join(" · ")}</p></details>

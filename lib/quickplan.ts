@@ -11,6 +11,11 @@ export function maxMinutes(r: any): number {
   const range = totalRange(r);
   return toMinutes(range.split("–").pop()) || toMinutes(range) || 0;
 }
+// Shortest realistic time, in minutes ("45–55 min" → 45)
+export function minMinutes(r: any): number {
+  const range = totalRange(r);
+  return toMinutes(range.split("–")[0]) || toMinutes(range) || 0;
+}
 export function levelOf(r: any): Level | null {
   const m = maxMinutes(r);
   if (!m) return null;
