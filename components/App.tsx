@@ -5,7 +5,7 @@ import { useUser, useClerk } from "@clerk/nextjs";
 import { CARD_POOL } from "../lib/dishes";
 import { buildPrompt } from "../lib/prompts";
 import { isRude } from "../lib/guard";
-import { TIME_RULE, totalRange, totalShort } from "../lib/times";
+import { TIME_RULE, totalRange, totalShort, toMinutes, fmtMinutes } from "../lib/times";
 import { STAPLES_NOTE, ingredientUses } from "../lib/pantry";
 import { mergeDocs } from "../lib/planMerge";
 import { sharedProduce, levelOf } from "../lib/quickplan";
@@ -4114,7 +4114,7 @@ ${tiktok.text}`}]);
               </div>
             </div>
           </div>
-          {(()=>{const w=withTimes(recipe);const parts=[w?.prep_time&&w.prep_time!=="—"&&`Prep ${w.prep_time}`,w?.cook_time&&w.cook_time!=="—"&&`Cook ${w.cook_time}`].filter(Boolean);return parts.length?<p className="rx-meta-sub">{parts.join(" · ")}</p>:null;})()}
+          {(()=>{const w=withTimes(recipe);const nice=(t:string)=>{const m=toMinutes(t);return m?fmtMinutes(m):t;};const parts=[w?.prep_time&&w.prep_time!=="—"&&`Prep ${nice(w.prep_time)}`,w?.cook_time&&w.cook_time!=="—"&&`Cook ${nice(w.cook_time)}`].filter(Boolean);return parts.length?<p className="rx-meta-sub">{parts.join(" · ")}</p>:null;})()}
           {(()=>{
             const n=nutri[nutriKey(recipe)];
             if(!n||n==="error")return null;
@@ -4303,7 +4303,7 @@ ${tiktok.text}`}]);
             <div className="rx-meta-div"/>
             <div className="rx-meta-item"><span className="rx-meta-label">Serves</span><span className="rx-meta-value">{r.servings}</span></div>
           </div>
-          {(()=>{const w=withTimes(r);const parts=[w?.prep_time&&w.prep_time!=="—"&&`Prep ${w.prep_time}`,w?.cook_time&&w.cook_time!=="—"&&`Cook ${w.cook_time}`].filter(Boolean);return parts.length?<p className="rx-meta-sub">{parts.join(" · ")}</p>:null;})()}
+          {(()=>{const w=withTimes(r);const nice=(t:string)=>{const m=toMinutes(t);return m?fmtMinutes(m):t;};const parts=[w?.prep_time&&w.prep_time!=="—"&&`Prep ${nice(w.prep_time)}`,w?.cook_time&&w.cook_time!=="—"&&`Cook ${nice(w.cook_time)}`].filter(Boolean);return parts.length?<p className="rx-meta-sub">{parts.join(" · ")}</p>:null;})()}
         </header>
         <div className="recipe-body">
           <div className="two-col">
