@@ -18,10 +18,17 @@ async function ask(model: string, prompt: string): Promise<Record<string, number
     body: JSON.stringify({ model, max_tokens: 400, messages: [{ role: "user", content: prompt }] }),
     signal: AbortSignal.timeout(25000),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(`Anthropic ${res.status}: ${JSON.stringify(data).slice(0, 200)}`);
-  const text = (data.content || []).map((c: any) => c.text || "").join("");
-  const j = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1));
+  const raw = await res.text();
+  if (!res.ok) throw new Error(`Anthropic ${res.status}: ${raw.slice(0, 200)}`);
+  let data: any = {};
+  try { data = JSON.parse(raw); } catch { throw new Error(`Unreadable reply (${raw.length} bytes): ${raw.slice(0, 150)}`); }
+  const text = (data.content || []).filter((c: any) => c.type === "text").map((c: any) => c.text || "").join("");
+  // the numbers, whether they come back as JSON or as "calories: 650" lines
+  let j: any = {};
+  const a = text.indexOf("{"), b = text.lastIndexOf("}");
+  if (a >= 0 && b > a) { try { j = JSON.parse(text.slice(a, b + 1)); } catch { j = {}; } }
+  for (const f of FIELDS) if (j[f] == null) { const m = new RegExp(`"?${f}"?\\s*[:=]\\s*"?([\\d.,]+)`, "i").exec(text); if (m) j[f] = m[1]; }
+  if (FIELDS.some((f) => j[f] == null)) throw new Error(`No numbers in reply (stop: ${data.stop_reason}, ${text.length} chars): ${text.slice(0, 150)}`);
   const out: Record<string, number> = {};
   // tolerate "45g", "1,380 mg" or 12.5
   for (const f of FIELDS) out[f] = Math.round(parseFloat(String(j[f] ?? "").replace(/,/g, "")));
