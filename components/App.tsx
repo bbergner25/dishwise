@@ -441,6 +441,22 @@ const CSS = `
   .qp-pick-text strong{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .qp-pick-text span{font-size:13px;color:#6E635F;}
   .qp-shuffle{width:42px;height:42px;flex-shrink:0;border-radius:21px;border:1px solid #E3DCD0;background:#fff;color:#1A1F2E;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .qp-undo{color:#4F4744;}
+  .qp-see-pic{flex-shrink:0;padding:0;border:none;background:none;border-radius:9px;cursor:pointer;display:flex;}
+  .qp-see{display:block;padding:0;border:none;background:none;text-align:left;font-family:'Figtree',sans-serif;font-size:15px;font-weight:700;color:#151210;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;cursor:pointer;}
+  .qp-when{align-self:flex-start;display:inline-flex;align-items:center;gap:4px;margin-top:3px;padding:2px 8px;border:none;border-radius:10px;background:#F5EFE4;font-family:'Figtree',sans-serif;font-size:12.5px;color:#4F4744;cursor:pointer;max-width:100%;}
+  .qp-see:focus-visible,.qp-see-pic:focus-visible,.qp-when:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
+  .qp-view{display:flex;flex-direction:column;}
+  .qp-view-back{align-self:flex-start;margin:0 0 10px;}
+  .qp-view-pic{width:100%!important;height:200px!important;border-radius:16px;object-fit:cover;}
+  .qp-view-tag{margin:4px 0 0;font-size:15px;line-height:1.45;color:#4F4744;}
+  .qp-view-meta{margin:6px 0 0;font-size:14px;color:#6E635F;}
+  .qp-view-h{margin:18px 0 6px;font-family:'Fraunces',serif;font-size:19px;}
+  .qp-view-group{margin:8px 0 2px;font-size:13px;font-weight:700;color:#6E635F;}
+  .qp-view-ings{margin:0;padding-left:18px;font-size:15px;line-height:1.6;}
+  .qp-view-steps{margin:0;padding-left:20px;font-size:15px;line-height:1.5;display:flex;flex-direction:column;gap:8px;}
+  .qp-view-actions{display:flex;gap:8px;margin-top:20px;}
+  .qp-view-actions>button{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;}
   .qp-shuffle:disabled{opacity:.4;cursor:progress;}
   .qp-skipped{flex:1;min-height:42px;display:flex;align-items:center;flex-wrap:wrap;gap:4px;padding:8px 14px;border-radius:14px;background:#F5EFE4;color:#6E635F;font-size:14px;line-height:1.4;}
   .qp-note{margin:10px 0 12px;font-size:14px;line-height:1.45;color:#4F4744;}
@@ -1837,7 +1853,8 @@ export default function App({onReady}:{onReady?:()=>void}={}){
   const [planSides,setPlanSides] = useState<Record<string,{title:string;status:string;recipe:any}[]>>({}); // sides paired to each day's main dish
   const [planMade,setPlanMade]   = useState<Record<string,boolean>>({}); // dates whose planned meal was made
   const [showEarlier,setShowEarlier] = useState(false);  // Plan: earlier days expanded
-  const [qp,setQp] = useState<{stage:"days"|"loading"|"week";days:{key:string;level:QPLevel}[];picks:Record<string,{recipe:any;minutes:number}|null>;matches:Record<string,number>;seen:Record<string,string[]>;shared:string[];replace:Record<string,boolean>;week2:boolean;err?:string;busy?:string;open?:string}|null>(null);
+  const qpScroll=useRef(0); // where "Your week" was scrolled to before opening a recipe
+  const [qp,setQp] = useState<{stage:"days"|"loading"|"week";days:{key:string;level:QPLevel}[];picks:Record<string,{recipe:any;minutes:number}|null>;matches:Record<string,number>;seen:Record<string,string[]>;shared:string[];replace:Record<string,boolean>;week2:boolean;err?:string;busy?:string;open?:string;view?:string;prev?:Record<string,{pick:{recipe:any;minutes:number}|null;level:QPLevel;replaced:boolean}[]>}|null>(null);
   const [qpQuery,setQpQuery] = useState("");
   const [qpHits,setQpHits] = useState<{title:string;total?:string;key?:string;recipe?:any;from:"mine"|"community"}[]>([]);
   const [planAhead,setPlanAhead] = useState(14);         // Plan: how many days ahead are shown
@@ -4545,21 +4562,28 @@ ${tiktok.text}`}]);
       if(!p){setQp(q=>q&&{...q,busy:undefined});return;}
       const lv=day.level;
       const recipes=[...Object.entries(qp.picks).filter(([k,x])=>k!==key&&x).map(([,x])=>x!.recipe),p.recipe,...qp14.filter(k=>plan[k]&&!rep2[k]).map(k=>plan[k])];
-      setQp(q=>q&&{...q,busy:undefined,replace:rep2,days:q.days.map(x=>x.key===key?{...x,level:lv}:x),picks:{...q.picks,[key]:p},seen:{...q.seen,[key]:[...(q.seen[key]||[]),p.recipe.title]},shared:sharedProduce(recipes).slice(0,4)});
+      setQp(q=>q&&{...q,busy:undefined,prev:qpSnap(q,key),replace:rep2,days:q.days.map(x=>x.key===key?{...x,level:lv}:x),picks:{...q.picks,[key]:p},seen:{...q.seen,[key]:[...(q.seen[key]||[]),p.recipe.title]},shared:sharedProduce(recipes).slice(0,4)});
     }catch{setQp(q=>q&&{...q,busy:undefined});}
   };
+  // remember what a night had before a change, so it can be put back
+  const qpSnap=(q:NonNullable<typeof qp>,key:string)=>({...(q.prev||{}),[key]:[...((q.prev||{})[key]||[]).slice(-9),{pick:q.picks[key]??null,level:(q.days.find(x=>x.key===key)?.level||"normal") as QPLevel,replaced:!!q.replace[key]}]});
+  const qpUndo=(key:string)=>setQp(q=>{
+    if(!q)return q;
+    const stack=(q.prev||{})[key]||[];const last=stack[stack.length-1];if(!last)return q;
+    return {...q,open:undefined,picks:{...q.picks,[key]:last.pick},days:q.days.map(x=>x.key===key?{...x,level:last.level}:x),replace:{...q.replace,[key]:last.replaced},prev:{...q.prev,[key]:stack.slice(0,-1)}};
+  });
   // tap a night in "Your week": change its time, skip it, or put a specific dish there
   const qpToggleRow=(key:string)=>{setQpQuery("");setQpHits([]);setQp(q=>q&&{...q,open:q.open===key?undefined:key});};
   const qpSetLevel=async(key:string,level:QPLevel)=>{
     if(!qp)return;
     const planned=!!plan[key];
     if(level==="skip"){
-      setQp(q=>q&&{...q,open:undefined,days:q.days.map(x=>x.key===key?{...x,level}:x),picks:{...q.picks,[key]:null},replace:planned?{...q.replace,[key]:true}:q.replace});
+      setQp(q=>q&&{...q,open:undefined,prev:qpSnap(q,key),days:q.days.map(x=>x.key===key?{...x,level}:x),picks:{...q.picks,[key]:null},replace:planned?{...q.replace,[key]:true}:q.replace});
       return;
     }
     const day={key,level};
     const rep2=planned?{...qp.replace,[key]:true}:qp.replace;
-    setQp(q=>q&&{...q,busy:key,open:undefined,days:q.days.map(x=>x.key===key?{...x,level}:x),replace:rep2});
+    setQp(q=>q&&{...q,busy:key,open:undefined,prev:qpSnap(q,key),days:q.days.map(x=>x.key===key?{...x,level}:x),replace:rep2});
     try{
       const others=Object.entries(qp.picks).filter(([k,p])=>k!==key&&p).map(([,p])=>p!.recipe.title);
       const d=await qpFetch([day],[...qpRecent(),...others],rep2);
@@ -4575,7 +4599,7 @@ ${tiktok.text}`}]);
     }
     const planned=!!plan[key];
     setQpQuery("");setQpHits([]);
-    setQp(q=>q&&{...q,open:undefined,picks:{...q.picks,[key]:{recipe:r,minutes:0}},days:q.days.map(x=>x.key===key&&x.level==="skip"?{...x,level:"normal"}:x),replace:planned?{...q.replace,[key]:true}:q.replace});
+    setQp(q=>q&&{...q,open:undefined,prev:qpSnap(q,key),picks:{...q.picks,[key]:{recipe:r,minutes:0}},days:q.days.map(x=>x.key===key&&x.level==="skip"?{...x,level:"normal"}:x),replace:planned?{...q.replace,[key]:true}:q.replace});
   };
   // search your recipes and the Community while typing
   useEffect(()=>{
@@ -5212,12 +5236,41 @@ ${tiktok.text}`}]);
         const week2Btn=<button className="qp-week2" onClick={()=>setQp(q=>q&&{...q,week2:!q.week2})}>{qp.week2?"Just this week":"+ Plan next week too"}</button>;
         const nReplace=Object.keys(qp.replace).filter(k=>qp.replace[k]&&plan[k]&&activeKeys.has(k)&&qp.picks[k]).length;
         const nOff=active.filter(d=>d.level==="skip"&&plan[d.key]&&qp.replace[d.key]).length;
+        // a read-only look at one night's dinner, without leaving the sheet
+        const viewKey=qp.view;
+        const viewR:any=viewKey?(plan[viewKey]&&!qp.replace[viewKey]?plan[viewKey]:qp.picks[viewKey]?.recipe):null;
+        const backToWeek=()=>{setQp(q=>q&&{...q,view:undefined});requestAnimationFrame(()=>document.querySelector(".qp-sheet")?.scrollTo({top:qpScroll.current}));};
+        const recipeView=viewR?(
+          <div className="qp-view">
+            <button className="rx-back qp-view-back" onClick={backToWeek}>
+              <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+              Your week
+            </button>
+            {photosOn&&<DishPic title={viewR.title} src={photoFor(viewR)} className="qp-view-pic"/>}
+            <h2 id="qp-title" className="share-sheet-title" style={{marginTop:12}}>{viewR.title}</h2>
+            {viewR.tagline&&<p className="qp-view-tag">{viewR.tagline}</p>}
+            <p className="qp-view-meta">{[tt(viewR),viewR.servings?`Serves ${viewR.servings}`:""].filter(Boolean).join(" · ")}</p>
+            <h3 className="qp-view-h">Ingredients</h3>
+            {(viewR.ingredient_groups||[]).map((g:any,gi:number)=>(
+              <div key={gi}>
+                {g.label&&<p className="qp-view-group">{g.label}</p>}
+                <ul className="qp-view-ings">{(g.items||[]).map((it:any,ii:number)=><li key={ii}>{[it.amount,it.name].filter(Boolean).join(" ")}</li>)}</ul>
+              </div>
+            ))}
+            <h3 className="qp-view-h">Steps</h3>
+            <ol className="qp-view-steps">{(viewR.steps||[]).map((st:any,si:number)=><li key={si}>{typeof st==="string"?st:st?.text||""}</li>)}</ol>
+            <div className="qp-view-actions">
+              <button className="ui-btn-secondary" onClick={()=>{const k=viewKey!;backToWeek();qpShuffle(k);}}>{Ic.shuffle(16)} Different pick</button>
+              <button className="ui-btn-primary" onClick={backToWeek}>Keep this one</button>
+            </div>
+          </div>
+        ):null;
         return(
           <div className="share-overlay" onClick={close}>
             <div className="share-sheet qp-sheet" role="dialog" aria-modal="true" aria-labelledby="qp-title" onClick={e=>e.stopPropagation()}>
               <div className="ui-handle" aria-hidden="true"/>
               <button className="ui-close" aria-label="Close" onClick={close}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
-              {qp.stage!=="week"?(
+              {qp.stage==="week"&&recipeView?recipeView:qp.stage!=="week"?(
                 <>
                   <h2 id="qp-title" className="share-sheet-title">Your week</h2>
                   {qp.err?(
@@ -5239,7 +5292,7 @@ ${tiktok.text}`}]);
               ):(
                 <>
                   <h2 id="qp-title" className="share-sheet-title">{qp.week2?"Your next two weeks":"Your week"}</h2>
-                  <p className="qp-sub">Tap a night to change it. Tap <span aria-hidden="true">{Ic.shuffle(14)}</span><span className="sr-only">shuffle</span> for a different pick.</p>
+                  <p className="qp-sub">Tap a dinner to see the recipe, or its time to change the night. Tap <span aria-hidden="true">{Ic.shuffle(14)}</span><span className="sr-only">shuffle</span> for a different pick.</p>
                   <ul className="qp-days">
                     {shown.flatMap((d,i)=>{
                       const p=qp.picks[d.key];
@@ -5247,6 +5300,18 @@ ${tiktok.text}`}]);
                       const isOpen=qp.open===d.key;
                       const tapHint={role:"button" as const,tabIndex:0,"aria-expanded":isOpen,onClick:()=>qpToggleRow(d.key),onKeyDown:(e:any)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();qpToggleRow(d.key);}}};
                       const curLevel:QPLevel=kept?"normal":d.level;
+                      const prevs=(qp.prev||{})[d.key]||[];
+                      const undoBtn=prevs.length>0&&qp.busy!==d.key?(
+                        <button className="qp-shuffle qp-undo" aria-label={`Go back to ${prevs[prevs.length-1].pick?.recipe?.title||"the last choice"}`} onClick={()=>qpUndo(d.key)}>
+                          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+                        </button>
+                      ):null;
+                      const see=(title:string)=>({onClick:()=>{const el=document.querySelector(".qp-sheet");qpScroll.current=el?.scrollTop||0;setQp(q=>q&&{...q,view:d.key,open:undefined});requestAnimationFrame(()=>el?.scrollTo({top:0}));},"aria-label":`See the recipe for ${title}`});
+                      const when=(label:string)=>(
+                        <button className="qp-when" aria-expanded={isOpen} onClick={()=>qpToggleRow(d.key)}>
+                          {label}<svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d={isOpen?"m6 15 6-6 6 6":"m6 9 6 6 6-6"}/></svg>
+                        </button>
+                      );
                       return [divider(d.key,i),(
                         <li key={d.key} className={`qp-day${isOpen?" open":""}`}>
                           <div className="qp-row">
@@ -5255,10 +5320,9 @@ ${tiktok.text}`}]);
                               <span className="qp-skipped">Finding a dinner…</span>
                             ):kept?(
                               <span className="qp-pick">
-                                <span className="qp-tap" {...tapHint} aria-label={`${kept.title}, already planned. Change`}>
-                                  {photosOn&&<DishPic title={kept.title} src={photoFor(kept)} className="qp-pic"/>}
-                                  <span className="qp-pick-text"><strong>{kept.title}</strong><span>Already planned</span></span>
-                                </span>
+                                {photosOn&&<button className="qp-see-pic" {...see(kept.title)}><DishPic title={kept.title} src={photoFor(kept)} className="qp-pic"/></button>}
+                                <span className="qp-pick-text"><button className="qp-see" {...see(kept.title)}>{kept.title}</button>{when("Already planned")}</span>
+                                {undoBtn}
                                 <button className="qp-shuffle" aria-label={`Swap ${kept.title} for another dinner`} onClick={()=>qpShuffle(d.key)}>{Ic.shuffle(18)}</button>
                               </span>
                             ):d.level==="skip"||!p?(
@@ -5266,12 +5330,13 @@ ${tiktok.text}`}]);
                                 {d.level==="skip"?(plan[d.key]?`Skipped · removes ${plan[d.key].title}`:"Skipped"):`No ${QP_LABEL[d.level].toLowerCase()} dinners left${diets.length?" with your filters":""}`}
                                 <span className="qp-change">Change</span>
                               </span>
-                            ):(
+                            ):null}
+                            {qp.busy!==d.key&&!kept&&(d.level==="skip"||!p)?undoBtn:null}
+                            {qp.busy===d.key||kept||d.level==="skip"||!p?null:(
                               <span className={`qp-pick${plan[d.key]?" qp-switched":""}`}>
-                                <span className="qp-tap" {...tapHint} aria-label={`${p.recipe.title}. Change`}>
-                                  {photosOn&&<DishPic title={p.recipe.title} src={photoFor(p.recipe)} className="qp-pic"/>}
-                                  <span className="qp-pick-text"><strong>{p.recipe.title}</strong><span>{plan[d.key]?`Replaces ${plan[d.key].title}`:p.minutes?`${QP_LABEL[d.level]} · ${totalShort(p.recipe)}`:(totalShort(p.recipe)||"Your pick")}</span></span>
-                                </span>
+                                {photosOn&&<button className="qp-see-pic" {...see(p.recipe.title)}><DishPic title={p.recipe.title} src={photoFor(p.recipe)} className="qp-pic"/></button>}
+                                <span className="qp-pick-text"><button className="qp-see" {...see(p.recipe.title)}>{p.recipe.title}</button>{when(plan[d.key]?`Replaces ${plan[d.key].title}`:p.minutes?`${QP_LABEL[d.level]} · ${totalShort(p.recipe)}`:(totalShort(p.recipe)||"Your pick"))}</span>
+                                {undoBtn}
                                 <button className="qp-shuffle" aria-label={`Swap ${p.recipe.title} for another dinner`} onClick={()=>qpShuffle(d.key)}>{Ic.shuffle(18)}</button>
                               </span>
                             )}
