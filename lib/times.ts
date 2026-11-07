@@ -85,12 +85,14 @@ Reply with ONLY valid JSON: {"prep_time":"X mins","cook_time":"X mins","total_ti
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
-    body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 200, messages: [{ role: "user", content: prompt }] }),
+    body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 2000, messages: [{ role: "user", content: prompt }] }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(`Anthropic ${res.status}: ${JSON.stringify(data).slice(0, 300)}`);
   const text = (data.content || []).map((c: any) => c.text || "").join("");
-  const j = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1));
+  // the last {...} with the times in it (the model may work it out first)
+  const blocks = text.match(/\{[^{}]*"total_time"[^{}]*\}/g) || [];
+  const j = JSON.parse(blocks[blocks.length - 1] || "{}");
   if (!j.prep_time || !j.cook_time || !j.total_time) throw new Error("Missing fields: " + text.slice(0, 200));
   return { prep_time: String(j.prep_time), cook_time: String(j.cook_time), total_time: String(j.total_time).replace(/\s*-\s*/, "–") };
 }
