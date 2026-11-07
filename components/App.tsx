@@ -2396,10 +2396,14 @@ export default function App({onReady}:{onReady?:()=>void}={}){
       ...saved.map((r:any)=>r.title),...Object.values(plan).map((r:any)=>r?.title),
       ...[recipe,...saved,...Object.values(plan)].filter((r:any)=>r?._ownPhoto).map((r:any)=>photoName(r)),
       ...(tab==="community"?communityRecipes.map((r:any)=>r.title):[]),
+      // dinners picked in "Plan my week", Community matches for the fridge, household recipes
+      ...(qp?Object.values(qp.picks).map((p:any)=>p?.recipe?.title):[]),
+      ...fridgeCommunity.map(m=>m.recipe?.title),
+      ...hhRecipes.map((r:any)=>r.title),
     ];
     fetchPhotos(titles as string[]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[recipe?.title,pairedSides.length,trendingDishes.length,saved.length,plan,tab,communityRecipes.length]);
+  },[recipe?.title,pairedSides.length,trendingDishes.length,saved.length,plan,tab,communityRecipes.length,qp?.picks,fridgeCommunity.length,hhRecipes.length]);
   // make a photo for a recipe that doesn't have one yet (only when switched on for everyone)
   const ensureDishPhoto=(r:any)=>{
     if(!r?.title||!photosServerOn||!user)return;
