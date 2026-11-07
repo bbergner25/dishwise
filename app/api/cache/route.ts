@@ -1,4 +1,5 @@
 import { isCleanRecipe, overLimit, clientIp } from "../../../lib/guard";
+import { coreTitle } from "../../../lib/dupes";
 import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
 
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
   if (!q) return NextResponse.json({ found: false });
   try {
     const key = `recipe-cache:${CACHE_VERSION}:${normalize(q)}`;
-    const cached = await redis.get<any>(key);
+    const cached = (await redis.get<any>(key)) || (await redis.get<any>(`recipe-variant:${CACHE_VERSION}:${normalize(q)}`));
     if (cached && isCleanRecipe(cached, q)) {
       return NextResponse.json({ found: true, recipe: cached });
     }
@@ -51,6 +52,13 @@ export async function POST(req: NextRequest) {
     }
     if (await overLimit(redis, `cachew:${clientIp(req)}`, 40, 3600)) {
       return NextResponse.json({ ok: false, skipped: true });
+    }
+    // the Community already has this dish under another name? keep this version for searches, out of the Community list
+    const idx = await redis.get<{ n: string; key: string }[]>("community-index:v2");
+    const core = coreTitle(recipe.title);
+    if (idx?.some((e) => e.key !== normalize(dish) && coreTitle(e.n) === core)) {
+      await redis.set(`recipe-variant:${CACHE_VERSION}:${normalize(dish)}`, recipe, { nx: true });
+      return NextResponse.json({ ok: true, variant: true });
     }
     const key = `recipe-cache:${CACHE_VERSION}:${normalize(dish)}`;
     // No expiration — these recipes are the permanent Community inventory now, not a temporary cache

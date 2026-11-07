@@ -9,6 +9,7 @@ import { levelOf, isDinner, maxMinutes, minMinutes } from "../../../lib/quickpla
 import { DISH_TITLES } from "../../../lib/dishes";
 import { buildPrompt } from "../../../lib/prompts";
 import { RECIPE_SYSTEM, isCleanRecipe } from "../../../lib/guard";
+import { coreTitle } from "../../../lib/dupes";
 import { NextRequest, NextResponse } from "next/server";
 import {
   redis, ensurePhoto, normalizeDish, spentCents, imagesEnabled,
@@ -230,6 +231,48 @@ Reply with ONLY valid JSON: {"renames":[{"i":0,"title":"...","tagline":"... or e
       <p><a href="?secret=${secret}">← Back</a></p>`);
   }
 
+  if (action === "dupes" || action === "dupes-apply") {
+    // The same dish saved under several names. Keep one in the Community; the rest still answer
+    // searches for their exact name but stop showing up in the list.
+    const PROPOSAL = "dupes:proposal";
+    type Move = { keep: string; keepKey: string; drop: { title: string; key: string }[] };
+    if (action === "dupes-apply") {
+      const moves = (await redis.get<Move[]>(PROPOSAL)) || [];
+      let n = 0;
+      for (const m of moves) for (const d of m.drop) {
+        const rec = await redis.get<any>(`recipe-cache:v1:${d.key}`);
+        if (!rec) continue;
+        await redis.set(`recipe-variant:v1:${d.key}`, rec);
+        await redis.del(`recipe-cache:v1:${d.key}`);
+        n++;
+      }
+      await redis.del("community-index:v2", "community-list:v1", PROPOSAL);
+      return page("Duplicates", `<h1>Done</h1><p>Took ${n} duplicate${n === 1 ? "" : "s"} out of the Community list. Searching their exact names still opens them. The Community list catches up within 5 minutes.</p><p><a href="?secret=${secret}">← Back</a></p>`);
+    }
+    const keys = await redis.keys("recipe-cache:v1:*");
+    const items: { key: string; title: string }[] = [];
+    for (let i = 0; i < keys.length; i += 200) {
+      const vals = await redis.mget<any[]>(...keys.slice(i, i + 200));
+      vals.forEach((v, j) => { if (isCleanRecipe(v)) items.push({ key: keys[i + j].slice("recipe-cache:v1:".length), title: String(v.title) }); });
+    }
+    const groups: Record<string, { key: string; title: string }[]> = {};
+    for (const it of items) (groups[coreTitle(it.title)] ||= []).push(it);
+    const moves: Move[] = [];
+    for (const [core, list] of Object.entries(groups)) {
+      if (list.length < 2) continue;
+      // keep the plainest name: the one that is just the dish, else the shortest
+      const sorted = [...list].sort((a, b) => Number(normTitle(b.title) === core) - Number(normTitle(a.title) === core) || a.title.length - b.title.length);
+      moves.push({ keep: sorted[0].title, keepKey: sorted[0].key, drop: sorted.slice(1).map((x) => ({ title: x.title, key: x.key })) });
+    }
+    await redis.set(PROPOSAL, moves, { ex: 86400 });
+    const total = moves.reduce((n, m) => n + m.drop.length, 0);
+    return page("Duplicates", `<h1>Same dish, several names</h1>
+      <p class="muted">Checked ${items.length} Community recipes. In each group the first one stays; the others leave the Community list (searching their exact name still opens them). Nothing changes until you tap the button.</p>
+      ${moves.length ? `<table>${moves.map((m) => `<tr><td><strong>Keep:</strong> ${esc(m.keep)}<br><span class="muted">Remove: ${m.drop.map((d) => esc(d.title)).join(" · ")}</span></td></tr>`).join("")}</table>
+        <p><a href="?secret=${secret}&action=dupes-apply" style="display:inline-block;padding:12px 20px;border-radius:24px;background:#F4A021;color:#151210;font-weight:600;text-decoration:none">Remove ${total} duplicate${total === 1 ? "" : "s"}</a></p>` : "<p><strong>No duplicates found.</strong></p>"}
+      <p><a href="?secret=${secret}">← Back</a></p>`);
+  }
+
   if (action === "coverage") {
     const pool = await communityPool();
     const c = coverage(pool);
@@ -281,7 +324,7 @@ Reply with ONLY valid JSON: {"renames":[{"i":0,"title":"...","tagline":"... or e
     const pool = await communityPool();
     const g = gaps(coverage(pool)).slice(0, 10);
     const existing = pool.map((r) => String(r.title));
-    const taken = new Set(existing.map(normTitle));
+    const taken = new Set(existing.map(coreTitle));   // same dish under another name counts as taken
     const plan: { dish: string; diet: string; level: string }[] = [];
     let error = "";
     const growTo = Math.min(1000, Math.max(0, parseInt(sp.get("to") || "0", 10) || 0));
@@ -329,15 +372,15 @@ Reply with ONLY valid JSON: {"dishes":["..."]}` }] }),
       const already = plan.filter((p) => p.level === x.gap.level && (x.gap.diet === "All" || p.diet === x.gap.diet)).length;
       let got = 0;
       for (const dish of gapNames[i]) {
-        if (got >= x.want - already || plan.length >= MAX_TOTAL || taken.has(normTitle(dish))) continue;
-        taken.add(normTitle(dish)); plan.push({ dish, diet: x.gap.diet, level: x.gap.level }); got++;
+        if (got >= x.want - already || plan.length >= MAX_TOTAL || taken.has(coreTitle(dish))) continue;
+        taken.add(coreTitle(dish)); plan.push({ dish, diet: x.gap.diet, level: x.gap.level }); got++;
       }
     });
     mixAsks.forEach((x, i) => {
       let got = 0;
       for (const dish of mixNames[i]) {
-        if (got >= x.want || plan.length >= MAX_TOTAL || taken.has(normTitle(dish))) continue;
-        taken.add(normTitle(dish)); plan.push({ dish, diet: x.cat, level: "" }); got++;
+        if (got >= x.want || plan.length >= MAX_TOTAL || taken.has(coreTitle(dish))) continue;
+        taken.add(coreTitle(dish)); plan.push({ dish, diet: x.cat, level: "" }); got++;
       }
     });
     await redis.set("community-fill:proposal", plan, { ex: 86400 });
@@ -639,6 +682,7 @@ Reply with ONLY valid JSON: {"dishes":["..."]}` }] }),
     <tr><td>Spent this month</td><td>$${(spent / 100).toFixed(2)} of $${(MONTHLY_BUDGET_CENTS / 100).toFixed(2)} cap</td></tr></table>
     <ul><li><a href="?secret=${secret}&action=test&dishes=${encodeURIComponent("Kung Pao Noodles|Cottage Pie|Fish Tacos")}">Make test photos: Kung Pao Noodles, Cottage Pie, Fish Tacos</a> (about 10¢, takes up to a minute)</li>
     <li><a href="?secret=${secret}&action=coverage"><strong>Community coverage for "Plan my week"</strong></a></li>
+    <li><a href="?secret=${secret}&action=dupes">Find duplicate Community recipes (same dish, different names)</a></li>
     <li><a href="?secret=${secret}&action=count">Count dishes that need photos + cost estimate</a></li>
     <li><a href="?secret=${secret}&action=times">Realistic cook times for older recipes</a></li>
     <li><a href="?secret=${secret}&action=brands">Brand names in Community titles: check and clean up</a></li>
