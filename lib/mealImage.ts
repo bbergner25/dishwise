@@ -70,10 +70,18 @@ function vesselFor(title: string, h: number): string {
 export function buildPrompt(recipe: any): string {
   const title = String(recipe?.title || "").trim();
   const h = hash(normalizeDish(title));
-  const ings: string[] = (recipe?.ingredient_groups || [])
-    .flatMap((g: any) => (g.items || []).map((i: any) => String(i.name || "").split(/[,(]/)[0].trim()))
-    .filter((n: string) => n && !/^(salt|pepper|black pepper|kosher salt|water|oil|olive oil|vegetable oil|cooking spray)$/i.test(n))
-    .slice(0, 8);
+  // What you'd actually see: toppings and garnishes first (they were getting cut off), then the rest.
+  // Juice and zest go into the dish, so they're named that way instead of becoming lemon slices.
+  const SKIP = /^(salt|pepper|black pepper|kosher salt|sea salt|water|oil|olive oil|vegetable oil|canola oil|cooking spray|sugar|flour|baking (soda|powder))$/i;
+  const TOP = /topping|garnish|serving|to serve|finish/i;
+  const items: { n: string; top: boolean }[] = (recipe?.ingredient_groups || []).flatMap((g: any) => (g.items || []).map((i: any) => {
+    const full = String(i.name || "");
+    const base = full.split(/[,(]/)[0].trim();
+    const form = /\bzest\b/i.test(full + " " + (i.amount || "")) || /\bjuice(d)?\b/i.test(full) ? `${base} (only its juice or zest, mixed in; no slices or wedges)` : base;
+    return { n: form, top: TOP.test(String(g.label || "")) || /for (garnish|serving|topping)|to serve|to garnish/i.test(full) };
+  })).filter((x: any) => x.n && !SKIP.test(x.n) && !/powder|^ground |paprika|cumin|oregano|^dried |bay lea|broth|stock|bouillon|extract|\brind\b/i.test(x.n));
+  const ings: string[] = [...items.filter((x) => x.top), ...items.filter((x) => !x.top)].map((x) => x.n).slice(0, 12);
+  const tops = items.filter((x) => x.top).map((x) => x.n);
   const desc = [title, recipe?.tagline ? `(${String(recipe.tagline).replace(/\.$/, "")})` : ""].filter(Boolean).join(" ");
   return `Create a food photograph for a recipe app.
 
@@ -96,7 +104,7 @@ This dish's composition:
 - Placement: ${PLACEMENTS[h % PLACEMENTS.length]}
 - Extra detail: ${EXTRAS[(h >>> 3) % EXTRAS.length]}
 
-Dish: ${desc}, served in ${vesselFor(title, h)}.${ings.length ? ` Main ingredients you can see: ${ings.join(", ")}.` : ""} Show only what this recipe contains.`;
+Dish: ${desc}, served in ${vesselFor(title, h)}.${ings.length ? ` Main ingredients you can see: ${ings.join(", ")}.` : ""}${tops.length ? ` Show these on top: ${tops.join(", ")}.` : ""} Show only what this recipe contains: no garnishes, lemon slices or wedges, herb sprigs or sides that aren't listed here.`;
 }
 
 /* ── Generation ── */
