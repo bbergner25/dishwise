@@ -133,7 +133,12 @@ export async function GET(req: NextRequest) {
     const model = sp.get("model") || IMAGE_MODEL;
     const results: any[] = [];
     for (const t of titles) { // one at a time, to stay under per-minute limits
-      const cached = await redis.get<any>(`recipe-cache:v1:${normalizeDish(t)}`);
+      let cached = await redis.get<any>(`recipe-cache:v1:${normalizeDish(t)}`);
+      if (!cached) { // filed under the original search? find it by title
+        const idx = (await redis.get<{ n: string; key: string }[]>("community-index:v2")) || [];
+        const hit = idx.find((e) => e.n === normTitle(t));
+        if (hit) cached = (await redis.get<any>(`recipe-cache:v1:${hit.key}`)) || (await redis.get<any>(`recipe-variant:v1:${hit.key}`));
+      }
       const r = await ensurePhoto(cached || { title: t }, { force: true, skipBudget: true, model });
       results.push({ t, fromRecipe: !!cached, ...r });
     }
