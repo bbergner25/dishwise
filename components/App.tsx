@@ -7,6 +7,7 @@ import { buildPrompt } from "../lib/prompts";
 import { isRude } from "../lib/guard";
 import { TIME_RULE, totalRange, totalShort } from "../lib/times";
 import { STAPLES_NOTE, ingredientUses } from "../lib/pantry";
+import { AISLES, aisleOf, groceryKey, displayName, totalAmount, recipeGroceries, isStaple } from "../lib/grocery";
 
 const C = {
   cream:"#FDFAF5",parchment:"#FFF0D4",brown:"#151210",
@@ -28,7 +29,6 @@ const Ic = {
   camera:(s=20)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>,
   printer:(s=16)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>,
   cart:(s=14)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>,
-  target:(s=14)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
   home:(s=18)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
   arrowLeft:(s=14)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
   pin:(s=14)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
@@ -330,22 +330,6 @@ const CSS = `
     flex-shrink:0;margin-top:2px;letter-spacing:0;
   }
   .step-text{font-size:15px;line-height:1.75;font-weight:300;color:#151210;padding-top:3px;}
-  .shop-btns{display:flex;gap:8px;flex-wrap:wrap;}
-  .shop-btn{padding:7px 14px;border-radius:100px;border:none;font-family:'Figtree',sans-serif;font-size:12px;font-weight:500;cursor:pointer;text-decoration:none;transition:all .12s;display:inline-flex;align-items:center;gap:4px;color:#fff;}
-  .btn-wm{background:#0071CE;}.btn-wm:hover{background:#005AA6;}
-  .btn-tg{background:#CC0000;}.btn-tg:hover{background:#AA0000;}
-  .grocery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;}
-  .grocery-card{background:#fff;border:1px solid #EDE8E0;border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:8px;}
-  .grocery-check{width:15px;height:15px;border-radius:4px;border:1.5px solid #EDE8E0;background:#fff;flex-shrink:0;cursor:pointer;appearance:none;transition:all .12s;}
-  .grocery-check:checked{background:#1A1F2E;border-color:#1A1F2E;}
-  .grocery-item-wrap{flex:1;min-width:0;}
-  .grocery-name{font-size:13px;font-weight:600;line-height:1.3;color:#151210;}
-  .grocery-entries{margin-top:5px;display:flex;flex-direction:column;gap:3px;}
-  .grocery-entry{font-size:11px;color:#7A6E6A;line-height:1.3;display:flex;align-items:baseline;gap:4px;}
-  .grocery-entry-amount{color:#F4A021;font-weight:600;flex-shrink:0;}
-  .grocery-entry-recipe{color:#B8B0A8;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .grocery-shop-link{font-size:10px;padding:1px 6px;border-radius:100px;text-decoration:none;border:1px solid #EDE8E0;color:#7A6E6A;transition:all .12s;}
-  .grocery-shop-link:hover{border-color:#0071CE;color:#0071CE;}
   /* Remix — saffron card */
   .remix-section{padding:18px 22px 20px;background:#FFF0D4;border:1.5px solid #F4A021;border-radius:16px;}
   @media(max-width:640px){.remix-section{padding:16px 18px 18px;border-radius:14px;}}
@@ -395,9 +379,6 @@ const CSS = `
   .card-btn{flex:1;padding:6px;border-radius:8px;border:1px solid #EDE8E0;background:transparent;font-family:'Figtree',sans-serif;font-size:11px;font-weight:500;cursor:pointer;transition:all .12s;color:#7A6E6A;}
   .card-btn:hover{background:#FFF0D4;color:#151210;}
   .card-btn.danger:hover{background:#FEE;color:#C00;border-color:#C00;}
-  .consol-section{margin-top:40px;padding-top:32px;border-top:1px solid #EDE8E0;}
-  .consol-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
-  .consol-title{font-family:'Fraunces',serif;font-size:20px;}
   .inspire-lede{margin:6px 0 22px;font-size:16px;line-height:1.5;color:#4F4744;}
   .inspire-section{margin:0 0 22px;border:none;padding:0;min-width:0;}
   .inspire-section-label{display:block;padding:0;margin:0 0 10px;font-size:15px;font-weight:600;color:#151210;}
@@ -407,6 +388,47 @@ const CSS = `
   .inspire-chip:hover{border-color:#B8AFA3;}
   .inspire-chip.on{background:#1A1F2E;border-color:#1A1F2E;color:#FDFAF5;font-weight:600;}
   .inspire-chip:focus-visible,.inspire-go-btn:focus-visible,.inspire-card-btn:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
+  .rx-shop-select.gl-store{min-width:0;width:132px;height:42px;font-size:15px;}
+  .gl-sheet .ui-btn-primary{width:100%;}
+  .gl-ranges{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 12px;}
+  .gl-range{height:34px;padding:0 14px;border-radius:17px;border:none;background:#F5EFE4;color:#4F4744;font-family:'Figtree',sans-serif;font-size:14px;cursor:pointer;}
+  .gl-range.on{background:#1A1F2E;color:#FDFAF5;font-weight:600;}
+  .gl-range:focus-visible,.gl-check input:focus-visible,.rx-gro-add:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
+  .gl-add{display:flex;align-items:center;gap:8px;min-height:50px;padding:0 6px 0 14px;border:1px solid #E3DCD0;border-radius:14px;background:#fff;}
+  .gl-add:focus-within{border-color:#1A1F2E;box-shadow:0 0 0 3px rgba(244,160,33,.35);}
+  .gl-plus{font-size:22px;line-height:1;color:#1A1F2E;}
+  .gl-input{flex:1;min-width:0;height:46px;border:none;outline:none;background:transparent;font-family:'Figtree',sans-serif;font-size:16px;color:#151210;}
+  .gl-input::placeholder{color:#9A8F88;}
+  .gl-add .fr-add-btn{height:38px;}
+  .gl-aisle{margin-top:22px;}
+  .gl-aisle-name{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 2px;font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6E635F;}
+  .gl-aisle-n{font-weight:500;color:#9A8F88;letter-spacing:0;}
+  .gl-list{list-style:none;margin:0;padding:0;}
+  .gl-item{display:flex;align-items:center;gap:10px;min-height:56px;border-bottom:1px solid #F1EBE2;}
+  .gl-check{flex:1;min-width:0;display:flex;align-items:center;gap:12px;cursor:pointer;padding:8px 0;}
+  .gl-check input{width:22px;height:22px;accent-color:#1A1F2E;margin:0;flex-shrink:0;}
+  .gl-text{display:flex;flex-direction:column;gap:1px;min-width:0;}
+  .gl-name{font-size:17px;color:#151210;}
+  .gl-note{font-size:13px;color:#6E635F;line-height:1.35;}
+  .gl-amt{font-size:15px;color:#4F4744;white-space:nowrap;text-align:right;max-width:40%;}
+  .gl-shop{font-size:13px;padding:6px 10px;border-radius:14px;border:1px solid #E3DCD0;color:#4F4744;text-decoration:none;background:#fff;white-space:nowrap;}
+  .gl-item.done .gl-name{text-decoration:line-through;color:#9A8F88;}
+  .gl-item.done .gl-amt,.gl-item.done .gl-note{color:#B8AFA3;}
+  .gl-pantry{margin-top:24px;background:#fff;border:1px solid #ECE6DD;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px;}
+  .gl-pantry-title{margin:0;font-size:16px;font-weight:600;color:#151210;}
+  .gl-pantry-text{margin:0 0 4px;font-size:14px;color:#4F4744;}
+  .gl-cart{margin-top:28px;}
+  .gl-empty{margin-top:24px;padding:22px 18px;border-radius:16px;background:#fff;border:1px solid #ECE6DD;}
+  .gl-empty-title{margin:0 0 6px;font-family:'Fraunces',serif;font-size:20px;font-weight:700;color:#151210;}
+  .gl-empty-text{margin:0;font-size:15px;line-height:1.5;color:#4F4744;}
+  .rx-gro-add{margin-top:12px;height:44px;padding:0 18px;border-radius:22px;border:2px solid #1A1F2E;background:#fff;color:#151210;font-family:'Figtree',sans-serif;font-size:15px;font-weight:600;display:inline-flex;align-items:center;gap:8px;cursor:pointer;}
+  .gl-sheet-note{margin:0 0 8px;font-size:15px;line-height:1.45;color:#4F4744;}
+  .gl-sheet-list{list-style:none;margin:0 0 8px;padding:0;max-height:46vh;overflow-y:auto;}
+  .gl-sheet-list li{border-bottom:1px solid #F1EBE2;}
+  .gl-sheet-amt{color:#6E635F;font-size:15px;}
+  .gl-sheet-staples{margin:4px 0 12px;font-size:13px;line-height:1.45;color:#6E635F;}
+  .gl-toast{position:fixed;left:50%;bottom:104px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:14px;padding:12px 14px 12px 18px;border-radius:16px;background:#1A1F2E;color:#FDFAF5;font-size:15px;box-shadow:0 8px 24px rgba(21,18,16,.25);white-space:nowrap;}
+  .gl-toast button{border:none;background:none;color:#F4A021;font-family:'Figtree',sans-serif;font-size:15px;font-weight:600;cursor:pointer;padding:4px;}
   .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
   .fr-card{background:#fff;border:1px solid #ECE6DD;border-radius:20px;padding:18px;margin:6px 0 22px;display:flex;flex-direction:column;gap:12px;}
   .fr-title{margin:0;font-family:'Fraunces',serif;font-size:24px;font-weight:700;letter-spacing:-.4px;line-height:1.15;color:#151210;}
@@ -762,7 +784,6 @@ const CSS = `
   .pl-add-side{height:34px;padding:0 10px;border:none;background:none;color:#1A1F2E;font-family:'Figtree',sans-serif;font-size:14px;font-weight:500;cursor:pointer;}
   .pl-add-meal{height:48px;border-radius:14px;border:1.5px dashed #CFC6B8;background:transparent;color:#4F4744;font-family:'Figtree',sans-serif;font-size:15px;font-weight:500;text-align:left;padding:0 16px;cursor:pointer;}
   .pl-add-meal:hover{border-color:#1A1F2E;color:#1A1F2E;background:#F5EFE4;}
-  .pl-page .consol-section{scroll-margin-top:16px;}
   .pl-rel{font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#6E635F;}
   .pl-rel.today{color:#B8340F;}
   .pl-week{list-style:none;display:flex;align-items:center;gap:10px;padding:18px 0 2px;}
@@ -808,7 +829,7 @@ const CSS = `
     .lib-grid .card-actions{flex-wrap:wrap;}
   }
   @media print{
-    .nav,.bottom-nav,.shop-btns,
+    .nav,.bottom-nav,.gl-shop,.gl-add,.gl-ranges,
     .rx-topbar,.rx-tabs,.rx-actionbar,.rx-add-side,.cook-overlay,.rx-stepper,.add-side-panel,
     .source-links,.card-actions{display:none !important;}
     body{background:#fff;padding-bottom:0;}
@@ -1125,8 +1146,6 @@ function getSiteUrl(name: string, dish: string){
   const k=name.toLowerCase().trim();
   return (SITE_URLS[k]||`https://www.google.com/search?q=${encodeURIComponent(name+" recipe ")}`)+encodeURIComponent(dish);
 }
-function wmUrl(item: string){ return `https://www.walmart.com/search?q=${encodeURIComponent(item)}`; }
-function tgUrl(item: string){ return `https://www.target.com/s?searchTerm=${encodeURIComponent(item)}`; }
 
 /* ── UTILS ── */
 const UNI_FRAC: Record<string,string> = {"½":"1/2","¼":"1/4","¾":"3/4","⅓":"1/3","⅔":"2/3","⅛":"1/8","⅜":"3/8","⅝":"5/8","⅞":"7/8","⅕":"1/5","⅖":"2/5","⅗":"3/5","⅘":"4/5","⅙":"1/6","⅚":"5/6"};
@@ -1471,34 +1490,6 @@ function migratePlanKeys<T>(obj: Record<string,T>): Record<string,T>{
   return out;
 }
 
-function consolidate(plan: Record<string,any>, planSides: Record<string,{title:string;status:string;recipe:any}[]>|undefined, keys: string[]){
-  const map: Record<string,{name:string;entries:{recipe:string;amount:string}[]}> = {};
-  for(const k of keys){
-    const dayRecipes: any[] = [];
-    if(plan[k])dayRecipes.push(plan[k]);
-    for(const s of (planSides?.[k]||[])){ if(s.recipe)dayRecipes.push(s.recipe); }
-    for(const r of dayRecipes){
-      // Build a lookup of ingredient name → amount from ingredient_groups
-      const amountLookup: Record<string,string> = {};
-      for(const group of(r.ingredient_groups||[])){
-        for(const item of(group.items||[])){
-          const key=(item.name||"").toLowerCase().trim();
-          if(key)amountLookup[key]=item.amount||"";
-        }
-      }
-      for(const item of(r.grocery_items||[])){
-        const key=item.toLowerCase().trim();
-        if(!map[key])map[key]={name:item,entries:[]};
-        const alreadyAdded=map[key].entries.some(e=>e.recipe===r.title);
-        if(!alreadyAdded){
-          const amount=amountLookup[key]||"";
-          map[key].entries.push({recipe:r.title,amount});
-        }
-      }
-    }
-  }
-  return Object.values(map).sort((a,b)=>a.name.localeCompare(b.name));
-}
 function randomCode(){
   const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   return Array.from({length:6},()=>chars[Math.floor(Math.random()*chars.length)]).join("");
@@ -1547,6 +1538,13 @@ function downscaleImage(file: File, max=1400): Promise<string|null>{
     img.onerror=()=>{URL.revokeObjectURL(url);res(null);};
     img.src=url;
   });
+}
+
+// What the grocery list keeps: extras, plus checkmarks from the last 30 days
+function listPayload(extras:any[],checked:Record<string,number>,cleared:Record<string,number>){
+  const cutoff=Date.now()-30*864e5;
+  const recent=(o:Record<string,number>)=>{const n:Record<string,number>={};for(const k in o||{})if(o[k]>cutoff)n[k]=o[k];return n;};
+  return {extras:(extras||[]).slice(0,300),checked:recent(checked),cleared:recent(cleared)};
 }
 
 const FRIDGE_TIMES:[string,number][]=[["Under 30 mins",30],["Under 45 mins",45],["1 hour+",0]];
@@ -1766,6 +1764,15 @@ export default function App({onReady}:{onReady?:()=>void}={}){
   const [fridgeCommunity,setFridgeCommunity] = useState<{recipe:any;uses:string[];need:string[]}[]>([]);
   const [fridgeHave,setFridgeHave]     = useState<{id:number;items:string[]}|null>(null); // ticks these off the grocery list
   const fridgeFileRef=useRef<HTMLInputElement>(null);
+
+  // Grocery list: planned meals feed it automatically; extras are things added by hand or from a recipe
+  const [listExtras,setListExtras]   = useState<{id:string;name:string;amount?:string;recipe?:string;at:number}[]>([]);
+  const [listChecked,setListChecked] = useState<Record<string,number>>({}); // item id → when it went in the cart
+  const [listCleared,setListCleared] = useState<Record<string,number>>({}); // planned items cleared from the cart
+  const [listRange,setListRange]     = useState<"this"|"next"|"extras">("this");
+  const [listInput,setListInput]     = useState("");
+  const [addSheet,setAddSheet]       = useState<{recipe:any;items:{name:string;amount:string;on:boolean}[];staples:string[];plannedOn:string|null}|null>(null);
+  const [listToast,setListToast]     = useState("");
   const [inspireStatus,setInspireStatus] = useState("idle");
   const inspireStart=useRef(0);
   const [inspireSuggestions,setInspireSuggestions] = useState<any[]>([]);
@@ -1892,6 +1899,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
       try{const fc=localStorage.getItem("dw-family-code");if(fc){setFamilyCode(fc);loadShared(fc);}}catch{}
       try{const h=localStorage.getItem("dw-history");if(h)setHistory(JSON.parse(h));}catch{}
       try{const rt=localStorage.getItem("dw-retailer");if(rt)setRetailer(rt);}catch{}
+      try{const gl=localStorage.getItem("dw-list");if(gl){const d=JSON.parse(gl);setListExtras(Array.isArray(d.extras)?d.extras:[]);setListChecked(d.checked||{});setListCleared(d.cleared||{});}}catch{}
       try{const rg=localStorage.getItem("dw-ratings");if(rg)setRatings(JSON.parse(rg));}catch{}
       try{const co=localStorage.getItem("dw-cat-overrides");if(co)setCategoryOverrides(JSON.parse(co));}catch{}
       setReady(true);
@@ -1905,6 +1913,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-plan-made",JSON.stringify(planMade));}catch{};},[planMade,ready]);
   useEffect(()=>{if(ready&&location)try{localStorage.setItem("dw-location",location);}catch{};},[location,ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-retailer",retailer);}catch{};},[retailer,ready]);
+  useEffect(()=>{if(ready)try{localStorage.setItem("dw-list",JSON.stringify(listPayload(listExtras,listChecked,listCleared)));}catch{};},[listExtras,listChecked,listCleared,ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-ratings",JSON.stringify(ratings));}catch{};},[ratings,ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-cat-overrides",JSON.stringify(categoryOverrides));}catch{};},[categoryOverrides,ready]);
   useEffect(()=>{if(tab==="community"&&communityStatus==="idle")loadCommunity();},[tab,communityStatus]);
@@ -1953,7 +1962,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
      First time on a device: merge (account wins on a clash, this device's extra days are kept),
      so an empty device can't wipe the plan. After that the account copy is the source of truth,
      re-read whenever the app comes back to the foreground. */
-  const planPayload=(p:any,ps:any,pm:any)=>{
+  const planPayload=(p:any,ps:any,pm:any,l:any)=>{
     const cutoff=dateKey(addDays(startOfToday(),-PLAN_PAST_DAYS));
     const keep=(o:any)=>{const n:any={};for(const k in o||{})if(k>=cutoff)n[k]=o[k];return n;};
     const sides:any={};
@@ -1961,7 +1970,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
       const done=(arr as any[]).filter(x=>x&&x.status!=="loading");
       if(done.length)sides[k]=done;
     }
-    return {plan:keep(p),sides,made:keep(pm)};
+    return {plan:keep(p),sides,made:keep(pm),list:l};
   };
   const pullPlan=async(firstTime:boolean)=>{
     const res=await fetch("/api/plan");
@@ -1971,7 +1980,13 @@ export default function App({onReady}:{onReady?:()=>void}={}){
       planLastSent.current="";
       return;
     }
-    const cp=d.plan||{}, cs=d.sides||{}, cm=d.made||{};
+    const cp=d.plan||{}, cs=d.sides||{}, cm=d.made||{}, cl=d.list||null;
+    if(cl){
+      if(firstTime){
+        setListExtras(l=>[...(cl.extras||[]),...l.filter(x=>!(cl.extras||[]).some((y:any)=>y.id===x.id))]);
+        setListChecked(l=>({...l,...(cl.checked||{})}));setListCleared(l=>({...l,...(cl.cleared||{})}));
+      }else{setListExtras(cl.extras||[]);setListChecked(cl.checked||{});setListCleared(cl.cleared||{});}
+    }
     if(firstTime){
       setPlan((l:any)=>({...l,...cp}));
       setPlanSides((l:any)=>{const n={...l};for(const k in cs)n[k]=cs[k];for(const k in cp)if(!cs[k])delete n[k];return n;});
@@ -1982,7 +1997,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
       setPlanSides((l:any)=>{const n:any={...cs};for(const k in l){const loading=(l[k]||[]).filter((x:any)=>x?.status==="loading");if(loading.length&&cp[k])n[k]=[...(n[k]||[]),...loading.filter((x:any)=>!(n[k]||[]).some((y:any)=>y.title===x.title))];}return n;});
       setPlanMade(cm);
     }
-    planLastSent.current=JSON.stringify({plan:cp,sides:cs,made:cm});
+    planLastSent.current=cl&&!firstTime?JSON.stringify({plan:cp,sides:cs,made:cm,list:cl}):"";
   };
   useEffect(()=>{
     if(!isLoaded||!user||!ready)return;
@@ -2009,7 +2024,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
   },[isLoaded,user?.id,ready]);
   useEffect(()=>{
     if(!ready||!user||!planCloud)return;
-    const body=JSON.stringify(planPayload(plan,planSides,planMade));
+    const body=JSON.stringify(planPayload(plan,planSides,planMade,listPayload(listExtras,listChecked,listCleared)));
     if(body===planLastSent.current)return;
     if(planPushTimer.current)clearTimeout(planPushTimer.current);
     planPushTimer.current=setTimeout(()=>{
@@ -2018,7 +2033,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
         .then(r=>{if(r.ok)planLastSent.current=body;}).catch(()=>{});
     },700);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[plan,planSides,planMade,ready,user?.id,planCloud]);
+  },[plan,planSides,planMade,listExtras,listChecked,listCleared,ready,user?.id,planCloud]);
 
   /* Community matches while typing: offer the free, instant recipe before making a new one */
   useEffect(()=>{
@@ -2870,8 +2885,70 @@ ${tiktok.text}`}]);
   const curS=servings||baseS;
   const ratio=curS/baseS;
   const next7Keys=Array.from({length:7},(_,i)=>dateKey(addDays(startOfToday(),i)));
-  const consolidated=consolidate(plan,planSides,next7Keys);
   const mealsPlanned=next7Keys.filter(k=>plan[k]).length;
+
+  /* ── grocery list ── */
+  type ListEntry={name:string;amount:string;recipe:string;src:string;extraId?:string};
+  type ListItem={id:string;plannedId:string;key:string;name:string;amount:string;note:string;aisle:string;checked:boolean;extraIds:string[]};
+  const buildList=(range:"this"|"next"|"extras")=>{
+    const start=range==="next"?7:0;
+    const keys=range==="extras"?[]:Array.from({length:7},(_,i)=>dateKey(addDays(startOfToday(),start+i)));
+    const entries:ListEntry[]=[];
+    let meals=0;
+    for(const k of keys){
+      const dishes=[plan[k],...(planSides[k]||[]).filter(x=>x?.status==="done"&&x.recipe).map(x=>x.recipe)].filter(Boolean);
+      if(plan[k])meals++;
+      for(const r of dishes)for(const g of recipeGroceries(r))entries.push({name:g.name,amount:g.amount,recipe:r.title,src:`${k}:${r.title}`});
+    }
+    for(const x of listExtras)entries.push({name:x.name,amount:x.amount||"",recipe:x.recipe||"",src:`x:${x.id}`,extraId:x.id});
+    const groups:Record<string,ListEntry[]>={};
+    for(const e of entries){const k=groceryKey(e.name);if(!k)continue;(groups[k]=groups[k]||[]).push(e);}
+    const items:ListItem[]=[];const staples:string[]=[];
+    for(const key of Object.keys(groups)){
+      const es=groups[key];
+      // pantry staples stay off the list unless you added them yourself
+      if(!es.some(e=>e.extraId)&&es.every(e=>isStaple(e.name))){staples.push(displayName(es[0].name).toLowerCase());continue;}
+      const id=key+"@"+es.map(e=>e.src).sort().join("|");
+      const planned=es.filter(e=>!e.extraId);
+      const plannedId=planned.length?key+"@"+planned.map(e=>e.src).sort().join("|"):"";
+      if(listCleared[id]||(plannedId&&listCleared[plannedId]))continue;
+      const byRecipe:Record<string,string[]>={};
+      for(const e of es){const r=e.recipe||"Added by you";byRecipe[r]=byRecipe[r]||[];if(e.amount)byRecipe[r].push(e.amount);}
+      const recipes=Object.keys(byRecipe);
+      const amounts=es.map(e=>e.amount).filter(Boolean);
+      // something you added by name ("olive oil") means a whole one, so don't show a recipe's 1 tbsp
+      const amount=es.some(e=>e.extraId&&!e.amount)?"":totalAmount(amounts);
+      const note=recipes.length>1&&amounts.length>1?recipes.map(r=>byRecipe[r].length?`${r} ${totalAmount(byRecipe[r])}`:r).join(" · "):recipes.join(" · ");
+      items.push({id,plannedId,key,name:displayName(es[0].name),amount,note,aisle:aisleOf(es[0].name),checked:!!listChecked[id],extraIds:es.map(e=>e.extraId).filter(Boolean) as string[]});
+    }
+    items.sort((a,b)=>a.name.localeCompare(b.name));
+    return {items,staples:staples.filter((x,i)=>staples.indexOf(x)===i).sort(),meals};
+  };
+  const listThisWeek=buildList("this");
+  const listLeft=listThisWeek.items.filter(x=>!x.checked).length;
+  const addListExtras=(xs:{name:string;amount?:string;recipe?:string}[])=>{
+    const now=Date.now();
+    setListExtras(l=>[...l,...xs.filter(x=>x.name.trim()&&!isRude(x.name)).map((x,i)=>({id:`${now.toString(36)}${i}${Math.random().toString(36).slice(2,6)}`,name:x.name.trim().slice(0,80),amount:x.amount||"",recipe:x.recipe||"",at:now}))]);
+  };
+  const toggleListItem=(it:ListItem)=>setListChecked(c=>{const n={...c};if(n[it.id])delete n[it.id];else n[it.id]=Date.now();return n;});
+  const clearChecked=(items:ListItem[])=>{
+    const done=items.filter(x=>x.checked);
+    const xids=new Set(done.flatMap(x=>x.extraIds));
+    setListExtras(l=>l.filter(x=>!xids.has(x.id)));
+    setListCleared(c=>{const n={...c};for(const x of done)if(x.plannedId)n[x.plannedId]=Date.now();return n;});
+    setListChecked(c=>{const n={...c};for(const x of done)delete n[x.id];return n;});
+  };
+  const openAddSheet=(r:any)=>{
+    const have=fridgeHave&&fridgeHave.id===r.id?fridgeHave.items:[];
+    const gs=recipeGroceries(r);
+    const todayK=dateKey(startOfToday()),endK=dateKey(addDays(startOfToday(),6));
+    const plannedK=Object.keys(plan).find(k=>k>=todayK&&k<=endK&&sameRecipe(plan[k],r))||null;
+    setAddSheet({recipe:r,
+      items:gs.filter(g=>!isStaple(g.name)).map(g=>({...g,on:!have.some(h=>ingredientUses(g.name,h))})),
+      staples:gs.filter(g=>isStaple(g.name)).map(g=>g.name),
+      plannedOn:plannedK});
+  };
+  useEffect(()=>{if(!listToast)return;const t=setTimeout(()=>setListToast(""),3200);return()=>clearTimeout(t);},[listToast]);
 
   /* ── SEARCH VIEW ── */
   function SearchView(){
@@ -3546,6 +3623,7 @@ ${tiktok.text}`}]);
                     <h2 className="rx-gro-title">Grocery list</h2>
                     <span className="rx-gro-sub">{items.length} item{items.length===1?"":"s"}{multi?` for ${dishes.length} dishes`:""}</span>
                   </div>
+                  <button className="rx-gro-add" onClick={()=>openAddSheet(activePane===0?recipe:(pairedSides[activePane-1]?.recipe||recipe))}>{Ic.cart(17)} Add to my list</button>
                   {multi&&<p className="rx-gro-note"><span className="rx-gro-swatch" aria-hidden="true"/>Highlighted: the {activeCount} item{activeCount===1?"":"s"} for <strong>{activeTitle}</strong></p>}
                   {haveCount>0&&<p className="rx-gro-note">Ticked off: the {haveCount} item{haveCount===1?"":"s"} you already have.</p>}
                   {!store&&<p className="rx-gro-note">Choose a store under the main dish's details to get shopping links.</p>}
@@ -4170,6 +4248,97 @@ ${tiktok.text}`}]);
   }
 
   /* ── PLAN (scrolling timeline: today first, earlier days on demand) ── */
+  /* ── GROCERY LIST VIEW ── */
+  function ListView(){
+    const {items,staples,meals}=buildList(listRange);
+    const nextMeals=buildList("next").meals;
+    const todo=items.filter(x=>!x.checked), cart=items.filter(x=>x.checked);
+    const store=RETAILERS.find(r=>r.id===retailer);
+    const onList=new Set(listExtras.map(x=>groceryKey(x.name)));
+    const row=(it:ListItem)=>(
+      <li key={it.id} className={`gl-item${it.checked?" done":""}`}>
+        <label className="gl-check">
+          <input type="checkbox" checked={it.checked} onChange={()=>toggleListItem(it)}/>
+          <span className="gl-text">
+            <span className="gl-name">{it.name}</span>
+            {it.note&&<span className="gl-note">{it.note}</span>}
+          </span>
+        </label>
+        {it.amount&&<span className="gl-amt">{it.amount}</span>}
+        {store&&!it.checked&&<a className="gl-shop" href={store.url(it.name)} target="_blank" rel="noopener noreferrer" aria-label={`Find ${it.name} at ${store.name}`}>{store.name}</a>}
+      </li>
+    );
+    const sub=!items.length?"":listRange==="extras"?`${todo.length} to get · things you added`:meals?`${todo.length} to get · from ${meals} planned meal${meals===1?"":"s"}`:`${todo.length} to get`;
+    return(
+      <div className="pl-page">
+        <div className="pl-head">
+          <div>
+            <h1 className="ck-title" style={{margin:0}}>Groceries</h1>
+            <div className="pl-range" aria-live="polite">{sub}</div>
+          </div>
+          <div className="rx-shop-select-wrap">
+            <span className="rx-shop-dot" style={{background:store?.color||"#CFC6B8"}} aria-hidden="true"/>
+            <label htmlFor="gl-store" className="sr-only">Where are you shopping?</label>
+            <select id="gl-store" className="rx-shop-select gl-store" value={retailer} onChange={e=>setRetailer(e.target.value)}>
+              <option value="">Store</option>
+              {RETAILERS.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
+            <svg className="rx-shop-chev" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+        </div>
+        <div className="gl-ranges" role="tablist" aria-label="Which list">
+          {([["this",`This week${listThisWeek.meals?` · ${listThisWeek.meals} meal${listThisWeek.meals===1?"":"s"}`:""}`],["next",`Next week${nextMeals?` · ${nextMeals}`:""}`],["extras","Just extras"]] as [typeof listRange,string][]).map(([k,l])=>(
+            <button key={k} role="tab" aria-selected={listRange===k} className={`gl-range${listRange===k?" on":""}`} onClick={()=>setListRange(k)}>{l}</button>
+          ))}
+        </div>
+        <form className="gl-add" onSubmit={e=>{e.preventDefault();const parts=listInput.split(/[,\n;]+/).map(x=>x.trim()).filter(Boolean);if(parts.length)addListExtras(parts.map(name=>({name})));setListInput("");}}>
+          <label htmlFor="gl-input" className="sr-only">Add an item</label>
+          <span aria-hidden="true" className="gl-plus">+</span>
+          <input id="gl-input" className="gl-input" value={listInput} onChange={e=>setListInput(e.target.value)} placeholder="Add anything: milk, paper towels…" autoComplete="off" enterKeyHint="done"/>
+          {listInput.trim()&&<button type="submit" className="fr-add-btn">Add</button>}
+        </form>
+
+        {!items.length&&(
+          <div className="gl-empty">
+            <p className="gl-empty-title">{listRange==="extras"?"Nothing added yet":listRange==="next"?"Nothing planned for next week yet":"Your list is empty"}</p>
+            <p className="gl-empty-text">Meals you add to your plan show up here on their own, grouped by aisle. You can also add a recipe's ingredients from its page, or type anything above.</p>
+            <button className="ui-btn-secondary" style={{marginTop:12}} onClick={()=>goNav("week")}>Go to your plan</button>
+          </div>
+        )}
+
+        {AISLES.map(a=>{
+          const rows=todo.filter(x=>x.aisle===a);
+          if(!rows.length)return null;
+          return(
+            <section key={a} className="gl-aisle" aria-label={a}>
+              <h2 className="gl-aisle-name"><span>{a}</span><span className="gl-aisle-n">{rows.length}</span></h2>
+              <ul className="gl-list">{rows.map(row)}</ul>
+            </section>
+          );
+        })}
+
+        {listRange!=="extras"&&staples.filter(st=>!onList.has(groceryKey(st))).length>0&&(
+          <section className="gl-pantry" aria-labelledby="gl-pantry-h">
+            <h2 id="gl-pantry-h" className="gl-pantry-title">Probably already in your kitchen</h2>
+            <p className="gl-pantry-text">Tap anything you're out of to add it to the list.</p>
+            <div className="fr-chips">
+              {staples.filter(st=>!onList.has(groceryKey(st))).map(st=>(
+                <button key={st} className="fr-chip" onClick={()=>addListExtras([{name:st}])}><span aria-hidden="true">+</span> {st}</button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {cart.length>0&&(
+          <section className="gl-aisle gl-cart" aria-label="In the cart">
+            <h2 className="gl-aisle-name"><span>In the cart · {cart.length}</span><button className="ck-textlink" style={{alignSelf:"auto",fontSize:14,letterSpacing:0,textTransform:"none",fontWeight:500}} onClick={()=>clearChecked(items)}>Clear checked</button></h2>
+            <ul className="gl-list">{cart.map(row)}</ul>
+          </section>
+        )}
+      </div>
+    );
+  }
+
   function WeekView(){
     const today=startOfToday();
     const todayKey=dateKey(today);
@@ -4284,8 +4453,8 @@ ${tiktok.text}`}]);
             <h1 className="ck-title" style={{margin:0}}>Plan</h1>
           </div>
           {mealsPlanned>0&&(
-            <button className="pl-groceries" onClick={()=>document.getElementById("plan-groceries")?.scrollIntoView({behavior:"smooth",block:"start"})}>
-              {Ic.cart(17)} Next 7 days · {consolidated.length}
+            <button className="pl-groceries" onClick={()=>goNav("list")}>
+              {Ic.cart(17)} Groceries · {listLeft}
             </button>
           )}
         </div>
@@ -4306,56 +4475,6 @@ ${tiktok.text}`}]);
         </ol>
         {planAhead<PLAN_MAX_AHEAD&&(
           <button className="pl-more" onClick={()=>setPlanAhead(n=>Math.min(PLAN_MAX_AHEAD,n+14))}>Show 2 more weeks</button>
-        )}
-        {mealsPlanned>0&&(
-          <div className="consol-section" id="plan-groceries">
-            <div className="consol-hdr">
-              <div>
-                <div className="consol-title">Groceries for the next 7 days</div>
-                <p style={{fontSize:13,color:C.muted,marginTop:4}}>{consolidated.length} items across {mealsPlanned} meal{mealsPlanned!==1?"s":""}</p>
-              </div>
-              <div className="shop-btns">
-                {retailer?(
-                  <a href={RETAILERS.find(r=>r.id===retailer)?.url(consolidated[0]?.name||"")||"#"}
-                    target="_blank" rel="noopener noreferrer" className="shop-btn"
-                    style={{background:RETAILERS.find(r=>r.id===retailer)?.color,display:"flex",alignItems:"center",gap:5}}>
-                    {Ic.cart(13)} {RETAILERS.find(r=>r.id===retailer)?.name}
-                  </a>
-                ):(
-                  <>
-                    <a href={wmUrl(consolidated[0]?.name||"")} target="_blank" rel="noopener noreferrer" className="shop-btn btn-wm" style={{display:"flex",alignItems:"center",gap:5}}>{Ic.cart(13)} Walmart</a>
-                    <a href={tgUrl(consolidated[0]?.name||"")} target="_blank" rel="noopener noreferrer" className="shop-btn btn-tg" style={{display:"flex",alignItems:"center",gap:5}}>{Ic.target(13)} Target</a>
-                  </>
-                )}
-              </div>
-            </div>
-            <div className="grocery-grid">
-              {consolidated.map((item,i)=>(
-                <div key={i} className="grocery-card">
-                  <input type="checkbox" className="grocery-check"/>
-                  <div className="grocery-item-wrap">
-                    <div className="grocery-name">{item.name}</div>
-                    <div className="grocery-entries">
-                      {item.entries.map((e,j)=>(
-                        <div key={j} className="grocery-entry">
-                          {e.amount&&<span className="grocery-entry-amount">{e.amount}</span>}
-                          <span className="grocery-entry-recipe">{e.recipe}</span>
-                        </div>
-                      ))}
-                    </div>
-                    {retailer&&(
-                      <div className="grocery-shop-links" style={{marginTop:6}}>
-                        <a href={RETAILERS.find(r=>r.id===retailer)?.url(item.name)||"#"}
-                          target="_blank" rel="noopener noreferrer" className="grocery-shop-link">
-                          {RETAILERS.find(r=>r.id===retailer)?.name}
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         )}
       </div>
     );
@@ -4572,6 +4691,7 @@ ${tiktok.text}`}]);
   const NAV_ITEMS:{key:string;match:string[];label:string;icon:(n:number)=>any;badge:number|null}[]=[
     {key:"search",match:["search","community"],label:"Cook",icon:(n)=>Ic.cook(n),badge:null},
     {key:"week",match:["week"],label:"Plan",icon:(n)=>Ic.calendar(n),badge:mealsPlanned||null},
+    {key:"list",match:["list"],label:"List",icon:(n)=>Ic.cart(n),badge:listLeft||null},
     {key:"library",match:["library","saved","family"],label:"Library",icon:(n)=>Ic.library(n),badge:null},
   ];
   const goNav=(key:string)=>{
@@ -4653,7 +4773,54 @@ ${tiktok.text}`}]);
       {tab==="community"&&CommunityView()}
       {(tab==="library"||tab==="saved"||tab==="family")&&LibraryView()}
       {tab==="week"&&WeekView()}
+      {tab==="list"&&ListView()}
       {Modal()}
+      {addSheet&&(()=>{
+        const on=addSheet.items.filter(x=>x.on);
+        const close=()=>setAddSheet(null);
+        const planDay=addSheet.plannedOn?keyToDate(addSheet.plannedOn).toLocaleDateString("en-US",{weekday:"long"}):"";
+        return(
+          <div className="share-overlay" onClick={close}>
+            <div className="share-sheet gl-sheet" role="dialog" aria-modal="true" aria-labelledby="gl-sheet-title" onClick={e=>e.stopPropagation()}>
+              <div className="ui-handle" aria-hidden="true"/>
+              <button className="ui-close" aria-label="Close" onClick={close}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+              <h2 id="gl-sheet-title" className="share-sheet-title">Add to your grocery list</h2>
+              <p className="share-sheet-dish">{addSheet.recipe.title}</p>
+              {addSheet.plannedOn?(
+                <>
+                  <p className="gl-sheet-note">This is planned for {planDay}, so its ingredients are already on your list.</p>
+                  <button className="ui-btn-primary" onClick={()=>{close();goNav("list");}}>Open my list</button>
+                </>
+              ):(
+                <>
+                  <p className="gl-sheet-note">Untick anything you already have.</p>
+                  <ul className="gl-sheet-list">
+                    {addSheet.items.map((it,i)=>(
+                      <li key={i}>
+                        <label className="gl-check">
+                          <input type="checkbox" checked={it.on} onChange={()=>setAddSheet(s=>s&&({...s,items:s.items.map((x,j)=>j===i?{...x,on:!x.on}:x)}))}/>
+                          <span className="gl-text"><span className="gl-name" style={it.on?undefined:{color:"#9A8F88"}}>{displayName(it.name)}{it.amount?<span className="gl-sheet-amt"> · {it.amount}</span>:null}</span></span>
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                  {addSheet.staples.length>0&&<p className="gl-sheet-staples">Left off as pantry staples: {addSheet.staples.map(x=>displayName(x).toLowerCase()).join(", ")}.</p>}
+                  <button className="ui-btn-primary" disabled={!on.length} onClick={()=>{
+                    addListExtras(on.map(x=>({name:x.name,amount:x.amount,recipe:addSheet.recipe.title})));
+                    setListToast(`Added ${on.length} item${on.length===1?"":"s"} to your list`);close();
+                  }}>{on.length?`Add ${on.length} item${on.length===1?"":"s"}`:"Nothing to add"}</button>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+      {listToast&&(
+        <div className="gl-toast" role="status">
+          <span>{listToast}</span>
+          <button onClick={()=>{setListToast("");goNav("list");}}>View list</button>
+        </div>
+      )}
       {planPick&&(()=>{
         const r=planPick.recipe;
         const days=Array.from({length:14},(_,i)=>dateKey(addDays(startOfToday(),i)));
