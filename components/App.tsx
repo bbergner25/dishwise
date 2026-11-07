@@ -800,6 +800,20 @@ const CSS = `
   .ck-inspire-title{font-family:'Fraunces',serif;font-size:19px;font-weight:600;color:#FDFAF5;}
   .ck-inspire-sub{font-family:'Figtree',sans-serif;font-size:14px;color:#C9C3BA;}
   .ck-inspire-cta{flex-shrink:0;height:44px;padding:0 16px;border-radius:22px;background:#F4A021;color:#151210;font-family:'Figtree',sans-serif;font-weight:600;font-size:14px;display:flex;align-items:center;}
+  .cm-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;}
+  .cm-shuffle{flex-shrink:0;height:40px;padding:0 14px;border-radius:20px;border:1px solid #E3DCD0;background:#fff;display:flex;align-items:center;gap:6px;font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;color:#151210;cursor:pointer;}
+  .cm-shuffle:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
+  .ck-browse{display:flex;align-items:center;gap:14px;width:100%;margin-top:4px;padding:14px 12px 14px 16px;border-radius:20px;background:#fff;border:1px solid rgba(236,230,221,.8);box-shadow:0 1px 2px rgba(21,18,16,.05),0 8px 24px rgba(21,18,16,.07);text-align:left;cursor:pointer;font-family:'Figtree',sans-serif;color:#151210;}
+  .ck-browse:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
+  .ck-fan{position:relative;width:96px;height:66px;flex-shrink:0;}
+  .ck-fan-img{position:absolute;width:50px;height:60px;object-fit:cover;border-radius:10px;border:2px solid #fff;box-shadow:0 2px 6px rgba(21,18,16,.18);}
+  .ck-fan-0{left:0;top:5px;transform:rotate(-7deg);}
+  .ck-fan-1{left:23px;top:0;z-index:1;}
+  .ck-fan-2{left:46px;top:5px;transform:rotate(7deg);z-index:2;}
+  .ck-browse-txt{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0;}
+  .ck-browse-txt strong{font-family:'Fraunces',serif;font-weight:700;font-size:18px;line-height:1.15;}
+  .ck-browse-txt span{font-size:13.5px;line-height:1.35;color:#6E635F;}
+  .ck-browse-go{display:flex;color:#6E635F;flex-shrink:0;}
   .ck-textlink{align-self:flex-start;background:none;border:none;padding:6px 0;font-family:'Figtree',sans-serif;font-size:14px;font-weight:500;color:#1A1F2E;cursor:pointer;text-decoration:underline;text-underline-offset:3px;}
   .ck-textlink:hover{color:#151210;}
   .ck-inline-link{background:none;border:none;cursor:pointer;color:#1A1F2E;text-decoration:underline;font-size:13px;font-family:'Figtree',sans-serif;padding:0;}
@@ -1793,6 +1807,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
   const [communityStatus,setCommunityStatus]   = useState("idle");
   const [communityAuthed,setCommunityAuthed]   = useState(false);
   const [communityTab,setCommunityTab]         = useState("All");
+  const [commShuffle,setCommShuffle] = useState(0); // 0 = A–Z, otherwise a shuffle seed
   const [communitySearch,setCommunitySearch]   = useState("");
   const [showShare,setShowShare]               = useState(false);
   const [shareUrl,setShareUrl]                 = useState<string|null>(null);
@@ -3275,10 +3290,26 @@ ${tiktok.text}`}]);
                 </span>
                 <span className="ck-inspire-cta">Inspire me</span>
               </button>
-              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-start",gap:2}}>
-                <button className="ck-textlink" onClick={()=>{setHomeMode("tryme");window.scrollTo({top:0});}}>Or flip through ideas →</button>
-                <button className="ck-textlink" onClick={()=>{setCommFrom("search");setTab("community");window.scrollTo({top:0});}}>Or browse all community recipes →</button>
-              </div>
+              {(()=>{
+                // a fan of real dish photos (the trending dishes are Community recipes)
+                const fan=trendingDishes.filter(t=>photosOn&&photoFor(t)).slice(0,3);
+                return(
+                  <button className="ck-browse" onClick={()=>{setCommFrom("search");setTab("community");window.scrollTo({top:0});}}>
+                    {fan.length===3&&(
+                      <span className="ck-fan" aria-hidden="true">
+                        {fan.map((t,i)=><img key={t} src={photoFor(t)!} alt="" className={`ck-fan-img ck-fan-${i}`}/>)}
+                      </span>
+                    )}
+                    <span className="ck-browse-txt">
+                      <strong>Browse the community</strong>
+                      <span>Hundreds of dishes, ready to cook.</span>
+                    </span>
+                    <span className="ck-browse-go" aria-hidden="true">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+                    </span>
+                  </button>
+                );
+              })()}
 
               {trendingDishes.length>0&&(
                 <section className="ck-section">
@@ -4150,10 +4181,11 @@ ${tiktok.text}`}]);
       return ingredients.some((ing:string)=>ing.includes(sq));
     }
 
-    const filtered=communityRecipes.filter(r=>{
+    const matched=communityRecipes.filter(r=>{
       const catMatch=communityTab==="All"||communityCategory(r.title)===communityTab;
       return catMatch&&matchesSearch(r);
     });
+    const filtered=commShuffle&&!sq?seededShuffle(matched,commShuffle):matched;
 
     return(
       <div className="lib-page cm-page">
@@ -4161,7 +4193,12 @@ ${tiktok.text}`}]);
           <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="m15 6-6 6 6 6"/></svg>
           {commFrom==="library"?"Library":"Cook"}
         </button>
-        <h1 className="ck-title" style={{margin:"14px 0 0"}}>Community recipes</h1>
+        <div className="cm-head">
+          <h1 className="ck-title" style={{margin:0}}>Community</h1>
+          {communityStatus==="done"&&communityRecipes.length>1&&(
+            <button className="cm-shuffle" onClick={()=>setCommShuffle(Date.now()%100000+1)}>{Ic.shuffle(16)} Shuffle</button>
+          )}
+        </div>
         <p className="fl-lede">Dishes other people have made with Every Chef. Tap one to open it.</p>
 
         {!communityAuthed&&communityStatus==="done"&&(
