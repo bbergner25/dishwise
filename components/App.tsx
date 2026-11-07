@@ -2079,10 +2079,15 @@ export default function App({onReady}:{onReady?:()=>void}={}){
       const ss=window.speechSynthesis;if(!ss||!text)return;
       ss.cancel();
       const u=new SpeechSynthesisUtterance(text);
-      const voices=ss.getVoices().filter(v=>/^en[-_]US/i.test(v.lang));
-      const v=voices.find(v=>/premium|enhanced|natural/i.test(v.name))||voices.find(v=>/samantha|ava|allison|google us english/i.test(v.name))||voices[0];
+      // the best natural-sounding English voice the phone has; never the novelty and old robot voices (Albert, Fred, Zarvox…)
+      const ROBOT=/albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|junior|ralph|fred|kathy|grandma|grandpa|eddy|flo|reed|rocko|sandy|shelley|compact/i;
+      const voices=ss.getVoices().filter(v=>/^en[-_]/i.test(v.lang)&&!ROBOT.test(v.name)&&!ROBOT.test(v.voiceURI||""));
+      const us=voices.filter(v=>/^en[-_]US/i.test(v.lang));
+      const v=us.find(v=>/premium/i.test(v.name+v.voiceURI))||us.find(v=>/enhanced|siri|natural/i.test(v.name+v.voiceURI))
+        ||voices.find(v=>/premium|enhanced|siri|natural/i.test(v.name+v.voiceURI))
+        ||us.find(v=>/ava|samantha|allison|zoe|evan|nathan|susan|google us english/i.test(v.name))||us[0]||voices[0];
       if(v)u.voice=v;
-      u.lang="en-US";u.rate=0.97;
+      u.lang=v?.lang||"en-US";u.rate=1;
       ss.speak(u);
     }catch{}
   };
