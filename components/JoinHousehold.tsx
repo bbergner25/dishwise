@@ -6,7 +6,7 @@ import { useUser, useClerk } from "@clerk/nextjs";
 const CSS = `
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:#FDFAF5;font-family:'Figtree',sans-serif;color:#151210;-webkit-font-smoothing:antialiased;}
-.jh-header{background:#1A1F2E;height:64px;display:flex;align-items:center;justify-content:center;}
+.jh-header{background:#1A1F2E;height:calc(64px + env(safe-area-inset-top,0px));padding-top:env(safe-area-inset-top,0px);display:flex;align-items:center;justify-content:center;}
 .jh-wordmark{font-family:'Fraunces',serif;font-size:26px;font-weight:700;letter-spacing:-0.5px;text-decoration:none;}
 .jh-wordmark span:first-child{color:#FDFAF5;}
 .jh-wordmark span:last-child{color:#F4A021;font-style:italic;margin-left:2px;}

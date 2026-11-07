@@ -7,14 +7,15 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "Every Chef",
   },
   icons: { apple: "/apple-touch-icon.png?v=3", icon: "/favicon-32.png" },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#FDFAF5",
+  themeColor: "#1A1F2E",
+  viewportFit: "cover",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

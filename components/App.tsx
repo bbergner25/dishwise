@@ -90,7 +90,7 @@ const CSS = `
   /* ── MOBILE TOP HEADER ── */
   .mobile-header{
     display:flex;align-items:center;justify-content:center;
-    background:#1A1F2E;height:52px;
+    background:#1A1F2E;height:calc(52px + env(safe-area-inset-top,0px));padding-top:env(safe-area-inset-top,0px) !important;
     position:sticky;top:0;z-index:100;
     border-bottom:1px solid rgba(244,160,33,.15);
     padding:0 16px;
@@ -1169,7 +1169,7 @@ const CSS = `
   .mobile-header{background:rgba(26,31,46,.95);-webkit-backdrop-filter:blur(20px) saturate(160%);backdrop-filter:blur(20px) saturate(160%);border-bottom:1px solid rgba(255,255,255,.08);box-shadow:0 -100vh 0 100vh #1A1F2E,0 6px 20px rgba(21,18,16,.12);}
   @media(max-width:767px){
     body{padding-bottom:calc(104px + env(safe-area-inset-bottom,0px));}
-    .bottom-nav{left:14px;right:14px;bottom:calc(max(env(safe-area-inset-bottom,0px),10px) + 4px);height:64px;padding:6px;gap:4px;align-items:stretch;border-radius:32px;border:1px solid rgba(255,255,255,.7);
+    .bottom-nav{left:14px;right:14px;bottom:calc(max(env(safe-area-inset-bottom,0px) - 10px,10px) + 4px);height:64px;padding:6px;gap:4px;align-items:stretch;border-radius:32px;border:1px solid rgba(255,255,255,.7);
       background:rgba(253,250,245,.66);-webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);
       box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 10px 30px rgba(21,18,16,.16);}
     .bottom-nav.hidden{transform:translateY(calc(100% + 40px));}

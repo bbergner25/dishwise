@@ -148,7 +148,7 @@ export default async function PublicRecipePage({ params }: { params: { slug: str
         body{background:#FDFAF5;font-family:'Figtree',sans-serif;color:#151210;-webkit-font-smoothing:antialiased;}
         a{color:inherit;text-decoration:none;}
 
-        .pr-header{background:#1A1F2E;height:64px;display:flex;align-items:center;justify-content:center;position:sticky;top:0;z-index:20;}
+        .pr-header{background:#1A1F2E;height:calc(64px + env(safe-area-inset-top,0px));padding-top:env(safe-area-inset-top,0px);display:flex;align-items:center;justify-content:center;position:sticky;top:0;z-index:20;}
         .pr-wordmark{font-family:'Fraunces',serif;font-size:26px;font-weight:700;letter-spacing:-0.5px;line-height:1;}
         .pr-wordmark span:first-child{color:#FDFAF5;}
         .pr-wordmark span:last-child{color:#F4A021;font-style:italic;margin-left:2px;}
