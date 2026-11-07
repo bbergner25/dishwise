@@ -1150,6 +1150,57 @@ const CSS = `
   .pl-pic{width:56px;height:56px;}
   .fl-card.has-pic{padding-left:94px;min-height:96px;}
   .fl-pic{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:68px;height:68px;border-radius:14px;}
+  /* ═══ Depth: frosted floating layers, lifted cards, glossy primary buttons ═══ */
+  /* Text stays on solid surfaces; glass is only for things that float over content. */
+  .mobile-header{background:rgba(26,31,46,.95);-webkit-backdrop-filter:blur(20px) saturate(160%);backdrop-filter:blur(20px) saturate(160%);border-bottom:1px solid rgba(255,255,255,.08);box-shadow:0 -100vh 0 100vh #1A1F2E,0 6px 20px rgba(21,18,16,.12);}
+  @media(max-width:767px){
+    body{padding-bottom:calc(104px + env(safe-area-inset-bottom,0px));}
+    .bottom-nav{left:14px;right:14px;bottom:calc(max(env(safe-area-inset-bottom,0px),10px) + 4px);height:64px;padding:6px;gap:4px;align-items:stretch;border-radius:32px;border:1px solid rgba(255,255,255,.7);
+      background:rgba(253,250,245,.66);-webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 10px 30px rgba(21,18,16,.16);}
+    .bottom-nav.hidden{transform:translateY(calc(100% + 40px));}
+    .bottom-nav .bottom-tab{border-radius:26px;padding:4px;gap:2px;font-size:11px;color:#4F4744;transition:background .2s,color .2s,box-shadow .2s;}
+    .bottom-nav .bottom-tab.active{background:rgba(255,255,255,.8);box-shadow:0 2px 8px rgba(21,18,16,.08);color:#151210;}
+    .bottom-nav .bottom-tab.active::after{display:none;}
+    .bottom-nav .bottom-tab .nav-badge{top:2px;right:calc(50% - 22px);}
+  }
+  .glass-chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:18px;font-size:14px;font-weight:600;color:#FDFAF5;
+    background:rgba(21,18,16,.3);-webkit-backdrop-filter:blur(16px) saturate(170%);backdrop-filter:blur(16px) saturate(170%);border:1px solid rgba(255,255,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 4px 14px rgba(0,0,0,.18);}
+  /* sheets: frosted cream panel lifted off the page */
+  .share-overlay{background:rgba(21,18,16,.32);}
+  .share-sheet{background:rgba(253,250,245,.86);-webkit-backdrop-filter:blur(28px) saturate(180%);backdrop-filter:blur(28px) saturate(180%);border:1px solid rgba(255,255,255,.85);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 -12px 40px rgba(21,18,16,.2);}
+  /* cards: soft two-layer shadow */
+  .recipe-card,.inspire-card,.fr-card,.ck-trend-card,.qp-pick,.hh-box,.gl-pantry,.gl-empty,.lib-grid .recipe-card{border-color:rgba(236,230,221,.8);box-shadow:0 1px 2px rgba(21,18,16,.05),0 8px 24px rgba(21,18,16,.07);}
+  .pl-day{border-bottom:none;padding:8px 0;}
+  .pl-day:has(.pl-meal-top) .pl-meal{background:#fff;border:1px solid rgba(236,230,221,.8);border-radius:18px;padding:10px 12px;box-shadow:0 1px 2px rgba(21,18,16,.05),0 8px 24px rgba(21,18,16,.07);}
+  .pl-thumb,.qp-pic{box-shadow:0 4px 12px rgba(21,18,16,.18);}
+  .qp-shuffle{background:rgba(255,255,255,.66);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 3px 10px rgba(21,18,16,.12);}
+  /* primary buttons: glossy saffron */
+  .ui-btn-primary,.inspire-go-btn,.qp-card-btn,.rx-cook,.ck-inspire-cta,.qp-slim{background:linear-gradient(180deg,#F7B240,#F4A021);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 6px 18px rgba(244,160,33,.32);}
+  .qp-slim{border:none;color:#151210;}
+  .ui-btn-primary:disabled,.inspire-go-btn:disabled{background:#EDE6DA;box-shadow:none;}
+  .pl-groceries{box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 6px 18px rgba(26,31,46,.25);}
+  /* recipe page: big photo, glass details on it, recipe panel sliding up over it */
+  .rx-hero-wrap{position:relative;max-width:820px;margin:0 auto;}
+  .rx-hero-wrap .rx-hero{width:100%;height:320px;border-radius:0;margin:0;}
+  @media(min-width:768px){.rx-hero-wrap{padding:0 20px;margin-top:14px;}.rx-hero-wrap .rx-hero{height:380px;border-radius:24px;}}
+  .rx-hero-chips{position:absolute;left:16px;bottom:44px;display:flex;gap:8px;flex-wrap:wrap;}
+  @media(min-width:768px){.rx-hero-chips{left:36px;bottom:24px;}}
+  .rx-head-over{position:relative;margin-top:-28px;background:#FDFAF5;border-radius:26px 26px 0 0;box-shadow:0 -10px 30px rgba(21,18,16,.12);}
+  @media(min-width:768px){.rx-head-over{margin-top:0;box-shadow:none;border-radius:0;}}
+  /* recipe action bar: a floating glass pill */
+  @media(max-width:767px){
+    .rx-actionbar{left:12px;right:12px;bottom:calc(max(env(safe-area-inset-bottom,0px),10px) + 4px);padding:7px;border-radius:33px;border:1px solid rgba(255,255,255,.7);
+      background:rgba(253,250,245,.66);-webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 10px 30px rgba(21,18,16,.18);}
+    .rx-actionbar-inner{gap:6px;}
+    .rx-actionbar .rx-save,.rx-actionbar .rx-plan{border:none;background:rgba(255,255,255,.75);height:50px;padding:0 13px;font-size:15px;gap:6px;}
+    .rx-actionbar .rx-cook{height:50px;min-width:0;padding:0 12px;font-size:15px;white-space:nowrap;}
+  }
+  @media (prefers-reduced-transparency:reduce){
+    .bottom-nav,.rx-actionbar,.share-sheet,.mobile-header{background:#FDFAF5;-webkit-backdrop-filter:none;backdrop-filter:none;}
+    .mobile-header{background:#1A1F2E;}
+  }
+
 `;
 
 /* ── CONSTANTS (card pool + suggestions now live in lib/dishes.ts) ── */
@@ -3845,8 +3896,16 @@ ${tiktok.text}`}]);
     return(
       <div className="recipe-page rx-page">
         <input ref={photoInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handlePhotoUpload}/>
-        {photosOn?<DishPic title={recipe.title} src={photoFor(recipe,photo)} className="rx-hero"/>:photo&&<img src={photo} className="rx-photo" alt={recipe.title}/>}
-        <header className="rx-head">
+        {photosOn?(
+          <div className="rx-hero-wrap">
+            <DishPic title={recipe.title} src={photoFor(recipe,photo)} className="rx-hero"/>
+            <div className="rx-hero-chips" aria-hidden="true">
+              {totalRange(withTimes(recipe))&&<span className="glass-chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>{totalRange(withTimes(recipe))}</span>}
+              <span className="glass-chip">Serves {curS}</span>
+            </div>
+          </div>
+        ):photo&&<img src={photo} className="rx-photo" alt={recipe.title}/>}
+        <header className={`rx-head${photosOn?" rx-head-over":""}`}>
           <div className="rx-eyebrow">{recipe._author?`From @${recipe._author} on TikTok`:recipe._scanned?"Scanned recipe":recipe._imported?"Imported recipe":recipe._fromCache?"Community recipe":"Every Chef original"}</div>
           <h1 className="rx-title">{recipe.title}</h1>
           {recipe.tagline&&<p className="rx-tagline">{recipe.tagline}</p>}
