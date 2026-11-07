@@ -6,6 +6,7 @@ import { CARD_POOL } from "../lib/dishes";
 import { buildPrompt } from "../lib/prompts";
 import { isRude } from "../lib/guard";
 import { TIME_RULE, totalRange, totalShort } from "../lib/times";
+import { STAPLES_NOTE, ingredientUses } from "../lib/pantry";
 
 const C = {
   cream:"#FDFAF5",parchment:"#FFF0D4",brown:"#151210",
@@ -406,9 +407,32 @@ const CSS = `
   .inspire-chip:hover{border-color:#B8AFA3;}
   .inspire-chip.on{background:#1A1F2E;border-color:#1A1F2E;color:#FDFAF5;font-weight:600;}
   .inspire-chip:focus-visible,.inspire-go-btn:focus-visible,.inspire-card-btn:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
-  .inspire-fridge-input{width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid #E3DCD0;border-radius:14px;font-family:'Figtree',sans-serif;font-size:16px;color:#151210;outline:none;background:#fff;resize:none;line-height:1.45;}
-  .inspire-fridge-input:focus{border-color:#1A1F2E;box-shadow:0 0 0 3px rgba(244,160,33,.35);}
-  .inspire-fridge-input::placeholder{color:#9A8F88;}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+  .fr-card{background:#fff;border:1px solid #ECE6DD;border-radius:20px;padding:18px;margin:6px 0 22px;display:flex;flex-direction:column;gap:12px;}
+  .fr-title{margin:0;font-family:'Fraunces',serif;font-size:24px;font-weight:700;letter-spacing:-.4px;line-height:1.15;color:#151210;}
+  .fr-lede{margin:0;font-size:16px;line-height:1.5;color:#4F4744;}
+  .fr-snap{min-height:50px;border-radius:25px;border:2px solid #1A1F2E;background:#fff;color:#151210;font-family:'Figtree',sans-serif;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;}
+  .fr-snap:disabled{opacity:.6;cursor:progress;}
+  .fr-photo-row{display:flex;align-items:center;gap:12px;}
+  .fr-photo{width:64px;height:64px;border-radius:12px;object-fit:cover;flex-shrink:0;}
+  .fr-photo-note{font-size:14px;line-height:1.4;color:#4F4744;}
+  .fr-add{display:flex;gap:8px;}
+  .fr-input{flex:1;min-width:0;height:46px;box-sizing:border-box;padding:0 14px;border:1px solid #E3DCD0;border-radius:14px;font-family:'Figtree',sans-serif;font-size:16px;color:#151210;outline:none;background:#fff;}
+  .fr-input:focus{border-color:#1A1F2E;box-shadow:0 0 0 3px rgba(244,160,33,.35);}
+  .fr-input::placeholder{color:#9A8F88;}
+  .fr-add-btn{height:46px;padding:0 18px;border-radius:14px;border:none;background:#1A1F2E;color:#FDFAF5;font-family:'Figtree',sans-serif;font-size:15px;font-weight:600;cursor:pointer;}
+  .fr-add-btn:disabled{background:#EDE6DA;color:#9A8F88;cursor:default;}
+  .fr-chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .fr-chip{min-height:40px;padding:0 14px;border-radius:20px;border:1px dashed #B8AFA3;background:#fff;color:#6E635F;font-family:'Figtree',sans-serif;font-size:15px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;}
+  .fr-chip.on{border:1px solid #1A1F2E;background:#1A1F2E;color:#FDFAF5;}
+  .fr-chip:focus-visible,.fr-snap:focus-visible,.fr-add-btn:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
+  .fr-unsure{font-size:12px;opacity:.85;}
+  .fr-staples{margin:0;font-size:14px;line-height:1.45;color:#6E635F;}
+  .fr-results-title{margin:4px 0 12px;font-family:'Fraunces',serif;font-size:24px;font-weight:700;color:#151210;}
+  .fr-ready{align-self:flex-start;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#1A1F2E;background:#FCEBCB;padding:4px 8px;border-radius:8px;}
+  .fr-uses{font-weight:600;color:#151210;}
+  .fr-need{margin:0;font-size:15px;line-height:1.45;color:#4F4744;}
+  .fr-none{font-weight:600;color:#2F6B3A;}
   .inspire-diets{margin:-8px 0 16px;font-size:14px;color:#6E635F;}
   .inspire-go-btn{width:100%;min-height:52px;background:#F4A021;color:#151210;border:none;border-radius:26px;font-family:'Figtree',sans-serif;font-size:17px;font-weight:600;cursor:pointer;transition:background .15s;}
   .inspire-go-btn:hover:not(:disabled){background:#E8941A;}
@@ -1480,16 +1504,52 @@ function randomCode(){
   return Array.from({length:6},()=>chars[Math.floor(Math.random()*chars.length)]).join("");
 }
 
-function buildInspirePrompt(time: string,vibe: string,serves: string,diets: string[],fridge?: string,exclude: string[]=[]): string{
+function buildInspirePrompt(time: string,vibe: string,serves: string,diets: string[],exclude: string[]=[]): string{
   const d=diets.length?" Dietary restrictions: "+diets.join(", ")+".":"";
-  const f=fridge?.trim()?` Try to incorporate some or all of these ingredients the user already has: ${fridge.trim()}.`:"";
   const x=exclude.length?` Don't suggest any of these again: ${exclude.join("; ")}.`:"";
-  return `Suggest 4 distinct recipe ideas for someone who wants: time available: "${time}", vibe: "${vibe}", serving size: "${serves}".${d}${f}${x}
+  return `Suggest 4 distinct recipe ideas for someone who wants: time available: "${time}", vibe: "${vibe}", serving size: "${serves}".${d}${x}
 Reply with ONLY valid JSON, no other text:
 {"suggestions":[{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","total_time":"X–Y mins","servings":"2","why":"One sentence on why this fits their request perfectly."},{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","total_time":"X–Y mins","servings":"2","why":"..."},{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","total_time":"X–Y mins","servings":"2","why":"..."},{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","total_time":"X–Y mins","servings":"2","why":"..."}]}
 Make each suggestion meaningfully different from the others. Keep titles concise and appetizing, with no brand, store, restaurant or creator names. Only suggest dishes whose realistic total_time fits the time available.
 ${TIME_RULE}`;
 }
+
+// "Cook with what you have": four dishes built around what's already in the fridge
+function buildFridgePrompt(items: string[],time: string,diets: string[],exclude: string[]=[]): string{
+  const d=diets.length?" Dietary restrictions: "+diets.join(", ")+".":"";
+  const t=time?` Time available: "${time}". Only suggest dishes whose realistic total_time fits.`:"";
+  const x=exclude.length?` Don't suggest any of these: ${exclude.join("; ")}.`:"";
+  return `A home cook wants to make dinner mostly from what they already have: ${items.join("; ")}. Assume they also have ${STAPLES_NOTE}.${t}${d}${x}
+Suggest 4 distinct dishes that use as many of their ingredients as make a good dish, and keep anything else they'd have to buy to 3 items or fewer. Never build a dish around something they didn't list.
+Reply with ONLY valid JSON, no other text, with exactly 4 suggestions shaped like this:
+{"suggestions":[{"title":"...","tagline":"...","prep_time":"X mins","cook_time":"X mins","total_time":"X–Y mins","servings":"4","uses":["their ingredients this dish uses, written exactly as they gave them"],"need":["anything else to buy, short grocery names, not the staples above"],"why":"One sentence on why this is a good use of what they have."}]}
+Keep titles concise and appetizing, with no brand, store, restaurant or creator names.
+${TIME_RULE}`;
+}
+
+const FRIDGE_SPOT_PROMPT=`This is a photo of someone's fridge, freezer, pantry or counter. List the foods you can see that could go into a meal, using plain grocery names a home cook would use ("chicken thighs", "spinach", "cheddar", "greek yogurt", "bell peppers"). Leave out drinks, condiments, oil, salt, spices and anything you can't identify. Mark "sure": false for anything you're guessing at. At most 20 items.
+Reply with ONLY valid JSON: {"items":[{"name":"spinach","sure":true}]}. If there's no food in the photo, reply {"items":[]}.`;
+
+// Shrink a photo before sending it, so uploads are quick and cheap
+function downscaleImage(file: File, max=1400): Promise<string|null>{
+  return new Promise(res=>{
+    if(file.size>15*1024*1024)return res(null);
+    const url=URL.createObjectURL(file);
+    const img=new window.Image();
+    img.onload=()=>{
+      URL.revokeObjectURL(url);
+      let w=img.width,h=img.height;
+      if(w>max||h>max){if(w>h){h=Math.round(h*(max/w));w=max;}else{w=Math.round(w*(max/h));h=max;}}
+      const c=document.createElement("canvas");c.width=w;c.height=h;
+      const ctx=c.getContext("2d");if(!ctx)return res(null);
+      ctx.drawImage(img,0,0,w,h);res(c.toDataURL("image/jpeg",0.8));
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);res(null);};
+    img.src=url;
+  });
+}
+
+const FRIDGE_TIMES:[string,number][]=[["Under 30 mins",30],["Under 45 mins",45],["1 hour+",0]];
 
 function buildScanPrompt(): string{
   return `Extract the recipe from this image. Use US imperial measurements only (cups, tbsp, tsp, oz, lbs, °F). Each ingredient's "amount" holds only the quantity, unit and size (e.g. "1", "2 cups", "1 large"); the ingredient itself and any prep notes go in "name" (amount "1", name "red bell pepper, cored and diced"). Reply with ONLY valid JSON:
@@ -1697,7 +1757,15 @@ export default function App({onReady}:{onReady?:()=>void}={}){
   const [inspireTime,setInspireTime]   = useState("");
   const [inspireVibe,setInspireVibe]   = useState("");
   const [inspireServes,setInspireServes] = useState("");
-  const [inspireFridge,setInspireFridge] = useState("");
+  const [inspireKind,setInspireKind]   = useState<"fridge"|"vibe">("fridge");
+  const [fridgeItems,setFridgeItems]   = useState<{name:string;on:boolean;unsure?:boolean}[]>([]);
+  const [fridgeText,setFridgeText]     = useState("");
+  const [fridgePhoto,setFridgePhoto]   = useState<string|null>(null);
+  const [fridgeSpot,setFridgeSpot]     = useState<{status:"idle"|"spotting"|"error";msg?:string}>({status:"idle"});
+  const [fridgeTime,setFridgeTime]     = useState("");
+  const [fridgeCommunity,setFridgeCommunity] = useState<{recipe:any;uses:string[];need:string[]}[]>([]);
+  const [fridgeHave,setFridgeHave]     = useState<{id:number;items:string[]}|null>(null); // ticks these off the grocery list
+  const fridgeFileRef=useRef<HTMLInputElement>(null);
   const [inspireStatus,setInspireStatus] = useState("idle");
   const inspireStart=useRef(0);
   const [inspireSuggestions,setInspireSuggestions] = useState<any[]>([]);
@@ -2451,9 +2519,74 @@ export default function App({onReady}:{onReady?:()=>void}={}){
     const exclude=inspireStatus==="done"?inspireSuggestions.map((x:any)=>x.title).filter(Boolean):[];
     setInspireStatus("loading");setInspireSuggestions([]);inspireStart.current=Date.now();window.scrollTo({top:0});
     try{
-      const parsed=await callAPI([{role:"user",content:buildInspirePrompt(inspireTime,inspireVibe,inspireServes,diets,inspireFridge,exclude)}]);
+      const parsed=await callAPI([{role:"user",content:buildInspirePrompt(inspireTime,inspireVibe,inspireServes,diets,exclude)}]);
       setInspireSuggestions(parsed.suggestions||[]);setInspireStatus("done");
     }catch(e:any){setInspireStatus("error");}
+  };
+
+  /* cook with what you have */
+  const fridgeOn=fridgeItems.filter(x=>x.on).map(x=>x.name);
+  const addFridgeItems=(names:string[],on=true,unsure=false)=>{
+    setFridgeItems(list=>{
+      const out=[...list];
+      for(const raw of names){
+        const name=String(raw||"").trim().replace(/\s+/g," ").slice(0,60);
+        if(!name||isRude(name))continue;
+        const i=out.findIndex(x=>x.name.toLowerCase()===name.toLowerCase());
+        if(i>=0){if(on)out[i]={...out[i],on:true,unsure:false};}
+        else out.push({name,on,unsure});
+      }
+      return out.slice(0,30);
+    });
+  };
+  const addFridgeText=()=>{
+    const parts=fridgeText.split(/[,\n;]+/).map(x=>x.trim()).filter(Boolean);
+    if(parts.length)addFridgeItems(parts);
+    setFridgeText("");
+  };
+  const onFridgePhoto=async(e:any)=>{
+    const file:File|undefined=e.target.files?.[0];
+    if(fridgeFileRef.current)fridgeFileRef.current.value="";
+    if(!file)return;
+    const url=await downscaleImage(file);
+    if(!url){setFridgeSpot({status:"error",msg:"We couldn't read that photo. Try another one, under 15MB."});return;}
+    setFridgePhoto(url);setFridgeSpot({status:"spotting"});
+    try{
+      const parsed=await callAPI([{role:"user",content:[
+        {type:"image",source:{type:"base64",media_type:"image/jpeg",data:url.split(",")[1]}},
+        {type:"text",text:FRIDGE_SPOT_PROMPT},
+      ]}]);
+      const found=(Array.isArray(parsed.items)?parsed.items:[]).filter((x:any)=>x&&x.name);
+      if(!found.length){setFridgeSpot({status:"error",msg:"We couldn't spot any food in that photo. Try one with the shelves in view, or type what you have."});return;}
+      addFridgeItems(found.filter((x:any)=>x.sure!==false).map((x:any)=>x.name));
+      addFridgeItems(found.filter((x:any)=>x.sure===false).map((x:any)=>x.name),false,true);
+      setFridgeSpot({status:"idle"});
+    }catch{setFridgeSpot({status:"error",msg:"We couldn't look at that photo just now. Try again, or type what you have."});}
+  };
+  const doFridge=async(more=false)=>{
+    const items=fridgeOn;if(!items.length)return;
+    const exclude=more?[...inspireSuggestions.map((x:any)=>x.title),...fridgeCommunity.map(x=>x.recipe.title)].filter(Boolean):[];
+    setInspireStatus("loading");setInspireSuggestions([]);if(!more)setFridgeCommunity([]);
+    inspireStart.current=Date.now();window.scrollTo({top:0});
+    const maxMinutes=FRIDGE_TIMES.find(t=>t[0]===fridgeTime)?.[1]||0;
+    const community=more?Promise.resolve(fridgeCommunity):fetch("/api/pantry",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({items,maxMinutes})})
+      .then(r=>r.json()).then(d=>Array.isArray(d.results)?d.results:[]).catch(()=>[]);
+    const ideas=callAPI([{role:"user",content:buildFridgePrompt(items,fridgeTime,diets,exclude)}]).then(p=>p.suggestions||[]).catch(()=>null);
+    const [found,fresh]=await Promise.all([community,ideas]);
+    const taken=new Set(found.map((x:any)=>normTitle(x.recipe.title)));
+    const lower=items.map(i=>i.toLowerCase());
+    const ai=(fresh||[]).filter((sg:any)=>sg?.title&&!taken.has(normTitle(sg.title))).map((sg:any)=>({...sg,
+      uses:(Array.isArray(sg.uses)?sg.uses:[]).filter((u:any)=>lower.includes(String(u).toLowerCase())),
+      need:(Array.isArray(sg.need)?sg.need:[]).map(String).slice(0,5)}));
+    setFridgeCommunity(found);setInspireSuggestions(ai);
+    setInspireStatus(!fresh&&!found.length?"error":"done");
+  };
+  const openFridgeCommunity=(m:{recipe:any;uses:string[]})=>{
+    const full={...m.recipe,id:Date.now(),_dish:m.recipe.title,_ts:Date.now(),_fromCache:true};
+    setFridgeHave({id:full.id,items:fridgeOn});
+    setReturnTab(null);setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(full);setServings(null);setStatus("done");setTab("search");
+    setHistory(h=>[full,...h.filter((x:any)=>!sameRecipe(x,full))].slice(0,30));
+    window.scrollTo({top:0});
   };
 
   const loadCommunity=async()=>{
@@ -2482,16 +2615,18 @@ export default function App({onReady}:{onReady?:()=>void}={}){
     return "Mains";
   }
 
-  const pickInspiredRecipe=async(suggestion: any)=>{
+  const pickInspiredRecipe=async(suggestion: any, have?: string[])=>{
     setTab("search");setQuery(suggestion.title);
     const mySeq=++searchSeq.current;
     setLoadingDish(suggestion.title);setGenStart(Date.now());window.scrollTo({top:0});
     setStatus("loading");setRecipe(null);setServings(null);setErrorMsg("");
     setReturnTab(null);setPairedSides([]);setActivePane(0);setReturnDayKey(null);
     try{
-      const parsed=await callAPI([{role:"user",content:buildPrompt(suggestion.title,diets,seasonal,location)}]);
+      const extra=have?.length?` The cook already has ${(suggestion.uses?.length?suggestion.uses:have).join(", ")}, plus ${STAPLES_NOTE}. Build the recipe around those, and keep anything else they'd need to buy to ${suggestion.need?.length?suggestion.need.join(", "):"as little as possible"}.`:"";
+      const parsed=await callAPI([{role:"user",content:buildPrompt(suggestion.title,diets,seasonal,location)+extra}]);
       if(mySeq!==searchSeq.current)return;
       const r={...parsed,id:Date.now(),_dish:suggestion.title,_ts:Date.now()};
+      if(have?.length)setFridgeHave({id:r.id,items:have});
       setRecipe(r);setStatus("done");
       setHistory(h=>[r,...h.filter((x:any)=>x.id!==r.id)].slice(0,30));
     }catch(e:any){if(mySeq!==searchSeq.current)return;setErrorMsg(e.message||String(e));setStatus("error");}
@@ -2864,7 +2999,7 @@ ${tiktok.text}`}]);
               <button className="ck-inspire" onClick={()=>{setHomeMode("inspire");window.scrollTo({top:0});}}>
                 <span className="ck-inspire-text">
                   <span className="ck-inspire-title">Not sure what to make?</span>
-                  <span className="ck-inspire-sub">Tell us your time and mood. We'll pick four.</span>
+                  <span className="ck-inspire-sub">Snap your fridge or type what you have. We'll find dishes.</span>
                 </span>
                 <span className="ck-inspire-cta">Inspire me</span>
               </button>
@@ -3020,7 +3155,61 @@ ${tiktok.text}`}]);
               )}
               {homeMode==="inspire"&&(
               <div className="home-inspire-wrap">
-                {(inspireStatus==="idle"||inspireStatus==="error")&&(
+                {inspireKind==="fridge"&&(inspireStatus==="idle"||inspireStatus==="error")&&(
+                  <>
+                    {inspireStatus==="error"&&<p className="inspire-error" role="alert">We couldn't come up with dishes just now. Check your connection and try again.</p>}
+                    <section className="fr-card" aria-labelledby="fr-title">
+                      <h2 id="fr-title" className="fr-title">Cook with what you have</h2>
+                      <p className="fr-lede">Snap your fridge or pantry, or type a few things. We'll find dishes that use them up.</p>
+                      <input ref={fridgeFileRef} type="file" accept="image/*" style={{display:"none"}} onChange={onFridgePhoto}/>
+                      <button className="fr-snap" onClick={()=>fridgeFileRef.current?.click()} disabled={fridgeSpot.status==="spotting"}>
+                        {Ic.camera(20)} {fridgeSpot.status==="spotting"?"Looking at your photo…":fridgePhoto?"Snap another photo":"Snap your fridge"}
+                      </button>
+                      {fridgePhoto&&(
+                        <div className="fr-photo-row">
+                          <img src={fridgePhoto} alt="Your photo" className="fr-photo"/>
+                          <span className="fr-photo-note" aria-live="polite">{fridgeSpot.status==="spotting"?"Spotting what's in there…":"Tap anything below that's wrong, or that you're saving for something else."}</span>
+                        </div>
+                      )}
+                      {fridgeSpot.status==="error"&&<p className="inspire-error" role="alert" style={{margin:0}}>{fridgeSpot.msg}</p>}
+                      <form className="fr-add" onSubmit={e=>{e.preventDefault();addFridgeText();}}>
+                        <label htmlFor="fr-input" className="sr-only">Add an ingredient</label>
+                        <input id="fr-input" className="fr-input" value={fridgeText} onChange={e=>setFridgeText(e.target.value)} placeholder={fridgeItems.length?"Add something else":"Type an ingredient"} autoComplete="off" enterKeyHint="done"/>
+                        <button type="submit" className="fr-add-btn" disabled={!fridgeText.trim()}>Add</button>
+                      </form>
+                      {fridgeItems.length>0&&(
+                        <>
+                          <div className="fr-chips">
+                            {fridgeItems.map(it=>(
+                              <button key={it.name} type="button" className={`fr-chip${it.on?" on":""}`} aria-pressed={it.on}
+                                onClick={()=>setFridgeItems(l=>l.map(x=>x.name===it.name?{...x,on:!x.on,unsure:false}:x))}>
+                                {it.on?<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 7"/></svg>:<span aria-hidden="true">+</span>}
+                                {it.name}{it.unsure&&<span className="fr-unsure"> (not sure)</span>}
+                              </button>
+                            ))}
+                          </div>
+                          <p className="fr-staples">We assume you have {STAPLES_NOTE}. <button className="ck-textlink" style={{alignSelf:"auto",fontSize:"inherit"}} onClick={()=>{setFridgeItems([]);setFridgePhoto(null);setFridgeSpot({status:"idle"});}}>Clear all</button></p>
+                        </>
+                      )}
+                    </section>
+                    <fieldset className="inspire-section">
+                      <legend className="inspire-section-label">How much time do you have? <span className="inspire-optional">Optional</span></legend>
+                      <div className="inspire-chips">
+                        {FRIDGE_TIMES.map(([o])=>(
+                          <button key={o} type="button" className={`inspire-chip${fridgeTime===o?" on":""}`} aria-pressed={fridgeTime===o} onClick={()=>setFridgeTime(t=>t===o?"":o)}>{o}</button>
+                        ))}
+                      </div>
+                    </fieldset>
+                    {diets.length>0&&<p className="inspire-diets">Using your dietary filters: {diets.join(", ")}</p>}
+                    <button className="inspire-go-btn" onClick={()=>doFridge()} disabled={!fridgeOn.length||fridgeSpot.status==="spotting"}>
+                      {fridgeOn.length?`Find dishes · ${fridgeOn.length} ingredient${fridgeOn.length===1?"":"s"}`:"Find dishes"}
+                    </button>
+                    {!fridgeOn.length&&<p className="inspire-hint">Add at least one ingredient to continue.</p>}
+                    <p className="inspire-hint">Rather pick a vibe? <button className="ck-textlink" style={{alignSelf:"auto",fontSize:"inherit"}} onClick={()=>setInspireKind("vibe")}>Answer 3 quick questions</button></p>
+                  </>
+                )}
+
+                {inspireKind==="vibe"&&(inspireStatus==="idle"||inspireStatus==="error")&&(
                   <>
                     <p className="inspire-lede">Answer three quick questions and we'll suggest four dishes.</p>
                     {inspireStatus==="error"&&<p className="inspire-error" role="alert">We couldn't come up with ideas just now. Check your connection and try again.</p>}
@@ -3034,34 +3223,24 @@ ${tiktok.text}`}]);
                         </div>
                       </fieldset>
                     ))}
-                    <div className="inspire-section">
-                      <label htmlFor="inspire-fridge" className="inspire-section-label">Anything in the fridge to use up? <span className="inspire-optional">Optional</span></label>
-                      <textarea
-                        id="inspire-fridge"
-                        className="inspire-fridge-input"
-                        rows={2}
-                        placeholder="e.g. chicken thighs, half a lemon, spinach"
-                        value={inspireFridge}
-                        onChange={e=>setInspireFridge(e.target.value)}
-                      />
-                    </div>
                     {diets.length>0&&<p className="inspire-diets">Using your dietary filters: {diets.join(", ")}</p>}
                     <button className="inspire-go-btn" onClick={doInspire} disabled={!(inspireTime&&inspireVibe&&inspireServes)}>
                       {inspireStatus==="error"?"Try again":"Show me ideas"}
                     </button>
                     {!(inspireTime&&inspireVibe&&inspireServes)&&<p className="inspire-hint">Pick a time, a vibe and how many to continue.</p>}
+                    <p className="inspire-hint"><button className="ck-textlink" style={{alignSelf:"auto"}} onClick={()=>setInspireKind("fridge")}>Cook with what you have instead</button></p>
                   </>
                 )}
 
                 {inspireStatus==="loading"&&(()=>{
                   const elapsed=Math.max(0,(Date.now()-inspireStart.current)/1000);
                   const pct=Math.round(95*(1-Math.exp(-elapsed/6)));
-                  const STEPS=["Reading your answers","Checking what's in season","Matching ideas to your mood","Picking the best four"];
+                  const STEPS=inspireKind==="fridge"?["Reading your ingredients","Checking Community recipes","Matching dishes to what you have","Picking the best ones"]:["Reading your answers","Checking what's in season","Matching ideas to your mood","Picking the best four"];
                   const at=elapsed<2?0:elapsed<5?1:elapsed<9?2:3;
                   return(
                     <>
                       <div className="inspire-picks" aria-label="Your answers">
-                        {[inspireTime,inspireVibe,inspireServes].map(x=><span key={x} className="inspire-pick">{x}</span>)}
+                        {(inspireKind==="fridge"?[...fridgeOn,fridgeTime].filter(Boolean):[inspireTime,inspireVibe,inspireServes]).map(x=><span key={x} className="inspire-pick">{x}</span>)}
                       </div>
                       <div className="gen-card" aria-live="polite">
                         <div className="gen-card-head">
@@ -3091,7 +3270,47 @@ ${tiktok.text}`}]);
                   );
                 })()}
 
-                {inspireStatus==="done"&&(
+                {inspireKind==="fridge"&&inspireStatus==="done"&&(()=>{
+                  const n=fridgeOn.length;
+                  const shown=fridgeOn.slice(0,5);
+                  const card=(key:string,title:string,tagline:string,time:string,uses:string[],need:string[],ready:boolean,open:()=>void)=>(
+                    <article key={key} className="inspire-card fr-result">
+                      {ready&&<span className="fr-ready">Ready now · from the Community</span>}
+                      <h3 className="inspire-card-title">{title}</h3>
+                      {tagline&&<p className="inspire-card-desc">{tagline}</p>}
+                      <div className="inspire-card-meta">
+                        {time&&<span>{time}</span>}
+                        {uses.length>0&&<span className="fr-uses">Uses {uses.length} of your {n}</span>}
+                      </div>
+                      {need.length?<p className="fr-need">You'll need: {need.join(", ")}</p>:<p className="fr-need fr-none">Nothing to buy</p>}
+                      <button className="inspire-card-btn" onClick={open}>{ready?"Open the recipe":"Get the recipe"}</button>
+                    </article>
+                  );
+                  return(
+                    <>
+                      <div className="inspire-picks" aria-label="Your ingredients">
+                        {shown.map(x=><span key={x} className="inspire-pick">{x}</span>)}
+                        {n>shown.length&&<span className="inspire-pick">+{n-shown.length} more</span>}
+                        {fridgeTime&&<span className="inspire-pick">{fridgeTime}</span>}
+                      </div>
+                      <h2 className="fr-results-title">Dishes that use it up</h2>
+                      {fridgeCommunity.length+inspireSuggestions.length>0?(
+                        <div className="inspire-results">
+                          {fridgeCommunity.map((m,i)=>card("c"+i,m.recipe.title,m.recipe.tagline||"",totalRange(m.recipe),m.uses,m.need,true,()=>openFridgeCommunity(m)))}
+                          {inspireSuggestions.map((sg:any,i:number)=>card("a"+i,sg.title,sg.tagline||"",tt(sg),sg.uses||[],sg.need||[],false,()=>pickInspiredRecipe(sg,fridgeOn)))}
+                        </div>
+                      ):(
+                        <p className="inspire-error" role="alert">No dishes came back that time. Try again, or add a few more ingredients.</p>
+                      )}
+                      <div className="inspire-again">
+                        <button className="ck-textlink" style={{alignSelf:"auto"}} onClick={()=>doFridge(true)}>Show four more</button>
+                        <button className="ck-textlink" style={{alignSelf:"auto"}} onClick={()=>{setInspireStatus("idle");setInspireSuggestions([]);setFridgeCommunity([]);}}>Change ingredients</button>
+                      </div>
+                    </>
+                  );
+                })()}
+
+                {inspireKind==="vibe"&&inspireStatus==="done"&&(
                   <>
                     <div className="inspire-picks" aria-label="Your answers">
                       {[inspireTime,inspireVibe,inspireServes].map(x=><span key={x} className="inspire-pick">{x}</span>)}
@@ -3317,6 +3536,10 @@ ${tiktok.text}`}]);
               const store=RETAILERS.find(r=>r.id===retailer);
               const multi=dishes.length>1;
               const activeCount=items.filter(([,it])=>it.dishes.includes(activeTitle)).length;
+              // Opened from "Cook with what you have": tick off what they already have
+              const have=fridgeHave&&fridgeHave.id===recipe.id?fridgeHave.items:[];
+              const hasIt=(name:string)=>have.some(h=>ingredientUses(name,h));
+              const haveCount=items.filter(([,it])=>hasIt(it.name)).length;
               return(
                 <section className="rx-groceries" id="rx-groceries" aria-label="Grocery list">
                   <div className="rx-gro-head">
@@ -3324,14 +3547,15 @@ ${tiktok.text}`}]);
                     <span className="rx-gro-sub">{items.length} item{items.length===1?"":"s"}{multi?` for ${dishes.length} dishes`:""}</span>
                   </div>
                   {multi&&<p className="rx-gro-note"><span className="rx-gro-swatch" aria-hidden="true"/>Highlighted: the {activeCount} item{activeCount===1?"":"s"} for <strong>{activeTitle}</strong></p>}
+                  {haveCount>0&&<p className="rx-gro-note">Ticked off: the {haveCount} item{haveCount===1?"":"s"} you already have.</p>}
                   {!store&&<p className="rx-gro-note">Choose a store under the main dish's details to get shopping links.</p>}
-                  <ul className="rx-gro-list">
+                  <ul className="rx-gro-list" key={recipe.id}>
                     {items.map(([k,it])=>{
                       const on=!multi||it.dishes.includes(activeTitle);
                       return(
                         <li key={k} className={`rx-gro-item${on?" on":""}`}>
                           <label className="rx-gro-check">
-                            <input type="checkbox"/>
+                            <input type="checkbox" defaultChecked={hasIt(it.name)}/>
                             <span className="rx-gro-name">{it.name}</span>
                           </label>
                           {multi&&(
