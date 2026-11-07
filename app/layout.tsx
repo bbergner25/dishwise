@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "Every Chef",
   },
   icons: { apple: "/apple-touch-icon.png?v=3", icon: "/favicon-32.png" },
