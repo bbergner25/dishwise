@@ -2560,7 +2560,9 @@ export default function App({onReady}:{onReady?:()=>void}={}){
     if(nutri[k])return;
     setNutri(m=>({...m,[k]:"loading"}));
     fetch("/api/nutrition",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({recipe:{title:recipe.title,servings:recipe.servings,ingredient_groups:recipe.ingredient_groups}})})
-      .then(r=>r.json()).then(d=>setNutri(m=>({...m,[k]:d?.n||"error"}))).catch(()=>setNutri(m=>({...m,[k]:"error"})));
+      .then(r=>r.json()).then(d=>setNutri(m=>({...m,[k]:d?.n||"error"}))).catch(()=>setNutri(m=>({...m,[k]:"error"})))
+      // a failed estimate is tried again the next time the recipe opens
+      .finally(()=>setTimeout(()=>setNutri(m=>m[k]==="error"?(({[k]:_,...rest})=>rest)(m):m),15000));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[status,recipe]);
 

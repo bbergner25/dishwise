@@ -231,6 +231,14 @@ Reply with ONLY valid JSON: {"renames":[{"i":0,"title":"...","tagline":"... or e
       <p><a href="?secret=${secret}">← Back</a></p>`);
   }
 
+  if (action === "nutrition-test") {
+    // runs one nutrition estimate end to end and shows exactly what came back
+    const sample = { title: "Smoked Brisket", servings: "12", ingredient_groups: [{ label: "", items: [{ amount: "12 lbs", name: "whole packer brisket" }, { amount: "4 tbsp", name: "kosher salt" }, { amount: "4 tbsp", name: "coarse black pepper" }, { amount: "1 tbsp", name: "garlic powder" }] }] };
+    const res = await fetch(new URL("/api/nutrition", req.url), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ recipe: { ...sample, title: sample.title + " test " + Date.now() } }) });
+    const txt = await res.text();
+    return page("Nutrition test", `<h1>Nutrition test</h1><p>Status ${res.status}</p><pre style="white-space:pre-wrap">${esc(txt)}</pre><p><a href="?secret=${secret}">← Back</a></p>`);
+  }
+
   if (action === "dupes" || action === "dupes-apply") {
     // The same dish saved under several names. Keep one in the Community; the rest still answer
     // searches for their exact name but stop showing up in the list.
@@ -682,6 +690,7 @@ Reply with ONLY valid JSON: {"dishes":["..."]}` }] }),
     <tr><td>Spent this month</td><td>$${(spent / 100).toFixed(2)} of $${(MONTHLY_BUDGET_CENTS / 100).toFixed(2)} cap</td></tr></table>
     <ul><li><a href="?secret=${secret}&action=test&dishes=${encodeURIComponent("Kung Pao Noodles|Cottage Pie|Fish Tacos")}">Make test photos: Kung Pao Noodles, Cottage Pie, Fish Tacos</a> (about 10¢, takes up to a minute)</li>
     <li><a href="?secret=${secret}&action=coverage"><strong>Community coverage for "Plan my week"</strong></a></li>
+    <li><a href="?secret=${secret}&action=nutrition-test">Test nutrition estimate (Smoked Brisket)</a></li>
     <li><a href="?secret=${secret}&action=dupes">Find duplicate Community recipes (same dish, different names)</a></li>
     <li><a href="?secret=${secret}&action=count">Count dishes that need photos + cost estimate</a></li>
     <li><a href="?secret=${secret}&action=times">Realistic cook times for older recipes</a></li>
