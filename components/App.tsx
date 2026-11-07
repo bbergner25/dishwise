@@ -8,6 +8,7 @@ import { isRude } from "../lib/guard";
 import { TIME_RULE, totalRange, totalShort } from "../lib/times";
 import { STAPLES_NOTE, ingredientUses } from "../lib/pantry";
 import { mergeDocs } from "../lib/planMerge";
+import { sharedProduce } from "../lib/quickplan";
 import { AISLES, aisleOf, groceryKey, displayName, totalAmount, recipeGroceries, isStaple } from "../lib/grocery";
 
 const C = {
@@ -29,6 +30,7 @@ const Ic = {
   leaf:(s=16)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>,
   camera:(s=20)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>,
   printer:(s=16)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>,
+  shuffle:(s=18)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>,
   cart:(s=14)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>,
   home:(s=18)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
   arrowLeft:(s=14)=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
@@ -389,6 +391,39 @@ const CSS = `
   .inspire-chip:hover{border-color:#B8AFA3;}
   .inspire-chip.on{background:#1A1F2E;border-color:#1A1F2E;color:#FDFAF5;font-weight:600;}
   .inspire-chip:focus-visible,.inspire-go-btn:focus-visible,.inspire-card-btn:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
+  .qp-card{background:#1A1F2E;border-radius:20px;padding:18px;margin:4px 0 14px;display:flex;flex-direction:column;gap:10px;}
+  .qp-card-title{margin:0;font-family:'Fraunces',serif;font-size:22px;font-weight:700;color:#FDFAF5;}
+  .qp-card-text{margin:0;font-size:15px;line-height:1.45;color:#C9C3BA;}
+  .qp-card-btn{min-height:50px;border:none;border-radius:25px;background:#F4A021;color:#151210;font-family:'Figtree',sans-serif;font-size:16px;font-weight:600;cursor:pointer;}
+  .qp-card-btn:focus-visible,.qp-slim:focus-visible,.qp-opt:focus-visible,.qp-shuffle:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
+  .qp-slim{width:100%;min-height:46px;margin:0 0 12px;border-radius:23px;border:2px solid #1A1F2E;background:#fff;color:#151210;font-family:'Figtree',sans-serif;font-size:15px;font-weight:600;cursor:pointer;}
+  .qp-sheet{max-height:92vh;overflow-y:auto;}
+  .qp-sub{margin:0 0 8px;font-size:15px;line-height:1.45;color:#4F4744;}
+  .qp-sub svg{vertical-align:-2px;}
+  .qp-days{list-style:none;margin:0;padding:0;}
+  .qp-day{display:flex;align-items:center;gap:10px;min-height:52px;padding:4px 0;border-bottom:1px solid #ECE6DD;}
+  .qp-date{width:38px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;}
+  .qp-dow{font-size:11px;font-weight:600;letter-spacing:1px;color:#6E635F;}
+  .qp-dnum{font-family:'Fraunces',serif;font-size:19px;font-weight:700;color:#151210;line-height:1.1;}
+  .qp-date.today .qp-dow,.qp-date.today .qp-dnum{color:#B36A00;}
+  .qp-seg{flex:1;display:flex;gap:2px;background:#F5EFE4;border-radius:19px;padding:2px;min-width:0;}
+  .qp-opt{flex:1;min-width:0;height:36px;padding:0 4px;border:none;border-radius:17px;background:transparent;color:#6E635F;font-family:'Figtree',sans-serif;font-size:13px;white-space:nowrap;cursor:pointer;}
+  .qp-opt.long{flex:1.5;}
+  .qp-opt.on{background:#1A1F2E;color:#FDFAF5;font-weight:600;}
+  .qp-opt.on.skip{background:#E3DACB;color:#151210;}
+  .qp-planned{flex:1;min-height:38px;display:flex;align-items:center;flex-wrap:wrap;padding:6px 12px;border-radius:19px;background:#FFF8EA;border:1px solid #F6DCA6;font-size:14px;}
+  .qp-planned span{color:#6E635F;}
+  .qp-legend{margin:8px 0 12px;font-size:13px;color:#6E635F;}
+  .qp-go{width:100%;}
+  .qp-pick{flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:6px;border-radius:14px;background:#fff;border:1px solid #ECE6DD;}
+  .qp-pic{width:42px!important;height:42px!important;border-radius:9px;flex-shrink:0;object-fit:cover;}
+  .qp-pick-text{flex:1;min-width:0;display:flex;flex-direction:column;padding-left:4px;}
+  .qp-pick-text strong{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .qp-pick-text span{font-size:13px;color:#6E635F;}
+  .qp-shuffle{width:42px;height:42px;flex-shrink:0;border-radius:21px;border:1px solid #E3DCD0;background:#fff;color:#1A1F2E;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .qp-shuffle:disabled{opacity:.4;cursor:progress;}
+  .qp-skipped{flex:1;min-height:42px;display:flex;align-items:center;flex-wrap:wrap;gap:4px;padding:8px 14px;border-radius:14px;background:#F5EFE4;color:#6E635F;font-size:14px;line-height:1.4;}
+  .qp-note{margin:10px 0 12px;font-size:14px;line-height:1.45;color:#4F4744;}
   .pl-hh{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;margin:2px 0 10px;padding:6px 14px 6px 8px;border:1px solid #E3DCD0;border-radius:24px;background:#fff;font-family:'Figtree',sans-serif;font-size:15px;color:#151210;text-align:left;cursor:pointer;}
   .pl-hh.pl-hh-new{padding-left:14px;color:#1A1F2E;}
   .pl-hh>span:nth-child(2){flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -1566,6 +1601,12 @@ function listPayload(extras:any[],checked:Record<string,number>,cleared:Record<s
   return {extras:(extras||[]).slice(0,300),checked:recent(checked),cleared:recent(cleared)};
 }
 
+// "Plan my week": how much time each night. Starts like the last week someone planned.
+type QPLevel="quick"|"normal"|"long"|"skip";
+const QP_LEVELS:[QPLevel,string][]=[["quick","Quick"],["normal","Normal"],["long","Take my time"],["skip","Skip"]];
+const QP_LABEL:Record<QPLevel,string>={quick:"Quick",normal:"Normal",long:"Take my time",skip:"Skip"};
+const QP_DEFAULT:Record<number,QPLevel>={0:"long",1:"quick",2:"quick",3:"quick",4:"quick",5:"skip",6:"normal"}; // by weekday, Sunday = 0
+
 const HH_COLORS=["#1A1F2E","#B5651D","#2F6B3A","#6B4E9B","#B03A48","#1F6F8B","#8A6D1E","#4F4744"];
 
 const FRIDGE_TIMES:[string,number][]=[["Under 30 mins",30],["Under 45 mins",45],["1 hour+",0]];
@@ -1705,6 +1746,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
   const [planSides,setPlanSides] = useState<Record<string,{title:string;status:string;recipe:any}[]>>({}); // sides paired to each day's main dish
   const [planMade,setPlanMade]   = useState<Record<string,boolean>>({}); // dates whose planned meal was made
   const [showEarlier,setShowEarlier] = useState(false);  // Plan: earlier days expanded
+  const [qp,setQp] = useState<{stage:"days"|"loading"|"week";days:{key:string;level:QPLevel}[];picks:Record<string,{recipe:any;minutes:number}|null>;matches:Record<string,number>;seen:Record<string,string[]>;shared:string[];err?:string;busy?:string}|null>(null);
   const [planAhead,setPlanAhead] = useState(14);         // Plan: how many days ahead are shown
   const [assignDay,setAssignDay] = useState<string|null>(null);
   const [modalSearch,setModalSearch] = useState("");
@@ -4313,6 +4355,71 @@ ${tiktok.text}`}]);
   }
 
   /* ── PLAN (scrolling timeline: today first, earlier days on demand) ── */
+  /* ── PLAN MY WEEK ── */
+  const qpRhythm=():Record<number,QPLevel>=>{try{const r=JSON.parse(localStorage.getItem("dw-qp-rhythm")||"null");if(r&&typeof r==="object")return {...QP_DEFAULT,...r};}catch{}return {...QP_DEFAULT};};
+  // open nights this week, not counting ones they chose to skip
+  const qpSkipped=():string[]=>{try{return JSON.parse(localStorage.getItem("dw-qp-skipped")||"[]");}catch{return [];}};
+  const qpOpenDays=()=>{const sk=qpSkipped();return next7Keys.filter(k=>!plan[k]&&!sk.includes(k));};
+  const openQuickPlan=()=>{
+    const rh=qpRhythm();
+    setQp({stage:"days",days:next7Keys.map(k=>({key:k,level:rh[keyToDate(k).getDay()]||"quick"})),picks:{},matches:{},seen:{},shared:[]});
+  };
+  const qpRecent=()=>{
+    const cutoff=dateKey(addDays(startOfToday(),-14));
+    return Object.entries(plan).filter(([k,r]:any)=>k>=cutoff&&r?.title).map(([,r]:any)=>r.title);
+  };
+  const qpFetch=async(days:{key:string;level:QPLevel}[],avoid:string[])=>{
+    const fixed:Record<string,any>={};
+    for(const k of next7Keys)if(plan[k])fixed[k]=plan[k];
+    const res=await fetch("/api/quickplan",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({days,diets,avoid,fixed})});
+    const d=await res.json();
+    if(!res.ok)throw new Error(d.error||"Couldn't plan the week just now.");
+    return d;
+  };
+  const qpFill=async()=>{
+    if(!qp)return;
+    const days=qp.days.filter(d=>!plan[d.key]);
+    setQp(q=>q&&{...q,stage:"loading",err:undefined});
+    try{
+      const d=await qpFetch(days.filter(x=>x.level!=="skip"),qpRecent());
+      const seen:Record<string,string[]>={};
+      for(const [k,p] of Object.entries(d.picks||{}))if(p)seen[k]=[(p as any).recipe.title];
+      setQp(q=>q&&{...q,stage:"week",picks:d.picks||{},matches:d.matches||{},shared:d.shared||[],seen});
+    }catch(e:any){setQp(q=>q&&{...q,stage:"days",err:e.message});}
+  };
+  const qpShuffle=async(key:string)=>{
+    if(!qp)return;
+    const day=qp.days.find(d=>d.key===key);if(!day||day.level==="skip")return;
+    setQp(q=>q&&{...q,busy:key});
+    try{
+      const others=Object.entries(qp.picks).filter(([k,p])=>k!==key&&p).map(([,p])=>p!.recipe.title);
+      const d=await qpFetch([day],[...qpRecent(),...others,...(qp.seen[key]||[])]);
+      let p=d.picks?.[key]||null;
+      // shown them all? start over from the full list for that night
+      if(!p&&(qp.seen[key]||[]).length>1){const again=await qpFetch([day],[...qpRecent(),...others,qp.picks[key]?.recipe?.title||""]);p=again.picks?.[key]||null;if(p)setQp(q=>q&&{...q,seen:{...q.seen,[key]:[]}});}
+      if(!p){setQp(q=>q&&{...q,busy:undefined});return;}
+      const recipes=[...Object.entries(qp.picks).filter(([k,x])=>k!==key&&x).map(([,x])=>x!.recipe),p.recipe,...next7Keys.filter(k=>plan[k]).map(k=>plan[k])];
+      setQp(q=>q&&{...q,busy:undefined,picks:{...q.picks,[key]:p},seen:{...q.seen,[key]:[...(q.seen[key]||[]),p.recipe.title]},shared:sharedProduce(recipes).slice(0,4)});
+    }catch{setQp(q=>q&&{...q,busy:undefined});}
+  };
+  const qpAdd=()=>{
+    if(!qp)return;
+    const now=Date.now();
+    const add:Record<string,any>={};
+    Object.entries(qp.picks).forEach(([k,p],i)=>{if(p&&!plan[k])add[k]={...p.recipe,id:now+i,_dish:p.recipe.title,_ts:now,_fromCache:true};});
+    setPlan(pl=>({...pl,...add}));
+    // next week starts the same way
+    try{
+      const rh=qpRhythm();for(const d of qp.days)if(!plan[d.key])rh[keyToDate(d.key).getDay()]=d.level;localStorage.setItem("dw-qp-rhythm",JSON.stringify(rh));
+      const todayK=dateKey(startOfToday());
+      const sk=[...qpSkipped().filter(k=>k>=todayK),...qp.days.filter(d=>d.level==="skip"&&!plan[d.key]).map(d=>d.key)];
+      localStorage.setItem("dw-qp-skipped",JSON.stringify(sk.filter((k,i)=>sk.indexOf(k)===i)));
+    }catch{}
+    const n=Object.keys(add).length;
+    setQp(null);
+    if(n)setListToast(`Added ${n} dinner${n===1?"":"s"} to your plan and list`);
+  };
+
   /* ── GROCERY LIST VIEW ── */
   function ListView(){
     const {items,staples,meals}=buildList(listRange);
@@ -4563,7 +4670,16 @@ ${tiktok.text}`}]);
           </ol>
         )}
 
-        {mealsPlanned===0&&<p className="pl-hint">Tap <strong>+ Add a meal</strong> on any day to pick from your saved recipes.</p>}
+        {qpOpenDays().length>=3?(
+          <section className="qp-card">
+            <h2 className="qp-card-title">Plan your week in one tap</h2>
+            <p className="qp-card-text">We'll pick dinners that fit how much time you have each night. Swap anything you don't love.</p>
+            <button className="qp-card-btn" onClick={openQuickPlan}>Plan my week</button>
+          </section>
+        ):qpOpenDays().length>0&&(
+          <button className="qp-slim" onClick={openQuickPlan}>Fill the {qpOpenDays().length} open night{qpOpenDays().length===1?"":"s"} this week</button>
+        )}
+        {mealsPlanned===0&&<p className="pl-hint">Or tap <strong>+ Add a meal</strong> on any day to pick from your saved recipes.</p>}
         <ol className="pl-days">
           {aheadKeys.flatMap((k,i)=>[i===0?null:weekDivider(k),row(k)])}
         </ol>
@@ -4858,6 +4974,84 @@ ${tiktok.text}`}]);
       {tab==="week"&&WeekView()}
       {tab==="list"&&ListView()}
       {Modal()}
+      {qp&&(()=>{
+        const close=()=>setQp(null);
+        const DOWS=["SUN","MON","TUE","WED","THU","FRI","SAT"];
+        const todayK=dateKey(startOfToday());
+        const date=(k:string)=>{const d=keyToDate(k);return <span className={`qp-date${k===todayK?" today":""}`}><span className="qp-dow">{DOWS[d.getDay()]}</span><span className="qp-dnum">{d.getDate()}</span></span>;};
+        const toFill=qp.days.filter(d=>!plan[d.key]&&d.level!=="skip").length;
+        const picked=Object.entries(qp.picks).filter(([k,p])=>p&&!plan[k]).map(([,p])=>p!.recipe);
+        const listCount=(()=>{const keys=new Set<string>();for(const r of picked)for(const g of recipeGroceries(r))if(!isStaple(g.name))keys.add(groceryKey(g.name));return keys.size;})();
+        const fmtShared=(xs:string[])=>xs.length===1?xs[0]:xs.slice(0,-1).join(", ")+" and "+xs[xs.length-1];
+        return(
+          <div className="share-overlay" onClick={close}>
+            <div className="share-sheet qp-sheet" role="dialog" aria-modal="true" aria-labelledby="qp-title" onClick={e=>e.stopPropagation()}>
+              <div className="ui-handle" aria-hidden="true"/>
+              <button className="ui-close" aria-label="Close" onClick={close}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+              {qp.stage!=="week"?(
+                <>
+                  <h2 id="qp-title" className="share-sheet-title">Plan my week</h2>
+                  <p className="qp-sub">{(()=>{try{return localStorage.getItem("dw-qp-rhythm")?"Set up like last week. Tap a day to change it.":"Tap a day to change how much time you have.";}catch{return "Tap a day to change how much time you have.";}})()}</p>
+                  {qp.err&&<p className="inspire-error" role="alert" style={{margin:"0 0 8px"}}>{qp.err}</p>}
+                  <ul className="qp-days">
+                    {qp.days.map(d=>(
+                      <li key={d.key} className="qp-day">
+                        {date(d.key)}
+                        {plan[d.key]?(
+                          <span className="qp-planned"><b>{plan[d.key].title}</b><span>&nbsp;· already planned</span></span>
+                        ):(
+                          <span className="qp-seg" role="radiogroup" aria-label={`${keyToDate(d.key).toLocaleDateString("en-US",{weekday:"long"})}: how much time`}>
+                            {QP_LEVELS.map(([v,l])=>(
+                              <button key={v} role="radio" aria-checked={d.level===v} className={`qp-opt${d.level===v?" on":""}${v==="skip"?" skip":""}${v==="long"?" long":""}`}
+                                onClick={()=>setQp(q=>q&&{...q,days:q.days.map(x=>x.key===d.key?{...x,level:v}:x)})}>{l}</button>
+                            ))}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="qp-legend">Quick is under 30 min · Normal 30–60 · Take my time is an hour or more</p>
+                  <button className="ui-btn-primary qp-go" disabled={!toFill||qp.stage==="loading"} onClick={qpFill}>
+                    {qp.stage==="loading"?"Picking dinners…":toFill?`Fill ${toFill} dinner${toFill===1?"":"s"}`:"Nothing to fill"}
+                  </button>
+                </>
+              ):(
+                <>
+                  <h2 id="qp-title" className="share-sheet-title">Your week</h2>
+                  <p className="qp-sub">Tap <span aria-hidden="true">{Ic.shuffle(14)}</span><span className="sr-only">shuffle</span> to swap a dinner for another one.</p>
+                  <ul className="qp-days">
+                    {qp.days.map(d=>{
+                      const p=qp.picks[d.key];
+                      const fixedR=plan[d.key];
+                      return(
+                        <li key={d.key} className="qp-day">
+                          {date(d.key)}
+                          {fixedR?(
+                            <span className="qp-pick"><span className="qp-pick-text"><strong>{fixedR.title}</strong><span>Already planned</span></span></span>
+                          ):d.level==="skip"?(
+                            <span className="qp-skipped">Skipped</span>
+                          ):p?(
+                            <span className="qp-pick">
+                              {photosOn&&<DishPic title={p.recipe.title} src={photoFor(p.recipe)} className="qp-pic"/>}
+                              <span className="qp-pick-text"><strong>{p.recipe.title}</strong><span>{QP_LABEL[d.level]} · {totalShort(p.recipe)}</span></span>
+                              <button className="qp-shuffle" aria-label={`Swap ${p.recipe.title} for another dinner`} disabled={qp.busy===d.key} onClick={()=>qpShuffle(d.key)}>{Ic.shuffle(18)}</button>
+                            </span>
+                          ):(
+                            <span className="qp-skipped">No {QP_LABEL[d.level].toLowerCase()} dinners left to pick from{diets.length?` with your filters`:""}. <button className="ck-textlink" style={{alignSelf:"auto",fontSize:"inherit"}} onClick={()=>{setQp(q=>q&&{...q,stage:"days"});}}>Change time</button></span>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {(qp.shared.length>0||listCount>0)&&<p className="qp-note">{qp.shared.length>0?`Uses ${fmtShared(qp.shared)} more than once, so less goes to waste. `:""}{listCount?`Adds ${listCount} item${listCount===1?"":"s"} to your list.`:""}</p>}
+                  <button className="ui-btn-primary qp-go" disabled={!picked.length} onClick={qpAdd}>Add {picked.length} dinner{picked.length===1?"":"s"} to my plan</button>
+                  <button className="hh-leave" style={{color:"#1A1F2E",marginTop:6}} onClick={()=>setQp(q=>q&&{...q,stage:"days"})}>Change times</button>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })()}
       {showHousehold&&(()=>{
         const close=()=>{setShowHousehold(false);setHhInvite(null);setHhMsg("");setHhConfirm(null);};
         const others=household?household.members.filter(m=>m.id!==household.me):[];
