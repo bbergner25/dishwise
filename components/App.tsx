@@ -50,6 +50,8 @@ const CSS = `
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   *{font-variation-settings:'opsz' 9,'WONK' 1;}
   html{background:#1A1F2E;}
+  html,body{overflow-x:clip;max-width:100%;}
+  body{touch-action:manipulation;}
   body{font-family:'Figtree',sans-serif;background:#FDFAF5;color:#151210;min-height:100vh;padding-bottom:80px;}
   @media(min-width:768px){body{padding-bottom:0;}}
   /* ── TOP NAV (desktop) — midnight ribbon ── */
@@ -536,7 +538,7 @@ const CSS = `
   .gl-sheet-list li{border-bottom:1px solid #F1EBE2;}
   .gl-sheet-amt{color:#6E635F;font-size:15px;}
   .gl-sheet-staples{margin:4px 0 12px;font-size:13px;line-height:1.45;color:#6E635F;}
-  .gl-toast{position:fixed;left:50%;bottom:104px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:14px;padding:12px 14px 12px 18px;border-radius:16px;background:#1A1F2E;color:#FDFAF5;font-size:15px;box-shadow:0 8px 24px rgba(21,18,16,.25);white-space:nowrap;}
+  .gl-toast{position:fixed;left:50%;bottom:104px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:14px;padding:12px 14px 12px 18px;border-radius:16px;background:#1A1F2E;color:#FDFAF5;font-size:15px;box-shadow:0 8px 24px rgba(21,18,16,.25);width:max-content;max-width:calc(100vw - 32px);}
   .gl-toast button{border:none;background:none;color:#F4A021;font-family:'Figtree',sans-serif;font-size:15px;font-weight:600;cursor:pointer;padding:4px;}
   .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
   .fr-card{background:#fff;border:1px solid #ECE6DD;border-radius:20px;padding:18px;margin:6px 0 22px;display:flex;flex-direction:column;gap:12px;}
