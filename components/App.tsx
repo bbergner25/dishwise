@@ -819,6 +819,28 @@ const CSS = `
   .cm-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;}
   .cm-shuffle{flex-shrink:0;height:40px;padding:0 14px;border-radius:20px;border:1px solid #E3DCD0;background:#fff;display:flex;align-items:center;gap:6px;font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;color:#151210;cursor:pointer;}
   .cm-shuffle:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
+  .rx-nutri{display:block;width:100%;margin:14px 0 4px;padding:10px 8px 8px;border-radius:18px;background:#fff;border:1px solid rgba(236,230,221,.8);box-shadow:0 1px 2px rgba(21,18,16,.05),0 8px 24px rgba(21,18,16,.07);font-family:'Figtree',sans-serif;color:#151210;cursor:pointer;text-align:left;}
+  .rx-nutri:disabled{cursor:default;}
+  .rx-nutri:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
+  .rx-nutri-top{display:flex;justify-content:space-between;align-items:center;padding:0 8px;font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6E635F;}
+  .rx-nutri-est{display:inline-flex;align-items:center;gap:4px;font-weight:500;letter-spacing:0;text-transform:none;font-size:12.5px;}
+  .rx-nutri-row{display:flex;margin-top:4px;}
+  .rx-nutri-cell{flex:1;display:flex;flex-direction:column;align-items:center;padding:4px 2px;}
+  .rx-nutri-cell strong{font-family:'Fraunces',serif;font-size:20px;line-height:1.2;}
+  .rx-nutri-cell>span{font-size:12px;color:#6E635F;}
+  .nu-sub{margin:-4px 0 12px;font-size:14px;color:#6E635F;}
+  .nu-cal{margin:0 0 14px;font-size:16px;color:#4F4744;}
+  .nu-cal strong{font-family:'Fraunces',serif;font-size:44px;color:#151210;margin-right:6px;line-height:1;}
+  .nu-bar{margin-bottom:12px;}
+  .nu-bar-top{display:flex;justify-content:space-between;font-size:15px;margin-bottom:5px;}
+  .nu-bar-top span:last-child{color:#6E635F;}
+  .nu-track{display:block;height:8px;border-radius:4px;background:#F1EBE2;overflow:hidden;}
+  .nu-track>span{display:block;height:100%;border-radius:4px;}
+  .nu-more{display:flex;gap:8px;margin:4px 0 12px;}
+  .nu-more>span{flex:1;padding:10px 6px;border-radius:14px;background:#F5EFE4;text-align:center;display:flex;flex-direction:column;}
+  .nu-more strong{font-size:16px;}
+  .nu-more>span>span{font-size:12px;color:#6E635F;}
+  .nu-note{margin:0 0 14px;font-size:13.5px;line-height:1.45;color:#4F4744;}
   .ck-browse{display:flex;align-items:center;gap:14px;width:100%;margin-top:4px;padding:14px 12px 14px 16px;border-radius:20px;background:#fff;border:1px solid rgba(236,230,221,.8);box-shadow:0 1px 2px rgba(21,18,16,.05),0 8px 24px rgba(21,18,16,.07);text-align:left;cursor:pointer;font-family:'Figtree',sans-serif;color:#151210;}
   .ck-browse:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
   .ck-fan{position:relative;width:96px;height:66px;flex-shrink:0;}
@@ -1918,6 +1940,8 @@ export default function App({onReady}:{onReady?:()=>void}={}){
   const [editRecipe,setEditRecipe] = useState<any>(null);
   const [ingTextSize,setIngTextSize] = useState<"normal"|"large"|"xl">("normal");
   const [recipePhotos,setRecipePhotos] = useState<Record<number,string>>({});
+  const [nutri,setNutri] = useState<Record<string,any>>({}); // nutrition per serving, by recipe version ("loading" | "error" | numbers)
+  const [showNutri,setShowNutri] = useState(false);
   const [dishPhotos,setDishPhotos] = useState<Record<string,string>>({});   // AI dish photos by normalized title
   const [photosServerOn,setPhotosServerOn] = useState(false);               // photos switched on for everyone
   const [photosPreview,setPhotosPreview] = useState(false);                 // ?photos=1 preview on this device
@@ -2443,6 +2467,18 @@ export default function App({onReady}:{onReady?:()=>void}={}){
     if(returnDayKey)setPlanSides(p=>({...p,[returnDayKey]:pairedSides}));
     setReturnTab(null);setStatus("idle");setRecipe(null);setQuery("");closePairedSide();setShowRecipeMenu(false);setShowAddSide(false);
   };
+
+  /* ── Nutrition per serving (an estimate, worked out once per version of a recipe) ── */
+  const nutriKey=(r:any)=>r?JSON.stringify([String(r.title||"").toLowerCase(),String(r.servings||""),(r.ingredient_groups||[]).flatMap((g:any)=>(g?.items||[]).map((i:any)=>`${i?.amount||""} ${i?.name||""}`.trim()))]):"";
+  useEffect(()=>{
+    if(status!=="done"||!recipe?.title||!(recipe.ingredient_groups||[]).length)return;
+    const k=nutriKey(recipe);
+    if(nutri[k])return;
+    setNutri(m=>({...m,[k]:"loading"}));
+    fetch("/api/nutrition",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({recipe:{title:recipe.title,servings:recipe.servings,ingredient_groups:recipe.ingredient_groups}})})
+      .then(r=>r.json()).then(d=>setNutri(m=>({...m,[k]:d?.n||"error"}))).catch(()=>setNutri(m=>({...m,[k]:"error"})));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[status,recipe]);
 
   /* ── Dish photos ── */
   const photosOn=photosServerOn||photosPreview;
@@ -3973,6 +4009,20 @@ ${tiktok.text}`}]);
             </div>
           </div>
           {(()=>{const w=withTimes(recipe);const parts=[w?.prep_time&&w.prep_time!=="—"&&`Prep ${w.prep_time}`,w?.cook_time&&w.cook_time!=="—"&&`Cook ${w.cook_time}`].filter(Boolean);return parts.length?<p className="rx-meta-sub">{parts.join(" · ")}</p>:null;})()}
+          {(()=>{
+            const n=nutri[nutriKey(recipe)];
+            if(!n||n==="error")return null;
+            const ready=typeof n==="object";
+            const cells:[string,string][]=ready?[[String(n.calories),"calories"],[`${n.protein}g`,"protein"],[`${n.carbs}g`,"carbs"],[`${n.fat}g`,"fat"]]:[["","calories"],["","protein"],["","carbs"],["","fat"]];
+            return(
+              <button className="rx-nutri" disabled={!ready} onClick={()=>setShowNutri(true)} aria-label={ready?`Nutrition per serving, estimated: ${n.calories} calories, ${n.protein} grams protein, ${n.carbs} grams carbs, ${n.fat} grams fat. Tap for details`:"Estimating nutrition"}>
+                <span className="rx-nutri-top"><span>Per serving</span><span className="rx-nutri-est"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>Estimate</span></span>
+                <span className="rx-nutri-row" aria-hidden="true">
+                  {cells.map(([v,l])=><span key={l} className="rx-nutri-cell">{ready?<strong>{v}</strong>:<span className="gen-skel" style={{width:36,height:18,margin:"2px auto 4px"}}/>}<span>{l}</span></span>)}
+                </span>
+              </button>
+            );
+          })()}
           <div className="rx-shop">
             <label className="rx-shop-label" htmlFor="rx-shop-select">Where are you shopping?</label>
             <div className="rx-shop-row">
@@ -5371,6 +5421,34 @@ ${tiktok.text}`}]);
                   <button className="ui-btn-primary qp-go" disabled={!picked.length&&!nOff} onClick={qpAdd}>{(()=>{const a=picked.length-nReplace;const parts=[a?`Add ${a} dinner${a===1?"":"s"}`:"",nReplace?`switch ${nReplace}`:"",nOff?`skip ${nOff}`:""].filter(Boolean);if(!parts.length)return "Nothing to add";const t=parts.join(", ").replace(/, ([^,]*)$/," and $1");return t[0].toUpperCase()+t.slice(1);})()}</button>
                 </>
               )}
+            </div>
+          </div>
+        );
+      })()}
+        {showNutri&&(()=>{
+        const n=nutri[nutriKey(recipe)];
+        if(!recipe||!n||typeof n!=="object")return null;
+        const kc={p:n.protein*4,c:n.carbs*4,f:n.fat*9};const tot=kc.p+kc.c+kc.f||1;
+        const close=()=>setShowNutri(false);
+        const bar=(label:string,g:number,part:number,color:string)=>{const pct=Math.round(part/tot*100);return(
+          <div className="nu-bar"><div className="nu-bar-top"><span><b>{label}</b> {g}g</span><span>{pct}% of calories</span></div><span className="nu-track"><span style={{width:`${pct}%`,background:color}}/></span></div>
+        );};
+        return(
+          <div className="share-overlay" onClick={close}>
+            <div className="share-sheet" role="dialog" aria-modal="true" aria-labelledby="nu-title" onClick={e=>e.stopPropagation()}>
+              <div className="ui-handle" aria-hidden="true"/>
+              <button className="ui-close" aria-label="Close" onClick={close}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+              <h2 id="nu-title" className="share-sheet-title">Nutrition</h2>
+              <p className="nu-sub">Per serving{recipe.servings?` · recipe serves ${recipe.servings}`:""}</p>
+              <p className="nu-cal"><strong>{n.calories}</strong> calories</p>
+              {bar("Protein",n.protein,kc.p,"#2F6B3A")}
+              {bar("Carbs",n.carbs,kc.c,"#F4A021")}
+              {bar("Fat",n.fat,kc.f,"#B36A00")}
+              <div className="nu-more">
+                {([[`${n.fiber}g`,"fiber"],[`${n.sugar}g`,"sugar"],[`${n.sodium.toLocaleString()}mg`,"sodium"]] as [string,string][]).map(([v,l])=><span key={l}><strong>{v}</strong><span>{l}</span></span>)}
+              </div>
+              <p className="nu-note">An estimate worked out from this recipe's ingredients and amounts, not a lab test. Brands and portion sizes change the real numbers.</p>
+              <button className="ui-btn-primary" style={{width:"100%"}} onClick={close}>Done</button>
             </div>
           </div>
         );
