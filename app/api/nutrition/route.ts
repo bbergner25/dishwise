@@ -6,7 +6,7 @@ import { Redis } from "@upstash/redis";
 import { createHash } from "crypto";
 import { overLimit, clientIp } from "../../../lib/guard";
 
-export const maxDuration = 30;
+export const maxDuration = 60;
 const redis = new Redis({ url: process.env.KV_REST_API_URL!, token: process.env.KV_REST_API_TOKEN! });
 const FIELDS = ["calories", "protein", "carbs", "fat", "fiber", "sugar", "sodium"] as const;
 const MAX: Record<string, number> = { calories: 3500, protein: 300, carbs: 450, fat: 300, fiber: 100, sugar: 300, sodium: 9000 };
@@ -15,8 +15,8 @@ async function ask(model: string, prompt: string): Promise<Record<string, number
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY!, "anthropic-version": "2023-06-01" },
-    body: JSON.stringify({ model, max_tokens: 400, messages: [{ role: "user", content: prompt }] }),
-    signal: AbortSignal.timeout(25000),
+    body: JSON.stringify({ model, max_tokens: 3000, messages: [{ role: "user", content: prompt }] }),
+    signal: AbortSignal.timeout(28000),
   });
   const raw = await res.text();
   if (!res.ok) throw new Error(`Anthropic ${res.status}: ${raw.slice(0, 200)}`);
@@ -25,8 +25,9 @@ async function ask(model: string, prompt: string): Promise<Record<string, number
   const text = (data.content || []).filter((c: any) => c.type === "text").map((c: any) => c.text || "").join("");
   // the numbers, whether they come back as JSON or as "calories: 650" lines
   let j: any = {};
-  const a = text.indexOf("{"), b = text.lastIndexOf("}");
-  if (a >= 0 && b > a) { try { j = JSON.parse(text.slice(a, b + 1)); } catch { j = {}; } }
+  // the last {...} with the numbers in it (the model may work it out first)
+  const blocks = text.match(/\{[^{}]*"calories"[^{}]*\}/g) || [];
+  if (blocks.length) { try { j = JSON.parse(blocks[blocks.length - 1]); } catch { j = {}; } }
   for (const f of FIELDS) if (j[f] == null) { const m = new RegExp(`"?${f}"?\\s*[:=]\\s*"?([\\d.,]+)`, "i").exec(text); if (m) j[f] = m[1]; }
   if (FIELDS.some((f) => j[f] == null)) throw new Error(`No numbers in reply (stop: ${data.stop_reason}, ${text.length} chars): ${text.slice(0, 150)}`);
   const out: Record<string, number> = {};
@@ -69,7 +70,7 @@ Ingredients:
 ${ings.join("\n")}
 
 Divide the whole recipe by the number of servings. Ingredients "to taste" or "for serving" count as small typical amounts. Count oil used for frying only partly (some stays in the pan). Don't count water.
-Reply with ONLY valid JSON of plain whole numbers, no units: {"calories":0,"protein":0,"carbs":0,"fat":0,"fiber":0,"sugar":0,"sodium":0} (protein, carbs, fat, fiber, sugar in grams; sodium in milligrams)`;
+Keep any working short. End your reply with one line of JSON, plain whole numbers, no units: {"calories":0,"protein":0,"carbs":0,"fat":0,"fiber":0,"sugar":0,"sodium":0} (protein, carbs, fat, fiber, sugar in grams; sodium in milligrams)`;
     const per = parseInt(servings, 10) || 4;
     let n: Record<string, number> | null = null;
     const why: string[] = [];
