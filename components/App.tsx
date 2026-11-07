@@ -424,7 +424,7 @@ const CSS = `
   .qp-change{font-size:13px;font-weight:600;color:#1A1F2E;text-decoration:underline;flex-shrink:0;}
   .qp-day.open .qp-pick,.qp-day.open .qp-skipped{border-color:#1A1F2E;}
   .qp-edit{margin:8px 0 6px 48px;display:flex;flex-direction:column;gap:8px;}
-  .qp-find{height:44px;}
+  .qp-edit .qp-find{flex:none;height:46px;}
   .qp-hits{list-style:none;margin:0;padding:0;border:1px solid #ECE6DD;border-radius:14px;background:#fff;overflow:hidden;}
   .qp-hits li+li{border-top:1px solid #F1EBE2;}
   .qp-hit{width:100%;min-height:48px;padding:8px 14px;border:none;background:none;text-align:left;display:flex;flex-direction:column;gap:2px;font-family:'Figtree',sans-serif;cursor:pointer;}
@@ -4393,9 +4393,11 @@ ${tiktok.text}`}]);
   const qpSkipped=():string[]=>{try{return JSON.parse(localStorage.getItem("dw-qp-skipped")||"[]");}catch{return [];}};
   const qpOpenDays=()=>{const sk=qpSkipped();return next7Keys.filter(k=>!plan[k]&&!sk.includes(k));};
   const qp14=Array.from({length:14},(_,i)=>dateKey(addDays(startOfToday(),i)));
+  // Opens straight to a filled week, set up the way they planned last time. Each night can be changed from there.
   const openQuickPlan=()=>{
     const rh=qpRhythm();
-    setQp({stage:"days",days:qp14.map(k=>({key:k,level:rh[keyToDate(k).getDay()]||"quick"})),picks:{},matches:{},seen:{},shared:[],replace:{},week2:false});
+    const q={stage:"loading" as const,days:qp14.map(k=>({key:k,level:rh[keyToDate(k).getDay()]||"quick" as QPLevel})),picks:{},matches:{},seen:{},shared:[],replace:{},week2:false};
+    setQp(q);qpFill(q);
   };
   // nights the sheet is filling: open ones, plus planned ones they chose to change
   const qpActive=(q:NonNullable<typeof qp>)=>q.days.filter((d,i)=>(i<7||q.week2)&&(!plan[d.key]||q.replace[d.key]));
@@ -4411,16 +4413,17 @@ ${tiktok.text}`}]);
     if(!res.ok)throw new Error(d.error||"Couldn't plan the week just now.");
     return d;
   };
-  const qpFill=async()=>{
-    if(!qp)return;
-    const days=qpActive(qp);
+  const qpFill=async(start?:NonNullable<typeof qp>)=>{
+    const cur=start||qp;
+    if(!cur)return;
+    const days=qpActive(cur);
     setQp(q=>q&&{...q,stage:"loading",err:undefined});
     try{
-      const d=await qpFetch(days.filter(x=>x.level!=="skip"),qpRecent(),qp.replace);
+      const d=await qpFetch(days.filter(x=>x.level!=="skip"),qpRecent(),cur.replace);
       const seen:Record<string,string[]>={};
       for(const [k,p] of Object.entries(d.picks||{}))if(p)seen[k]=[(p as any).recipe.title];
       setQp(q=>q&&{...q,stage:"week",picks:d.picks||{},matches:d.matches||{},shared:d.shared||[],seen});
-    }catch(e:any){setQp(q=>q&&{...q,stage:"days",err:e.message});}
+    }catch(e:any){setQp(q=>q&&{...q,stage:"days",err:e.message||"Couldn't plan the week just now."});}
   };
   const qpShuffle=async(key:string)=>{
     if(!qp)return;
@@ -5117,36 +5120,27 @@ ${tiktok.text}`}]);
               <button className="ui-close" aria-label="Close" onClick={close}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
               {qp.stage!=="week"?(
                 <>
-                  <h2 id="qp-title" className="share-sheet-title">Plan my week</h2>
-                  <p className="qp-sub">{(()=>{try{return localStorage.getItem("dw-qp-rhythm")?"Set up like last week. Tap a day to change it.":"Tap a day to change how much time you have.";}catch{return "Tap a day to change how much time you have.";}})()}</p>
-                  {qp.err&&<p className="inspire-error" role="alert" style={{margin:"0 0 8px"}}>{qp.err}</p>}
-                  <ul className="qp-days">
-                    {shown.flatMap((d,i)=>[divider(d.key,i),(
-                      <li key={d.key} className="qp-day">
-                        {date(d.key)}
-                        {plan[d.key]&&!qp.replace[d.key]?(
-                          <span className="qp-planned"><span className="qp-planned-t"><b>{plan[d.key].title}</b><span>Already planned</span></span><button className="ck-textlink" style={{alignSelf:"auto",fontSize:14}} onClick={()=>setQp(q=>q&&{...q,replace:{...q.replace,[d.key]:true}})}>Change</button></span>
-                        ):(
-                          <span className="qp-seg" role="radiogroup" aria-label={`${keyToDate(d.key).toLocaleDateString("en-US",{weekday:"long"})}: how much time`}>
-                            {QP_LEVELS.map(([v,l])=>(
-                              <button key={v} role="radio" aria-checked={d.level===v} className={`qp-opt${d.level===v?" on":""}${v==="skip"?" skip":""}${v==="long"?" long":""}`}
-                                onClick={()=>setQp(q=>q&&{...q,days:q.days.map(x=>x.key===d.key?{...x,level:v}:x)})}>{l}</button>
-                            ))}
-                          </span>
-                        )}
-                      </li>
-                    )])}
-                  </ul>
-                  {week2Btn}
-                  <p className="qp-legend">Quick is under 30 min · Normal 30–60 · Take my time is an hour or more</p>
-                  <button className="ui-btn-primary qp-go" disabled={!toFill||qp.stage==="loading"} onClick={qpFill}>
-                    {qp.stage==="loading"?"Picking dinners…":toFill?`Fill ${toFill} dinner${toFill===1?"":"s"}`:"Nothing to fill"}
-                  </button>
+                  <h2 id="qp-title" className="share-sheet-title">Your week</h2>
+                  {qp.err?(
+                    <>
+                      <p className="inspire-error" role="alert" style={{margin:"4px 0 12px"}}>{qp.err}</p>
+                      <button className="ui-btn-primary qp-go" onClick={()=>qpFill()}>Try again</button>
+                    </>
+                  ):(
+                    <>
+                      <p className="qp-sub" aria-live="polite">Picking dinners…</p>
+                      <ul className="qp-days" aria-hidden="true">
+                        {qp.days.slice(0,7).map(d=>(
+                          <li key={d.key} className="qp-day"><div className="qp-row">{date(d.key)}<span className="qp-pick"><span className="gen-skel" style={{width:"60%",height:16,margin:"12px 8px"}}/></span></div></li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
                 </>
               ):(
                 <>
                   <h2 id="qp-title" className="share-sheet-title">{qp.week2?"Your next two weeks":"Your week"}</h2>
-                  <p className="qp-sub">Tap a night to change its time, skip it or find a dish. Tap <span aria-hidden="true">{Ic.shuffle(14)}</span><span className="sr-only">shuffle</span> for a different pick.</p>
+                  <p className="qp-sub">Tap a night to change it. Tap <span aria-hidden="true">{Ic.shuffle(14)}</span><span className="sr-only">shuffle</span> for a different pick.</p>
                   <ul className="qp-days">
                     {shown.flatMap((d,i)=>{
                       const p=qp.picks[d.key];
@@ -5190,8 +5184,9 @@ ${tiktok.text}`}]);
                                   <button key={v} role="radio" aria-checked={!kept&&curLevel===v} className={`qp-opt${!kept&&curLevel===v?" on":""}${v==="skip"?" skip":""}${v==="long"?" long":""}`} onClick={()=>qpSetLevel(d.key,v)}>{l}</button>
                                 ))}
                               </span>
+                              <span className="qp-legend" style={{margin:0}}>Quick is under 30 min · Normal 30–60 · Take my time is over an hour</span>
                               <label htmlFor={`qp-find-${d.key}`} className="sr-only">Find a dish for this night</label>
-                              <input id={`qp-find-${d.key}`} className="fr-input qp-find" autoFocus value={qpQuery} onChange={e=>setQpQuery(e.target.value)} placeholder="Or find a dish: tacos, lasagna…" autoComplete="off" enterKeyHint="search"/>
+                              <input id={`qp-find-${d.key}`} className="fr-input qp-find" value={qpQuery} onChange={e=>setQpQuery(e.target.value)} placeholder="Or find a dish: tacos, lasagna…" autoComplete="off" enterKeyHint="search"/>
                               {qpHits.length>0&&(
                                 <ul className="qp-hits">
                                   {qpHits.map((h,hi)=>(
@@ -5209,7 +5204,6 @@ ${tiktok.text}`}]);
                   {!qp.week2&&<button className="qp-week2" disabled={qp.busy==="week2"} onClick={qpFillWeek2}>{qp.busy==="week2"?"Picking next week…":"+ Plan next week too"}</button>}
                   {(qp.shared.length>0||listCount>0)&&<p className="qp-note">{qp.shared.length>0?`Uses ${fmtShared(qp.shared)} more than once, so less goes to waste. `:""}{listCount?`Adds ${listCount} item${listCount===1?"":"s"} to your list.`:""}</p>}
                   <button className="ui-btn-primary qp-go" disabled={!picked.length&&!nOff} onClick={qpAdd}>{(()=>{const a=picked.length-nReplace;const parts=[a?`Add ${a} dinner${a===1?"":"s"}`:"",nReplace?`switch ${nReplace}`:"",nOff?`skip ${nOff}`:""].filter(Boolean);if(!parts.length)return "Nothing to add";const t=parts.join(", ").replace(/, ([^,]*)$/," and $1");return t[0].toUpperCase()+t.slice(1);})()}</button>
-                  <button className="hh-leave" style={{color:"#1A1F2E",marginTop:6}} onClick={()=>setQp(q=>q&&{...q,stage:"days"})}>Change times</button>
                 </>
               )}
             </div>
