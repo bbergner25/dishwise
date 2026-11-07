@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@breezystack/lamejs": "^1.2.7",
     "@clerk/nextjs": "^5.0.0",
     "@upstash/redis": "^1.28.0",
     "@vercel/blob": "^1.1.1",

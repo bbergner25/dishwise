@@ -2074,7 +2074,8 @@ export default function App({onReady}:{onReady?:()=>void}={}){
 
   /* cooking mode: read steps out loud (the phone's own voice, no cost) */
   useEffect(()=>{try{setReadAloud(localStorage.getItem("dw-read-aloud")==="1");}catch{}},[]);
-  const say=(text:string)=>{
+  // the phone's own voice: the backup when the natural voice can't load
+  const deviceSay=(text:string)=>{
     try{
       const ss=window.speechSynthesis;if(!ss||!text)return;
       ss.cancel();
@@ -2091,14 +2092,47 @@ export default function App({onReady}:{onReady?:()=>void}={}){
       ss.speak(u);
     }catch{}
   };
+  // natural voice (made once per sentence on our server and saved), falling back to the phone's voice
+  const ttsAudio=useRef<HTMLAudioElement|null>(null);
+  const ttsUrls=useRef<Record<string,Promise<string|null>>>({});
+  const ttsTurn=useRef(0);
+  const ttsUrl=(text:string)=>{
+    if(!ttsUrls.current[text])ttsUrls.current[text]=fetch("/api/speak",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text})})
+      .then(r=>r.ok?r.json():null).then(d=>d?.url||null).catch(()=>null)
+      .then(u=>{if(!u)delete ttsUrls.current[text];return u;});
+    return ttsUrls.current[text];
+  };
+  // iPhone only lets a page play sound it starts from a tap: call this inside the tap
+  const unlockAudio=()=>{
+    try{
+      if(!ttsAudio.current){ttsAudio.current=new Audio();ttsAudio.current.preload="auto";}
+      const a=ttsAudio.current;
+      if(!a.src||a.src.startsWith("data:")){a.src="data:audio/mpeg;base64,//NAxAAAAANIAAAAAExBTUUDAAkIAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/80LEAAAAA0gAAAAATEFNRQMACQgABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRQMACQgABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/zQsQAAAADSAAAAABMQU1FAwAJCAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/zQMQAAAADSAAAAABMQU1FAwAJCAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NCxAAAAANIAAAAAExBTUUDAAkIAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";a.play().catch(()=>{});}
+    }catch{}
+  };
+  const stopSpeech=()=>{ttsTurn.current++;try{ttsAudio.current?.pause();}catch{}try{window.speechSynthesis?.cancel();}catch{}};
+  const say=(text:string)=>{
+    if(!text)return;
+    stopSpeech();
+    const turn=ttsTurn.current;
+    const slow=setTimeout(()=>{if(turn===ttsTurn.current){ttsTurn.current++;deviceSay(text);}},7000);
+    ttsUrl(text).then(url=>{
+      clearTimeout(slow);
+      if(turn!==ttsTurn.current)return;
+      const a=ttsAudio.current;
+      if(!url||!a){deviceSay(text);return;}
+      a.src=url;
+      a.play().catch(()=>{if(turn===ttsTurn.current)deviceSay(text);});
+    });
+  };
   const stepSpeech=(r:any,i:number)=>i===0?"Gather your ingredients. Tap Start cooking when you're ready.":`Step ${i}. ${(r?.steps||[])[i-1]||""}`;
-  useEffect(()=>{if(!cookRecipe)try{window.speechSynthesis?.cancel();}catch{}},[cookRecipe]);
+  useEffect(()=>{if(!cookRecipe)stopSpeech();},[cookRecipe]);
   const toggleReadAloud=()=>{
     const on=!readAloud;
     setReadAloud(on);
     try{localStorage.setItem("dw-read-aloud",on?"1":"0");}catch{}
-    if(!on)try{window.speechSynthesis?.cancel();}catch{}
-    else if(cookRecipe)say(stepSpeech(cookRecipe,cookStep));
+    if(!on)stopSpeech();
+    else if(cookRecipe){unlockAudio();say(stepSpeech(cookRecipe,cookStep));ttsUrl(stepSpeech(cookRecipe,cookStep+1));}
   };
 
   /* cooking mode: tick running timers; chime + vibrate when one finishes */
@@ -2741,7 +2775,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
 
   /* cooking mode */
   const openCookMode=(r:any)=>{
-    setCookRecipe(r);setCookStep(0);setCookTimers({});setShowRecipeMenu(false);if(readAloud)say(stepSpeech(r,0));
+    setCookRecipe(r);setCookStep(0);setCookTimers({});setShowRecipeMenu(false);if(readAloud){unlockAudio();say(stepSpeech(r,0));ttsUrl(stepSpeech(r,1));}
     // older recipes: ask once which ingredients go in at each step, then keep the answer with the recipe
     const steps=r?.steps||[];
     const valid=Array.isArray(r?.step_ingredients)&&r.step_ingredients.length===steps.length;
@@ -5749,7 +5783,7 @@ ${tiktok.text}`}]);
         const timers=idx>0?stepTimers(stepText):[];
         const now=Date.now();
         const otherTimers=Object.entries(cookTimers).filter(([k])=>Number(k.split(".")[0])!==idx).map(([k,t])=>({key:k,step:Number(k.split(".")[0]),t,left:Math.max(0,Math.ceil((t.end-now)/1000))}));
-        const go=(n:number)=>{const to=Math.max(0,Math.min(last,n));if(to===idx)return;setCookStep(to);if(readAloud)say(stepSpeech(r,to));};
+        const go=(n:number)=>{const to=Math.max(0,Math.min(last,n));if(to===idx)return;setCookStep(to);if(readAloud){unlockAudio();say(stepSpeech(r,to));if(to<last)ttsUrl(stepSpeech(r,to+1));}};
         return(
           <div className="cook-overlay" role="dialog" aria-modal="true" aria-label={`Cooking ${r.title}`}
             onTouchStart={(e)=>{cookSwipeX.current=e.touches[0].clientX;}}
@@ -5806,7 +5840,7 @@ ${tiktok.text}`}]);
                 <>
                   <div className="cook-eyebrow">Step {idx}</div>
                   <p className="cook-step-text">{stepText}</p>
-                  {readAloud&&<button className="cook-again" onClick={()=>say(stepSpeech(r,idx))}>
+                  {readAloud&&<button className="cook-again" onClick={()=>{unlockAudio();say(stepSpeech(r,idx));}}>
                     <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
                     Read it again
                   </button>}
