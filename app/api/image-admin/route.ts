@@ -3,9 +3,12 @@ import { auth } from "@clerk/nextjs/server";
 //   /api/image-admin?secret=WARM_SECRET                         → status + links
 //   /api/image-admin?secret=WARM_SECRET&action=test&dishes=Kung Pao Noodles|Cottage Pie|Fish Tacos
 //   /api/image-admin?secret=WARM_SECRET&action=count             → how many dishes still need photos + est. cost
-import { estimateTimes, TIME_KEY, totalRange } from "../../../lib/times";
+import { estimateTimes, TIME_KEY, totalRange, getTimeFixes } from "../../../lib/times";
+import { coverage, gaps, COVER_DIETS, COVER_LEVELS, targetFor } from "../../../lib/coverage";
+import { levelOf } from "../../../lib/quickplan";
+import { DISH_TITLES } from "../../../lib/dishes";
 import { buildPrompt } from "../../../lib/prompts";
-import { RECIPE_SYSTEM } from "../../../lib/guard";
+import { RECIPE_SYSTEM, isCleanRecipe } from "../../../lib/guard";
 import { NextRequest, NextResponse } from "next/server";
 import {
   redis, ensurePhoto, normalizeDish, spentCents, imagesEnabled,
@@ -85,6 +88,23 @@ async function fixTimes(budgetMs: number) {
   }
   return { fixed, errors };
 }
+
+// The Community library as "Plan my week" sees it, with realistic re-estimated times applied
+const normTitle = (s: string) => (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+async function communityPool(): Promise<any[]> {
+  const keys = await redis.keys("recipe-cache:v1:*");
+  const list: any[] = [];
+  for (let i = 0; i < keys.length; i += 200) {
+    const vals = await redis.mget<any[]>(...keys.slice(i, i + 200));
+    vals.forEach((r) => { if (isCleanRecipe(r)) list.push(r); });
+  }
+  const fixes = await getTimeFixes(redis, list.map((r) => normTitle(r.title)));
+  return list.map((r) => { const f = fixes[normTitle(r.title)]; return f ? { ...r, ...f } : r; });
+}
+const FILL_QUEUE = "community-fill:queue";   // [{ dish, diet, level }]
+const FILL_DONE = "community-fill:done";     // { made, skipped, errors[] }
+const LEVEL_WORDS: Record<string, string> = { quick: "ready in under 30 minutes start to finish", normal: "taking 30 to 60 minutes start to finish", long: "taking over an hour (braises, roasts, slow cooks, weekend projects)" };
+const LEVEL_NAME: Record<string, string> = { quick: "Quick", normal: "Normal", long: "Take my time" };
 
 async function pollAndContinue() {
   const r = await pollBatch();
@@ -208,6 +228,174 @@ Reply with ONLY valid JSON: {"renames":[{"i":0,"title":"...","tagline":"... or e
       ${renames.length ? `<table>${renames.map((r) => `<tr><td>${esc(r.old)}${r.tagline ? `<br><span class="muted">${esc(r.oldTagline || "")}</span>` : ""}</td><td>→</td><td><strong>${esc(r.title)}</strong>${r.tagline ? `<br><span class="muted">${esc(r.tagline)}</span>` : ""}</td></tr>`).join("")}</table>
         <p><a href="?secret=${secret}&action=brands-apply" style="display:inline-block;padding:12px 20px;border-radius:24px;background:#F4A021;color:#151210;font-weight:600;text-decoration:none">Apply ${renames.length} renames</a></p>` : error ? "" : "<p><strong>Nothing to rename.</strong></p>"}
       <p><a href="?secret=${secret}">← Back</a></p>`);
+  }
+
+  if (action === "coverage") {
+    const c = coverage(await communityPool());
+    const g = gaps(c);
+    // the original starter list of dishes, warmed in batches a while back
+    const starterKeys = DISH_TITLES.map((t) => `recipe-cache:v1:${t.toLowerCase().trim().replace(/\s+/g, " ")}`);
+    const starterHave: boolean[] = [];
+    for (let i = 0; i < starterKeys.length; i += 100) {
+      const vals = await redis.mget<any[]>(...starterKeys.slice(i, i + 100));
+      vals.forEach((v) => starterHave.push(!!v));
+    }
+    const starterMissing = DISH_TITLES.filter((_, i) => !starterHave[i]);
+    const cell = (d: string, l: string) => {
+      const n = c.cells[d][l].length, t = targetFor(d, l);
+      const bg = n >= t ? "#E8F3E6" : n >= t / 2 ? "#FFF3D6" : "#FDE3DA";
+      return `<td style="background:${bg};text-align:center;border-radius:8px;padding:8px 14px"><strong>${n}</strong><span class="muted"> / ${t}</span></td>`;
+    };
+    const missing = g.reduce((n, x) => n + x.need, 0);
+    return page("Community coverage", `<h1>Community coverage</h1>
+      <p class="muted">How many Community dinners "Plan my week" can pick from, by how long they take. The second number is what's needed for two weeks of planning to feel varied. Green is enough, yellow is thin, red is very thin.</p>
+      <p>${c.total} Community recipes · ${c.dinners} count as dinners (sides, desserts, brunch and snacks aren't picked)${c.noTime ? ` · ${c.noTime} have no usable time` : ""}</p>
+      <table style="border-spacing:6px;border-collapse:separate"><tr><td></td>${COVER_LEVELS.map((l) => `<td style="text-align:center"><strong>${l.name}</strong><br><span class="muted">${l.range}</span></td>`).join("")}</tr>
+      ${COVER_DIETS.map((d) => `<tr><td><strong>${d === "All" ? "Everyone" : d}</strong></td>${COVER_LEVELS.map((l) => cell(d, l.id)).join("")}</tr>`).join("")}</table>
+      <p class="muted">Diets are judged from ingredients, so vegetarian and dairy-free are reliable and gluten-free and low-carb are best-effort.</p>
+      <h2>The original starter list</h2>
+      <p>${DISH_TITLES.length - starterMissing.length} of ${DISH_TITLES.length} dishes from the starter list are in the Community.${starterMissing.length ? ` ${starterMissing.length} were never made.` : " It's complete."}</p>
+      ${starterMissing.length ? `<details><summary class="muted">See the ${starterMissing.length} missing dishes</summary><p>${starterMissing.map(esc).join(" · ")}</p></details>
+        <p><a href="?secret=${secret}&action=fill-starter">Queue the ${starterMissing.length} missing starter dishes</a> <span class="muted">(about $${(starterMissing.length * 0.025).toFixed(2)}; you approve on the next page). Many are desserts, sides and starters, which help the Community but not "Plan my week".</span></p>` : ""}
+      ${g.length ? `<h2>Filling the gaps</h2><p>About <strong>${missing}</strong> more dinners would fill every gap. Step one suggests dish names for each gap (about 1¢, nothing is made yet). You review the list, then approve making them.</p>
+        <p><a href="?secret=${secret}&action=fill-suggest" style="display:inline-block;padding:12px 20px;border-radius:24px;background:#F4A021;color:#151210;font-weight:600;text-decoration:none">Suggest dishes for the gaps</a></p>` : `<p><strong>Every cell has enough dinners.</strong></p>`}
+      <p><a href="?secret=${secret}">← Back</a></p>`);
+  }
+
+  if (action === "fill-suggest") {
+    const pool = await communityPool();
+    const g = gaps(coverage(pool)).slice(0, 10);
+    const existing = pool.map((r) => String(r.title));
+    const taken = new Set(existing.map(normTitle));
+    const plan: { dish: string; diet: string; level: string }[] = [];
+    let error = "";
+    const MAX_TOTAL = 150;
+    for (const gap of g) {
+      if (plan.length >= MAX_TOTAL) break;
+      const n = Math.min(gap.need, 30, MAX_TOTAL - plan.length);
+      // a dinner added for one gap often fills another (a quick vegetarian dinner also counts for everyone)
+      const already = plan.filter((p) => p.level === gap.level && (gap.diet === "All" || p.diet === gap.diet)).length;
+      const want = n - already;
+      if (want <= 0) continue;
+      try {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY!, "anthropic-version": "2023-06-01" },
+          body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 1500, messages: [{ role: "user", content:
+`List ${want + 6} different, well-known dinners a home cook would make on a ${gap.level === "long" ? "weekend" : "weeknight"}, each ${LEVEL_WORDS[gap.level]}${gap.diet === "All" ? "" : `, and ${gap.diet.toLowerCase()}`}. Main dishes only (no sides, salads served as a side, desserts, breakfast or snacks). Mix cuisines and main ingredients. Use plain cookbook names with no brand, restaurant or creator names and no words like "viral" or "best".
+Don't include any of these, which we already have: ${[...existing, ...plan.map((p) => p.dish)].slice(0, 600).join("; ")}
+Reply with ONLY valid JSON: {"dishes":["..."]}` }] }),
+        });
+        const data = await res.json();
+        if (!res.ok) { error = `${res.status}: ${JSON.stringify(data).slice(0, 300)}`; break; }
+        const text = (data.content || []).map((c: any) => c.text || "").join("");
+        const j = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1));
+        let added = 0;
+        for (const dish of (j.dishes || []).map((x: any) => String(x).trim().slice(0, 80))) {
+          if (added >= want || !dish || taken.has(normTitle(dish))) continue;
+          taken.add(normTitle(dish));
+          plan.push({ dish, diet: gap.diet, level: gap.level });
+          added++;
+        }
+      } catch (e: any) { error = String(e?.message || e); break; }
+    }
+    await redis.set("community-fill:proposal", plan, { ex: 86400 });
+    const cents = Math.ceil(plan.length * 2.5);
+    const byGap: Record<string, string[]> = {};
+    for (const p of plan) (byGap[`${p.diet === "All" ? "Everyone" : p.diet} · ${LEVEL_NAME[p.level]}`] ||= []).push(p.dish);
+    return page("Fill the gaps", `<h1>Dishes to add</h1>
+      <p class="muted">Nothing has been made yet. Each one is written with the same recipe rules as the app (realistic times, no brand names) and joins the Community only if it passes the same checks. Photos come later through the normal photo backfill.</p>
+      ${error ? `<pre style="color:#B8340F;white-space:pre-wrap">${esc(error)}</pre>` : ""}
+      ${Object.entries(byGap).map(([k, v]) => `<h3 style="margin:18px 0 4px">${esc(k)} (${v.length})</h3><p>${v.map(esc).join(" · ")}</p>`).join("")}
+      ${plan.length ? `<p><strong>${plan.length} recipes, about $${(cents / 100).toFixed(2)}</strong> in AI (roughly 2–3¢ each), plus about $${(plan.length * 0.017).toFixed(2)} for photos when the backfill runs.</p>
+        <p><a href="?secret=${secret}&action=fill-approve" style="display:inline-block;padding:12px 20px;border-radius:24px;background:#F4A021;color:#151210;font-weight:600;text-decoration:none">Approve and make ${plan.length} recipes</a>
+        &nbsp; <a href="?secret=${secret}&action=fill-suggest">Suggest a different list</a></p>` : "<p>No new dishes came back.</p>"}
+      <p><a href="?secret=${secret}&action=coverage">← Coverage</a></p>`);
+  }
+
+  if (action === "fill-approve") {
+    const proposal = ((await redis.get<any[]>("community-fill:proposal")) || []) as { dish: string; diet: string; level: string }[];
+    const queue = ((await redis.get<any[]>(FILL_QUEUE)) || []) as { dish: string; diet: string; level: string }[];
+    const have = new Set(queue.map((q) => normTitle(q.dish)));
+    await redis.set(FILL_QUEUE, [...queue, ...proposal.filter((p) => !have.has(normTitle(p.dish)))], { ex: 3 * 86400 });
+    await redis.del("community-fill:proposal", FILL_DONE);
+    return NextResponse.redirect(new URL(`/api/image-admin?secret=${secret}&action=fill-run&go=1`, req.url));
+  }
+
+  if (action === "fill-starter") {
+    const keys = DISH_TITLES.map((t) => `recipe-cache:v1:${t.toLowerCase().trim().replace(/\s+/g, " ")}`);
+    const missing: string[] = [];
+    for (let i = 0; i < keys.length; i += 100) {
+      const vals = await redis.mget<any[]>(...keys.slice(i, i + 100));
+      vals.forEach((v, j) => { if (!v) missing.push(DISH_TITLES[i + j]); });
+    }
+    const queue = ((await redis.get<any[]>(FILL_QUEUE)) || []) as { dish: string; diet: string; level: string }[];
+    const have = new Set(queue.map((q) => normTitle(q.dish)));
+    const add = missing.filter((d) => !have.has(normTitle(d))).map((dish) => ({ dish, diet: "All", level: "" }));
+    const all = [...queue, ...add];
+    return page("Starter list", `<h1>Finish the starter list</h1>
+      <p>${add.length} starter dishes to make${queue.length ? `, plus ${queue.length} already waiting` : ""}: <strong>${all.length} recipes, about $${(all.length * 0.025).toFixed(2)}</strong> in AI, plus about $${(all.length * 0.017).toFixed(2)} for photos when the backfill runs.</p>
+      <p>${add.map((a) => esc(a.dish)).join(" · ")}</p>
+      ${add.length ? `<p><a href="?secret=${secret}&action=fill-starter-ok" style="display:inline-block;padding:12px 20px;border-radius:24px;background:#F4A021;color:#151210;font-weight:600;text-decoration:none">Approve and make ${all.length} recipes</a></p>` : ""}
+      <p><a href="?secret=${secret}&action=coverage">← Coverage</a></p>`);
+  }
+  if (action === "fill-starter-ok") {
+    const keys = DISH_TITLES.map((t) => `recipe-cache:v1:${t.toLowerCase().trim().replace(/\s+/g, " ")}`);
+    const missing: string[] = [];
+    for (let i = 0; i < keys.length; i += 100) {
+      const vals = await redis.mget<any[]>(...keys.slice(i, i + 100));
+      vals.forEach((v, j) => { if (!v) missing.push(DISH_TITLES[i + j]); });
+    }
+    const queue = ((await redis.get<any[]>(FILL_QUEUE)) || []) as { dish: string; diet: string; level: string }[];
+    const have = new Set(queue.map((q) => normTitle(q.dish)));
+    await redis.set(FILL_QUEUE, [...queue, ...missing.filter((d) => !have.has(normTitle(d))).map((dish) => ({ dish, diet: "All", level: "" }))], { ex: 3 * 86400 });
+    await redis.del(FILL_DONE);
+    return NextResponse.redirect(new URL(`/api/image-admin?secret=${secret}&action=fill-run&go=1`, req.url));
+  }
+
+  if (action === "fill-run") {
+    const queue = ((await redis.get<any[]>(FILL_QUEUE)) || []) as { dish: string; diet: string; level: string }[];
+    const done = ((await redis.get<any>(FILL_DONE)) || { made: 0, skipped: 0, offLevel: 0, errors: [] }) as { made: number; skipped: number; offLevel: number; errors: string[] };
+    if (sp.get("go") === "1" && queue.length) {
+      // about 10 recipes per page load, so each stays inside the time limit; the page reloads itself
+      const t0 = Date.now();
+      const batch = queue.slice(0, 10);
+      await Promise.all(batch.map(async (q) => {
+        try {
+          const key = `recipe-cache:v1:${q.dish.toLowerCase().trim().replace(/\s+/g, " ")}`;
+          if (await redis.exists(key)) { done.skipped++; return; }
+          const res = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY!, "anthropic-version": "2023-06-01" },
+            body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 2048, system: RECIPE_SYSTEM, messages: [{ role: "user", content: buildPrompt(q.dish, q.diet === "All" ? [] : [q.diet], false, "") }] }),
+            signal: AbortSignal.timeout(52000 - (Date.now() - t0)),
+          });
+          const data = await res.json();
+          if (!res.ok) { done.errors.push(`${q.dish}: ${res.status}`); return; }
+          const text = (data.content || []).map((c: any) => c.text || "").join("");
+          const r = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1));
+          if (!isCleanRecipe(r, q.dish)) { done.skipped++; return; }
+          if (q.level && levelOf(r) !== q.level) done.offLevel++; // still a good dinner, just a different length than asked
+          await redis.set(key, r, { nx: true });
+          done.made++;
+        } catch (e: any) { done.errors.push(`${q.dish}: ${String(e?.message || e).slice(0, 80)}`); }
+      }));
+      const rest = queue.slice(batch.length);
+      if (rest.length) await redis.set(FILL_QUEUE, rest, { ex: 3 * 86400 }); else await redis.del(FILL_QUEUE);
+      done.errors = done.errors.slice(-20);
+      await redis.set(FILL_DONE, done, { ex: 3 * 86400 });
+      // the Community list and search index rebuild with the new recipes
+      await redis.del("community-list:v1", "community-index:v2");
+      const left = rest.length;
+      return new NextResponse((await page("Making recipes", `<h1>Making recipes</h1>
+        <p><strong>${done.made}</strong> made${done.skipped ? ` · ${done.skipped} skipped (already there or didn't pass checks)` : ""}${done.errors.length ? ` · ${done.errors.length} errors` : ""} · <strong>${left}</strong> to go</p>
+        ${left ? `<p class="muted">This page keeps going on its own. You can leave it open, or close it and come back to this link to continue.</p>` : `<p><strong>Done.</strong> ${done.offLevel ? `${done.offLevel} came out a different length than asked, so they count toward a different column. ` : ""}<a href="?secret=${secret}&action=coverage">See the new coverage</a>. To add photos, use Resume on the main admin page.</p>`}
+        ${done.errors.length ? `<details><summary class="muted">Errors</summary><pre>${esc(done.errors.join("\n"))}</pre></details>` : ""}`)).body, {
+        headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", ...(left ? { Refresh: `2; url=?secret=${secret}&action=fill-run&go=1` } : {}) },
+      });
+    }
+    return page("Fill the gaps", `<h1>Fill the gaps</h1><p>${queue.length ? `${queue.length} recipes are waiting. <a href="?secret=${secret}&action=fill-run&go=1">Continue making them</a>` : `Nothing waiting. ${done.made ? `${done.made} were made last time.` : ""}`}</p>
+      <p><a href="?secret=${secret}&action=coverage">← Coverage</a></p>`);
   }
 
   if (action === "taste") {
@@ -409,6 +597,7 @@ Reply with ONLY valid JSON: {"renames":[{"i":0,"title":"...","tagline":"... or e
     <tr><td>Model</td><td>${esc(IMAGE_MODEL)}</td></tr>
     <tr><td>Spent this month</td><td>$${(spent / 100).toFixed(2)} of $${(MONTHLY_BUDGET_CENTS / 100).toFixed(2)} cap</td></tr></table>
     <ul><li><a href="?secret=${secret}&action=test&dishes=${encodeURIComponent("Kung Pao Noodles|Cottage Pie|Fish Tacos")}">Make test photos: Kung Pao Noodles, Cottage Pie, Fish Tacos</a> (about 10¢, takes up to a minute)</li>
+    <li><a href="?secret=${secret}&action=coverage"><strong>Community coverage for "Plan my week"</strong></a></li>
     <li><a href="?secret=${secret}&action=count">Count dishes that need photos + cost estimate</a></li>
     <li><a href="?secret=${secret}&action=times">Realistic cook times for older recipes</a></li>
     <li><a href="?secret=${secret}&action=brands">Brand names in Community titles: check and clean up</a></li>

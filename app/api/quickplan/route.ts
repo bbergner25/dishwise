@@ -16,12 +16,12 @@ const LEVELS = new Set(["quick", "normal", "long", "skip"]);
 let memo: { at: number; pool: any[] } | null = null;
 async function pool(): Promise<any[]> {
   if (memo && Date.now() - memo.at < 5 * 60_000) return memo.pool;
-  let list = await redis.get<any[]>("community-list:v1");
-  if (!list) {
-    const keys = await redis.keys("recipe-cache:v1:*");
-    const vals = keys.length ? await redis.mget<any[]>(...keys) : [];
-    list = vals.filter((r) => isCleanRecipe(r)).slice(0, 200);
-    await redis.set("community-list:v1", list, { ex: 300 });
+  // the whole Community library (the Community tab's list stops at 200)
+  const keys = await redis.keys("recipe-cache:v1:*");
+  const list: any[] = [];
+  for (let i = 0; i < keys.length; i += 200) {
+    const vals = await redis.mget<any[]>(...keys.slice(i, i + 200));
+    vals.forEach((r) => { if (isCleanRecipe(r)) list.push(r); });
   }
   // older recipes: use their realistic re-estimated times
   const fixes = await getTimeFixes(redis, list.map((r) => normTitle(r.title)));
