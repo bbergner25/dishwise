@@ -2130,6 +2130,21 @@ export default function App({onReady}:{onReady?:()=>void}={}){
     setHhConfirm(null);
     if(d){if(who==="leave"){setShowHousehold(false);setPlanMeta(null);setHhRecipes([]);}pullPlan(false).catch(()=>{});}
   };
+  // An invite opened before signing up: join as soon as they're signed in, wherever they landed
+  const pendingJoinTried=useRef(false);
+  useEffect(()=>{
+    if(!ready||!user||!planCloud||pendingJoinTried.current)return;
+    let token="";try{token=localStorage.getItem("dw-pending-invite")||"";}catch{}
+    if(!token)return;
+    pendingJoinTried.current=true;
+    (async()=>{
+      const d=await hhPost({action:"join",token});
+      try{localStorage.removeItem("dw-pending-invite");}catch{}
+      if(d?.ok)await pullPlan(false).catch(()=>{});
+      setTab("week");setShowHousehold(true); // shows who's in it, or why joining didn't work
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[ready,user?.id,planCloud]);
   const hhName=(id?:string,name?:string)=>!id?"":household&&id===household.me?"you":(name||"Someone");
   const ago=(t:number)=>{const m=Math.round((Date.now()-t)/60000);return m<1?"just now":m<60?`${m} min ago`:m<1440?`${Math.round(m/60)} hr ago`:`${Math.round(m/1440)} d ago`;};
 

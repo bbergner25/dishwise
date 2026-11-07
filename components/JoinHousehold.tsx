@@ -34,6 +34,8 @@ export default function JoinHousehold({ token }: { token: string }) {
   const [err, setErr] = useState("");
 
   useEffect(() => {
+    // remember the invite, so it still goes through if signing up lands them somewhere else
+    try { localStorage.setItem("dw-pending-invite", token); } catch {}
     fetch(`/api/household?invite=${encodeURIComponent(token)}`).then((r) => r.json()).then(setInfo).catch(() => setInfo({ valid: false }));
   }, [token]);
 
@@ -43,7 +45,7 @@ export default function JoinHousehold({ token }: { token: string }) {
       const res = await fetch("/api/household", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "join", token }) });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || "Couldn't join just now.");
-      try { sessionStorage.setItem("dw-open-tab", "week"); } catch {}
+      try { sessionStorage.setItem("dw-open-tab", "week"); localStorage.removeItem("dw-pending-invite"); } catch {}
       window.location.href = "/";
     } catch (e: any) { setErr(e.message || "Couldn't join just now. Try again."); setBusy(false); }
   };
@@ -73,7 +75,7 @@ export default function JoinHousehold({ token }: { token: string }) {
               <button className="jh-btn" onClick={join} disabled={busy}>{busy ? "Joining…" : `Join ${inviter}'s household`}</button>
             ) : (
               <>
-                <button className="jh-btn" onClick={() => openSignIn({ forceRedirectUrl: typeof window !== "undefined" ? window.location.href : undefined })}>Sign in to join</button>
+                <button className="jh-btn" onClick={() => { const back = typeof window !== "undefined" ? window.location.href : undefined; openSignIn({ forceRedirectUrl: back, signUpForceRedirectUrl: back }); }}>Sign in or create an account</button>
                 <p className="jh-text" style={{ fontSize: 14 }}>It's free. You need an account so only your household can see your plan.</p>
               </>
             )}
