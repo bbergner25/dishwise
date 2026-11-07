@@ -1856,6 +1856,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
   const [showAddSide,setShowAddSide] = useState(false);      // "Add another side" popover
   const [addSideMode,setAddSideMode] = useState<"suggest"|"search">("suggest");
   const [addSideQuery,setAddSideQuery] = useState("");
+  const [commFrom,setCommFrom]=useState<"search"|"library">("search"); // where Community was opened from, for Back and the nav
   const [libFilter,setLibFilter]   = useState<"all"|"mine"|"family"|"sides"|"recent">("all"); // Library filter chip
   const [showScanMenu,setShowScanMenu] = useState(false); // scan menu on the Cook search bar
   const [showUrlRow,setShowUrlRow]   = useState(false);   // "Paste a link" row expanded
@@ -3274,7 +3275,10 @@ ${tiktok.text}`}]);
                 </span>
                 <span className="ck-inspire-cta">Inspire me</span>
               </button>
-              <button className="ck-textlink" onClick={()=>{setHomeMode("tryme");window.scrollTo({top:0});}}>Or flip through ideas →</button>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-start",gap:2}}>
+                <button className="ck-textlink" onClick={()=>{setHomeMode("tryme");window.scrollTo({top:0});}}>Or flip through ideas →</button>
+                <button className="ck-textlink" onClick={()=>{setCommFrom("search");setTab("community");window.scrollTo({top:0});}}>Or browse all community recipes →</button>
+              </div>
 
               {trendingDishes.length>0&&(
                 <section className="ck-section">
@@ -3292,17 +3296,12 @@ ${tiktok.text}`}]);
                         <span className="ck-trend-tag">Trending</span>
                       </button>
                     ))}
-                    <button className="ck-trend-card ck-trend-more" onClick={()=>{setTab("community");window.scrollTo({top:0});}}>
+                    <button className="ck-trend-card ck-trend-more" onClick={()=>{setCommFrom("search");setTab("community");window.scrollTo({top:0});}}>
                       <span className="ck-trend-title">See all community recipes</span>
                       <span className="ck-trend-more-arrow" aria-hidden="true">→</span>
                     </button>
                   </div>
                 </section>
-              )}
-              {trendingDishes.length===0&&(
-                <div className="ck-section">
-                  <button className="ck-textlink" onClick={()=>setTab("community")}>Browse community recipes →</button>
-                </div>
               )}
 
               <section className="ck-section">
@@ -4158,9 +4157,9 @@ ${tiktok.text}`}]);
 
     return(
       <div className="lib-page cm-page">
-        <button className="rx-back ck-mode-back" onClick={()=>{setTab("search");setHomeMode("search");window.scrollTo({top:0});}}>
+        <button className="rx-back ck-mode-back" onClick={()=>{if(commFrom==="library")setTab("library");else{setTab("search");setHomeMode("search");}window.scrollTo({top:0});}}>
           <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="m15 6-6 6 6 6"/></svg>
-          Cook
+          {commFrom==="library"?"Library":"Cook"}
         </button>
         <h1 className="ck-title" style={{margin:"14px 0 0"}}>Community recipes</h1>
         <p className="fl-lede">Dishes other people have made with Every Chef. Tap one to open it.</p>
@@ -4320,7 +4319,7 @@ ${tiktok.text}`}]);
     });
     const sortedCats=RECIPE_CATEGORIES.filter(c=>grouped[c]&&grouped[c].length>0);
     const historyFiltered=history.filter(matches);
-    const FILTERS:[string,string][]=[["all","All"],["mine","Mine"],["family","Household"],["sides","Sides"],["recent","Recent"]];
+    const FILTERS:[string,string][]=[["all","All"],["mine","Mine"],["community","Community"],["family","Household"],["sides","Sides"],["recent","Recent"]];
     return(
       <div className="lib-page">
         <div className="pl-head">
@@ -4336,7 +4335,7 @@ ${tiktok.text}`}]);
         )}
         <div className="lib-filters" role="tablist" aria-label="Filter recipes">
           {FILTERS.map(([k,l])=>(
-            <button key={k} role="tab" aria-selected={libFilter===k} className={`ck-chip${libFilter===k?" on-dark":""}`} onClick={()=>setLibFilter(k as any)}>
+            <button key={k} role="tab" aria-selected={libFilter===k} className={`ck-chip${libFilter===k?" on-dark":""}`} onClick={()=>{if(k==="community"){setCommFrom("library");setTab("community");window.scrollTo({top:0});}else setLibFilter(k as any);}}>
               {l}{k==="mine"&&saved.length?` · ${saved.length}`:""}
             </button>
           ))}
@@ -5074,10 +5073,10 @@ ${tiktok.text}`}]);
   }
 
   const NAV_ITEMS:{key:string;match:string[];label:string;icon:(n:number)=>any;badge:number|null}[]=[
-    {key:"search",match:["search","community"],label:"Cook",icon:(n)=>Ic.cook(n),badge:null},
+    {key:"search",match:commFrom==="library"?["search"]:["search","community"],label:"Cook",icon:(n)=>Ic.cook(n),badge:null},
     {key:"week",match:["week"],label:"Plan",icon:(n)=>Ic.calendar(n),badge:mealsPlanned||null},
     {key:"list",match:["list"],label:"List",icon:(n)=>Ic.cart(n),badge:listLeft||null},
-    {key:"library",match:["library","saved","family"],label:"Library",icon:(n)=>Ic.library(n),badge:null},
+    {key:"library",match:commFrom==="library"?["library","saved","family","community"]:["library","saved","family"],label:"Library",icon:(n)=>Ic.library(n),badge:null},
   ];
   const goNav=(key:string)=>{
     if(key==="search"){

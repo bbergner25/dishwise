@@ -2,6 +2,7 @@
 // writing new ideas. Free and instant, since nothing is generated.
 //   POST /api/pantry { items: ["chicken thighs","spinach"], maxMinutes?: 45 }
 //   → { results: [{ recipe, uses: [...], need: [...] }] }
+import { communityList } from "../../../lib/community";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { Redis } from "@upstash/redis";
@@ -21,15 +22,7 @@ async function communityRecipes(signedIn: boolean): Promise<any[]> {
     const vals = await redis.mget<any[]>(...PROMOTED_DISHES.map((t) => `recipe-cache:v1:${norm(t)}`));
     return vals.filter((r) => isCleanRecipe(r));
   }
-  const LIST_KEY = "community-list:v1"; // same 5-minute list the Community tab uses
-  let list = await redis.get<any[]>(LIST_KEY);
-  if (!list) {
-    const keys = await redis.keys("recipe-cache:v1:*");
-    const vals = keys.length ? await redis.mget<any[]>(...keys) : [];
-    list = vals.filter((r) => isCleanRecipe(r)).slice(0, 200);
-    await redis.set(LIST_KEY, list, { ex: 300 });
-  }
-  return list;
+  return communityList(redis);
 }
 
 export async function POST(req: NextRequest) {

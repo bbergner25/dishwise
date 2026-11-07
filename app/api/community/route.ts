@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { Redis } from "@upstash/redis";
 import { PROMOTED_DISHES } from "../../../lib/promoted";
+import { communityList } from "../../../lib/community";
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL!,
@@ -33,16 +34,7 @@ export async function GET() {
       return NextResponse.json({ authenticated: false, recipes });
     }
 
-    // The Community list is the same for everyone, so build it at most every 5 minutes
-    // instead of scanning the whole database on every visit.
-    const LIST_KEY = "community-list:v1";
-    let recipes = await redis.get<any[]>(LIST_KEY);
-    if (!recipes) {
-      const keys = await redis.keys(`recipe-cache:${CACHE_VERSION}:*`);
-      const values = keys.length ? await redis.mget<any[]>(...keys) : [];
-      recipes = values.filter((r) => isCleanRecipe(r)).slice(0, 200);
-      await redis.set(LIST_KEY, recipes, { ex: 300 });
-    }
+    const recipes = await communityList(redis);
     return NextResponse.json({ authenticated: true, recipes });
   } catch (err) {
     console.error("Community GET error:", err);
