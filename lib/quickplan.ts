@@ -4,7 +4,9 @@ import { totalRange, toMinutes } from "./times";
 import { aisleOf, groceryKey, isStaple, recipeGroceries } from "./grocery";
 
 export type Level = "quick" | "normal" | "long" | "skip";
-export const LEVEL_RANGE: Record<Exclude<Level, "skip">, [number, number]> = { quick: [0, 30], normal: [31, 60], long: [61, 100000] };
+// Judged by the short end of a recipe's realistic range ("35–45 min" counts as 35). Honest home-cook times
+// put almost nothing under 30, so Quick means about 40 minutes or less.
+export const LEVEL_RANGE: Record<Exclude<Level, "skip">, [number, number]> = { quick: [0, 40], normal: [41, 75], long: [76, 100000] };
 
 // Longest realistic time, in minutes ("45–55 min" → 55)
 export function maxMinutes(r: any): number {
@@ -17,9 +19,9 @@ export function minMinutes(r: any): number {
   return toMinutes(range.split("–")[0]) || toMinutes(range) || 0;
 }
 export function levelOf(r: any): Level | null {
-  const m = maxMinutes(r);
+  const m = minMinutes(r);
   if (!m) return null;
-  return m <= 30 ? "quick" : m <= 60 ? "normal" : "long";
+  return m <= LEVEL_RANGE.quick[1] ? "quick" : m <= LEVEL_RANGE.normal[1] ? "normal" : "long";
 }
 
 // Dinner, not dessert, brunch, a snack or a drink
@@ -101,7 +103,7 @@ export function pickWeek(pool: any[], days: DayAsk[], opts: { diets: string[]; a
   for (const d of days) {
     if (d.level === "skip") continue;
     const [lo, hi] = LEVEL_RANGE[d.level];
-    const fit = ok.filter((r) => { const m = maxMinutes(r); return m >= lo && m <= hi; });
+    const fit = ok.filter((r) => { const m = minMinutes(r); return m >= lo && m <= hi; });
     const fresh = fit.filter((r) => !avoid.has(norm(r.title)) && !used.has(norm(r.title)));
     matches[d.key] = fresh.length;
     if (!fresh.length) { picks[d.key] = null; continue; }

@@ -103,7 +103,7 @@ async function communityPool(): Promise<any[]> {
 }
 const FILL_QUEUE = "community-fill:queue";   // [{ dish, diet, level }]
 const FILL_DONE = "community-fill:done";     // { made, skipped, errors[] }
-const LEVEL_WORDS: Record<string, string> = { quick: "ready in under 30 minutes start to finish", normal: "taking 30 to 60 minutes start to finish", long: "taking over an hour (braises, roasts, slow cooks, weekend projects)" };
+const LEVEL_WORDS: Record<string, string> = { quick: "ready in about 40 minutes or less start to finish, including prep (simple weeknight dinners: stir-fries, tacos, pastas, sheet-pan and skillet meals)", normal: "taking 40 to 75 minutes start to finish", long: "taking over 75 minutes (braises, roasts, slow cooks, weekend projects)" };
 const LEVEL_NAME: Record<string, string> = { quick: "Quick", normal: "Normal", long: "Take my time" };
 
 async function pollAndContinue() {
@@ -292,7 +292,7 @@ Reply with ONLY valid JSON: {"renames":[{"i":0,"title":"...","tagline":"... or e
         const res = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY!, "anthropic-version": "2023-06-01" },
-          body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 3000, messages: [{ role: "user", content:
+          body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 4000, messages: [{ role: "user", content:
 `List ${n} different, well-known ${words}. Mix cuisines and main ingredients. Use plain cookbook names with no brand, restaurant or creator names and no words like "viral" or "best".
 Don't include any of these, which we already have: ${existing.slice(0, 700).join("; ")}
 Reply with ONLY valid JSON: {"dishes":["..."]}` }] }),
@@ -301,8 +301,11 @@ Reply with ONLY valid JSON: {"dishes":["..."]}` }] }),
         const data = await res.json();
         if (!res.ok) { error = `${res.status}: ${JSON.stringify(data).slice(0, 300)}`; return []; }
         const text = (data.content || []).map((c: any) => c.text || "").join("");
-        const j = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1));
-        return (j.dishes || []).map((x: any) => String(x).trim().slice(0, 80)).filter(Boolean);
+        // a reply cut off partway still has usable names in it
+        let names: string[] = [];
+        try { names = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1)).dishes || []; }
+        catch { names = Array.from(text.matchAll(/"([^"\n]{3,80})"/g)).map((m: any) => String(m[1])).filter((x) => x !== "dishes"); }
+        return names.map((x: any) => String(x).trim().slice(0, 80)).filter(Boolean);
       } catch (e: any) { error = String(e?.message || e); return []; }
     };
     const gapAsks = g.map((gap) => ({ gap, want: Math.min(gap.need, 30) }));

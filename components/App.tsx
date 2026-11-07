@@ -5184,7 +5184,7 @@ ${tiktok.text}`}]);
                                   <button key={v} role="radio" aria-checked={!kept&&curLevel===v} className={`qp-opt${!kept&&curLevel===v?" on":""}${v==="skip"?" skip":""}${v==="long"?" long":""}`} onClick={()=>qpSetLevel(d.key,v)}>{l}</button>
                                 ))}
                               </span>
-                              <span className="qp-legend" style={{margin:0}}>Quick is under 30 min · Normal 30–60 · Take my time is over an hour</span>
+                              <span className="qp-legend" style={{margin:0}}>Quick is about 40 min or less · Normal 40–75 · Take my time is longer</span>
                               <label htmlFor={`qp-find-${d.key}`} className="sr-only">Find a dish for this night</label>
                               <input id={`qp-find-${d.key}`} className="fr-input qp-find" value={qpQuery} onChange={e=>setQpQuery(e.target.value)} placeholder="Or find a dish: tacos, lasagna…" autoComplete="off" enterKeyHint="search"/>
                               {qpHits.length>0&&(

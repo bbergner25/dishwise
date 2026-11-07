@@ -3,9 +3,9 @@ import { isDinner, fitsDiets, levelOf, type Level } from "./quickplan";
 
 export const COVER_DIETS = ["All", "Vegetarian", "Vegan", "Gluten-Free", "Dairy-Free", "Low-Carb"] as const;
 export const COVER_LEVELS: { id: Exclude<Level, "skip">; name: string; range: string }[] = [
-  { id: "quick", name: "Quick", range: "under 30 minutes" },
-  { id: "normal", name: "Normal", range: "30 to 60 minutes" },
-  { id: "long", name: "Take my time", range: "over an hour" },
+  { id: "quick", name: "Quick", range: "about 40 min or less" },
+  { id: "normal", name: "Normal", range: "40 to 75 min" },
+  { id: "long", name: "Take my time", range: "over 75 min" },
 ];
 // Enough that two weeks of planning, skipping the last two weeks' dinners, still has real choice
 export const TARGETS: Record<string, Record<string, number>> = {
