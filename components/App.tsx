@@ -2553,6 +2553,10 @@ export default function App({onReady}:{onReady?:()=>void}={}){
   };
 
   /* ── Nutrition per serving (an estimate, worked out once per version of a recipe) ── */
+  // "⅙ of the recipe", and what a smaller piece comes to (people often cut a pan into more pieces)
+  const servesOf=(r:any)=>{const n=parseInt(String(r?.servings||""),10);return n>0&&n<=24?n:0;};
+  const FRAC:Record<number,string>={2:"½",3:"⅓",4:"¼",5:"⅕",6:"⅙",8:"⅛",10:"1/10",12:"1/12"};
+  const fracOf=(n:number)=>FRAC[n]||`1/${n}`;
   const nutriKey=(r:any)=>r?JSON.stringify([String(r.title||"").toLowerCase(),String(r.servings||""),(r.ingredient_groups||[]).flatMap((g:any)=>(g?.items||[]).map((i:any)=>`${i?.amount||""} ${i?.name||""}`.trim()))]):"";
   useEffect(()=>{
     if(status!=="done"||!recipe?.title||!(recipe.ingredient_groups||[]).length)return;
@@ -4122,7 +4126,7 @@ ${tiktok.text}`}]);
             const cells:[string,string][]=ready?[[String(n.calories),"calories"],[`${n.protein}g`,"protein"],[`${n.carbs}g`,"carbs"],[`${n.fat}g`,"fat"]]:[["","calories"],["","protein"],["","carbs"],["","fat"]];
             return(
               <button className="rx-nutri" disabled={!ready} onClick={()=>setShowNutri(true)} aria-label={ready?`Nutrition per serving, estimated: ${n.calories} calories, ${n.protein} grams protein, ${n.carbs} grams carbs, ${n.fat} grams fat. Tap for details`:"Estimating nutrition"}>
-                <span className="rx-nutri-top"><span>Per serving</span><span className="rx-nutri-est"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>Estimate</span></span>
+                <span className="rx-nutri-top"><span>Per serving{servesOf(recipe)>1?` · ${fracOf(servesOf(recipe))} of the recipe`:""}</span><span className="rx-nutri-est"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>Estimate</span></span>
                 <span className="rx-nutri-row" aria-hidden="true">
                   {cells.map(([v,l])=><span key={l} className="rx-nutri-cell">{ready?<strong>{v}</strong>:<span className="gen-skel" style={{width:36,height:18,margin:"2px auto 4px"}}/>}<span>{l}</span></span>)}
                 </span>
