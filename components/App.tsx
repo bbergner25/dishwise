@@ -1176,7 +1176,7 @@ const CSS = `
   .pl-thumb,.qp-pic{box-shadow:0 4px 12px rgba(21,18,16,.18);}
   .qp-shuffle{background:rgba(255,255,255,.66);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 3px 10px rgba(21,18,16,.12);}
   /* primary buttons: glossy saffron */
-  .ui-btn-primary,.inspire-go-btn,.qp-card-btn,.rx-cook,.ck-inspire-cta,.qp-slim{background:linear-gradient(180deg,#F7B240,#F4A021);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 6px 18px rgba(244,160,33,.32);}
+  .ui-btn-primary,.inspire-go-btn,.qp-card-btn,.rx-cook,.ck-inspire-cta,.qp-slim{background:linear-gradient(180deg,rgba(255,255,255,.30) 0%,rgba(255,255,255,.06) 48%,rgba(255,255,255,0) 52%),linear-gradient(180deg,#F7AF38,#EE9412);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.75),inset 0 0 0 1px rgba(255,255,255,.28),inset 0 -2px 3px rgba(150,80,0,.22),0 1px 2px rgba(21,18,16,.22),0 4px 10px rgba(21,18,16,.12);}
   .qp-slim{border:none;color:#151210;}
   .ui-btn-primary:disabled,.inspire-go-btn:disabled{background:#EDE6DA;box-shadow:none;}
   .pl-groceries{box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 6px 18px rgba(26,31,46,.25);}
