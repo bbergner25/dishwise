@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { Redis } from "@upstash/redis";
+import { householdFor, removeMember } from "../../../lib/household";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,9 @@ export async function DELETE() {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   try {
+    // leave their household (the others keep the shared plan)
+    const h = await householdFor(userId);
+    if (h) await removeMember(h, userId);
     // links this person shared stop working
     const shares = ((await redis.smembers(`user-shares:${userId}`)) || []) as string[];
     const keys = [

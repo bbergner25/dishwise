@@ -12,11 +12,14 @@ export default function Support() {
       <h2>Share a recipe</h2>
       <p>Open the recipe, tap <strong>⋯</strong> then <strong>Share</strong>. Your link stays the same, and edits you make show up on it.</p>
 
+      <h2>Plan with your household</h2>
+      <p>On the Plan screen, tap <strong>Plan together</strong>, then <strong>Invite someone</strong> and send them the link. Once they join, you share one meal plan and one grocery list, and you can see each other's saved recipes in Library under <strong>Household</strong>. Anyone can leave from the same screen; only the person who started the household can remove someone.</p>
+
       <h2>Report a recipe</h2>
       <p>Open a Community or shared recipe, tap <strong>⋯</strong> then <strong>Report this recipe</strong>. On a shared page, use <strong>Report this recipe</strong> at the bottom.</p>
 
       <h2>Delete your account</h2>
-      <p>Tap your profile picture, then <strong>Delete account</strong>. This permanently removes your account, saved recipes, meal plan and shared links.</p>
+      <p>Tap your profile picture, then <strong>Delete account</strong>. This permanently removes your account, saved recipes, meal plan and shared links, and takes you out of your household.</p>
 
       <h2>Still need help?</h2>
       <p>Contact us at <Contact/>.</p>

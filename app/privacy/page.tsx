@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: "Privacy policy — Every Chef" };
 
 export default function Privacy() {
   return (
-    <InfoPage title="Privacy policy" updated="October 31, 2026">
+    <InfoPage title="Privacy policy" updated="November 6, 2026">
       <p>Every Chef helps you find, save, plan and cook recipes. This page explains what information the app uses, why, and the choices you have. In short: we use your information to run the app, we don't sell it, and we don't show ads.</p>
 
       <h2>What we collect</h2>
@@ -25,7 +25,7 @@ export default function Privacy() {
       <ul>
         <li><strong>The Community library.</strong> When you search for a dish that hasn't been made yet (without diet filters), the new recipe joins the shared Community library so others can open it too. It's not linked to your name or account.</li>
         <li><strong>Recipes you share.</strong> Anyone with the link can see that recipe, and edits you make show up on the link. Recipes you keep to yourself are private to your account.</li>
-        <li><strong>Family collections.</strong> Recipes you add to a family collection can be seen by anyone with that collection's code.</li>
+        <li><strong>Your household.</strong> If you join a household, its members can see and change the shared meal plan and grocery list, see your first name and who added or checked off what, and see the recipes you save. Only people you invite with a link can join.</li>
       </ul>
 
       <h2>Who helps us run Every Chef</h2>
@@ -33,7 +33,7 @@ export default function Privacy() {
 
       <h2>Your choices</h2>
       <ul>
-        <li><strong>Delete your account</strong> any time from your account menu in the app. This permanently removes your account, saved recipes, meal plan and the links you've shared. Recipes you added to a family collection stay with that collection, since others use it.</li>
+        <li><strong>Delete your account</strong> any time from your account menu in the app. This permanently removes your account, saved recipes, meal plan and the links you've shared. You're also taken out of your household; its members keep the shared plan.</li>
         <li><strong>Report a recipe</strong> that's offensive or wrong from its menu, or from the shared page.</li>
         <li>Questions or requests: contact us at <Contact/>.</li>
       </ul>

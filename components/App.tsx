@@ -7,6 +7,7 @@ import { buildPrompt } from "../lib/prompts";
 import { isRude } from "../lib/guard";
 import { TIME_RULE, totalRange, totalShort } from "../lib/times";
 import { STAPLES_NOTE, ingredientUses } from "../lib/pantry";
+import { mergeDocs } from "../lib/planMerge";
 import { AISLES, aisleOf, groceryKey, displayName, totalAmount, recipeGroceries, isStaple } from "../lib/grocery";
 
 const C = {
@@ -388,6 +389,38 @@ const CSS = `
   .inspire-chip:hover{border-color:#B8AFA3;}
   .inspire-chip.on{background:#1A1F2E;border-color:#1A1F2E;color:#FDFAF5;font-weight:600;}
   .inspire-chip:focus-visible,.inspire-go-btn:focus-visible,.inspire-card-btn:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
+  .pl-hh{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;margin:2px 0 10px;padding:6px 14px 6px 8px;border:1px solid #E3DCD0;border-radius:24px;background:#fff;font-family:'Figtree',sans-serif;font-size:15px;color:#151210;text-align:left;cursor:pointer;}
+  .pl-hh.pl-hh-new{padding-left:14px;color:#1A1F2E;}
+  .pl-hh>span:nth-child(2){flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pl-hh-manage{font-size:14px;font-weight:600;color:#1A1F2E;text-decoration:underline;flex-shrink:0;}
+  .pl-hh-avs{display:flex;flex-shrink:0;}
+  .pl-hh-av{width:28px;height:28px;border-radius:50%;color:#FDFAF5;font-size:13px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 0 2px #fff;}
+  .pl-hh-avs .pl-hh-av+.pl-hh-av{margin-left:-8px;}
+  .pl-activity{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:10px 12px;border-radius:14px;background:#FFF8EA;border:1px solid #F6DCA6;font-size:14px;line-height:1.4;color:#4F4744;}
+  .pl-activity b{color:#151210;}
+  .pl-activity .pl-hh-av{width:24px;height:24px;font-size:11px;box-shadow:none;}
+  .pl-by{color:#6E635F;}
+  .gl-shopper{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:10px 14px;border-radius:14px;background:#1A1F2E;color:#FDFAF5;font-size:14px;}
+  .gl-shopper-dot{width:8px;height:8px;border-radius:50%;background:#7BD389;flex-shrink:0;}
+  .hh-lede{margin:0 0 12px;font-size:15px;line-height:1.5;color:#4F4744;}
+  .hh-box{background:#fff;border:1px solid #ECE6DD;border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+  .hh-box-label{font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6E635F;}
+  .hh-row{display:flex;gap:10px;align-items:flex-start;margin:0;font-size:15px;line-height:1.4;color:#151210;}
+  .hh-row svg{flex-shrink:0;margin-top:2px;}
+  .hh-members{list-style:none;margin:4px 0 14px;padding:0;}
+  .hh-member{display:flex;align-items:center;gap:12px;min-height:52px;border-bottom:1px solid #F1EBE2;}
+  .hh-av{width:34px;height:34px;font-size:15px;box-shadow:none;}
+  .hh-member-name{flex:1;font-size:16px;}
+  .hh-owner{color:#6E635F;font-size:14px;}
+  .hh-confirm{display:flex;gap:12px;align-items:center;}
+  .hh-danger{height:36px;padding:0 14px;border-radius:18px;border:none;background:#B03A1E;color:#fff;font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+  .hh-wide{width:100%;}
+  .hh-fine{margin:8px 0 0;font-size:13px;line-height:1.45;color:#6E635F;text-align:center;}
+  .hh-invite{display:flex;flex-direction:column;gap:8px;}
+  .hh-link-row{display:flex;gap:8px;}
+  .hh-leave{display:block;margin:16px auto 0;min-height:44px;border:none;background:none;color:#8A2A0E;font-family:'Figtree',sans-serif;font-size:15px;text-decoration:underline;cursor:pointer;}
+  .hh-leave-confirm{margin-top:16px;padding:12px 14px;border-radius:14px;background:#FDECE6;border:1px solid #F3C3B3;}
+  .hh-leave-confirm p{margin:0 0 10px;font-size:15px;line-height:1.45;color:#4F4744;}
   .rx-shop-select.gl-store{min-width:0;width:132px;height:42px;font-size:15px;}
   .gl-sheet .ui-btn-primary{width:100%;}
   .gl-ranges{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 12px;}
@@ -954,16 +987,6 @@ const CSS = `
   /* Library: Family */
   .fm-wrap{display:flex;flex-direction:column;gap:12px;max-width:620px;}
   .fm-card{gap:8px;}
-  .fm-code-label{margin-top:8px;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:#6E635F;font-weight:600;}
-  .fm-code{font-family:'Fraunces',serif;font-size:34px;font-weight:700;letter-spacing:5px;color:#151210;}
-  .fm-help{margin:0;font-size:15px;line-height:1.5;color:#4F4744;}
-  .fm-leave{min-height:44px;padding:0 6px;border:none;background:none;font-family:'Figtree',sans-serif;font-size:15px;color:#B8340F;text-decoration:underline;text-underline-offset:3px;cursor:pointer;}
-  .fm-status{margin:6px 0 0;padding:10px 12px;border-radius:12px;font-size:15px;line-height:1.4;background:#F5EFE4;color:#1A1F2E;}
-  .fm-status.err,.fm-status.error{background:#FDECE6;color:#8A2A0E;}
-  .fm-join-row{display:flex;gap:8px;width:100%;}
-  .fm-join-input{flex:1;min-width:0;min-height:48px;padding:0 14px;border:1px solid #E3DCD0;border-radius:14px;background:#fff;font-family:'Figtree',sans-serif;font-size:18px;letter-spacing:3px;text-transform:uppercase;color:#151210;outline:none;}
-  .fm-join-input:focus{border-color:#1A1F2E;box-shadow:0 0 0 3px rgba(244,160,33,.35);}
-  .fm-join-row .ui-btn-primary:disabled{background:#EDE6DA;color:#6E635F;cursor:not-allowed;}
   .fm-save{margin-top:8px;min-height:40px;padding:0 14px;border:1px solid #CFC6B8;border-radius:20px;background:#fff;font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;color:#151210;cursor:pointer;}
   .fm-save:disabled{border-color:transparent;background:#F5EFE4;color:#1A1F2E;cursor:default;}
   /* Library: Recent */
@@ -1490,10 +1513,6 @@ function migratePlanKeys<T>(obj: Record<string,T>): Record<string,T>{
   return out;
 }
 
-function randomCode(){
-  const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  return Array.from({length:6},()=>chars[Math.floor(Math.random()*chars.length)]).join("");
-}
 
 function buildInspirePrompt(time: string,vibe: string,serves: string,diets: string[],exclude: string[]=[]): string{
   const d=diets.length?" Dietary restrictions: "+diets.join(", ")+".":"";
@@ -1546,6 +1565,8 @@ function listPayload(extras:any[],checked:Record<string,number>,cleared:Record<s
   const recent=(o:Record<string,number>)=>{const n:Record<string,number>={};for(const k in o||{})if(o[k]>cutoff)n[k]=o[k];return n;};
   return {extras:(extras||[]).slice(0,300),checked:recent(checked),cleared:recent(cleared)};
 }
+
+const HH_COLORS=["#1A1F2E","#B5651D","#2F6B3A","#6B4E9B","#B03A48","#1F6F8B","#8A6D1E","#4F4744"];
 
 const FRIDGE_TIMES:[string,number][]=[["Under 30 mins",30],["Under 45 mins",45],["1 hour+",0]];
 
@@ -1773,16 +1794,26 @@ export default function App({onReady}:{onReady?:()=>void}={}){
   const [listInput,setListInput]     = useState("");
   const [addSheet,setAddSheet]       = useState<{recipe:any;items:{name:string;amount:string;on:boolean}[];staples:string[];plannedOn:string|null}|null>(null);
   const [listToast,setListToast]     = useState("");
+
+  // Household: shared plan + list
+  type HHMember={id:string;name:string;image?:string};
+  const [household,setHousehold]     = useState<{id:string;owner:string;me:string;members:HHMember[]}|null>(null);
+  const [planMeta,setPlanMeta]       = useState<{planBy:Record<string,{id:string;name:string;at:number}>;extrasBy:Record<string,{id:string;name:string}>;checkedBy:Record<string,{id:string;name:string;at:number}>;activity:{id:string;name:string;text:string;at:number}[]}|null>(null);
+  const [showHousehold,setShowHousehold] = useState(false);
+  const [hhInvite,setHhInvite]       = useState<{url:string;copied?:boolean}|null>(null);
+  const [hhBusy,setHhBusy]           = useState(false);
+  const [hhMsg,setHhMsg]             = useState("");
+  const [hhConfirm,setHhConfirm]     = useState<string|null>(null); // "leave" or a member id to remove
+  const [hhRecipes,setHhRecipes]     = useState<any[]>([]);
+  const planInFlight=useRef(false);
+  const latestPlanPayload=useRef("");
   const [inspireStatus,setInspireStatus] = useState("idle");
   const inspireStart=useRef(0);
   const [inspireSuggestions,setInspireSuggestions] = useState<any[]>([]);
 
   // Family Codes
   const [familyCode,setFamilyCode]     = useState("");
-  const [joinInput,setJoinInput]       = useState("");
   const [sharedRecipes,setSharedRecipes] = useState<any[]>([]);
-  const [familyStatus,setFamilyStatus] = useState("");
-  const [familyStatusType,setFamilyStatusType] = useState("ok");
 
   // Auth UI
   const [showAccountDropdown,setShowAccountDropdown] = useState(false);
@@ -1913,6 +1944,8 @@ export default function App({onReady}:{onReady?:()=>void}={}){
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-plan-made",JSON.stringify(planMade));}catch{};},[planMade,ready]);
   useEffect(()=>{if(ready&&location)try{localStorage.setItem("dw-location",location);}catch{};},[location,ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-retailer",retailer);}catch{};},[retailer,ready]);
+  // arriving from a household invite: open the plan
+  useEffect(()=>{if(!ready)return;try{const t=sessionStorage.getItem("dw-open-tab");if(t){sessionStorage.removeItem("dw-open-tab");setTab(t);}}catch{}},[ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-list",JSON.stringify(listPayload(listExtras,listChecked,listCleared)));}catch{};},[listExtras,listChecked,listCleared,ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-ratings",JSON.stringify(ratings));}catch{};},[ratings,ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-cat-overrides",JSON.stringify(categoryOverrides));}catch{};},[categoryOverrides,ready]);
@@ -1973,9 +2006,13 @@ export default function App({onReady}:{onReady?:()=>void}={}){
     return {plan:keep(p),sides,made:keep(pm),list:l};
   };
   const pullPlan=async(firstTime:boolean)=>{
+    const sentBefore=planLastSent.current;
     const res=await fetch("/api/plan");
     if(!res.ok)throw new Error("plan read failed");
     const d=await res.json();
+    setHousehold(d.household||null);setPlanMeta(d.meta||null);
+    // an edit made on this device while we were asking wins; it's pushed next
+    if(!firstTime&&(planPushTimer.current||planInFlight.current||planLastSent.current!==sentBefore||(latestPlanPayload.current&&latestPlanPayload.current!==planLastSent.current)))return;
     if(!d.found){ // nothing on the account yet: this device's plan becomes the account's
       planLastSent.current="";
       return;
@@ -1997,7 +2034,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
       setPlanSides((l:any)=>{const n:any={...cs};for(const k in l){const loading=(l[k]||[]).filter((x:any)=>x?.status==="loading");if(loading.length&&cp[k])n[k]=[...(n[k]||[]),...loading.filter((x:any)=>!(n[k]||[]).some((y:any)=>y.title===x.title))];}return n;});
       setPlanMade(cm);
     }
-    planLastSent.current=cl&&!firstTime?JSON.stringify({plan:cp,sides:cs,made:cm,list:cl}):"";
+    planLastSent.current=cl&&!firstTime?JSON.stringify(planPayload(cp,cs,cm,listPayload(cl.extras||[],cl.checked||{},cl.cleared||{}))):"";
   };
   useEffect(()=>{
     if(!isLoaded||!user||!ready)return;
@@ -2022,18 +2059,79 @@ export default function App({onReady}:{onReady?:()=>void}={}){
     return()=>{cancelled=true;document.removeEventListener("visibilitychange",onVisible);};
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[isLoaded,user?.id,ready]);
+  // Put a merged copy from the account into this device, keeping any side still being written here
+  const applyPlanDoc=(d:any)=>{
+    const cp=d.plan||{}, cs=d.sides||{}, l=d.list||{};
+    setPlan(cp);
+    setPlanSides((cur:any)=>{const n:any={...cs};for(const k in cur){const loading=(cur[k]||[]).filter((x:any)=>x?.status==="loading");if(loading.length&&cp[k])n[k]=[...(n[k]||[]),...loading.filter((x:any)=>!(n[k]||[]).some((y:any)=>y.title===x.title))];}return n;});
+    setPlanMade(d.made||{});
+    setListExtras(Array.isArray(l.extras)?l.extras:[]);setListChecked(l.checked||{});setListCleared(l.cleared||{});
+  };
   useEffect(()=>{
     if(!ready||!user||!planCloud)return;
-    const body=JSON.stringify(planPayload(plan,planSides,planMade,listPayload(listExtras,listChecked,listCleared)));
+    const next=planPayload(plan,planSides,planMade,listPayload(listExtras,listChecked,listCleared));
+    const body=JSON.stringify(next);
+    latestPlanPayload.current=body;
     if(body===planLastSent.current)return;
     if(planPushTimer.current)clearTimeout(planPushTimer.current);
     planPushTimer.current=setTimeout(()=>{
       planPushTimer.current=null;
-      fetch("/api/plan",{method:"POST",headers:{"Content-Type":"application/json"},body})
-        .then(r=>{if(r.ok)planLastSent.current=body;}).catch(()=>{});
+      // send what this device last saw too, so the account applies only what changed here
+      const base=planLastSent.current?JSON.parse(planLastSent.current):null;
+      planInFlight.current=true;
+      fetch("/api/plan",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({base,next})})
+        .then(r=>r.ok?r.json():null).then(d=>{
+          if(!d)return;
+          setHousehold(d.household||null);setPlanMeta(d.meta||null);
+          const merged={plan:d.plan||{},sides:d.sides||{},made:d.made||{},list:d.list||{extras:[],checked:{},cleared:{}}};
+          const mergedStr=JSON.stringify(planPayload(merged.plan,merged.sides,merged.made,listPayload(merged.list.extras||[],merged.list.checked||{},merged.list.cleared||{})));
+          const now=latestPlanPayload.current;
+          planLastSent.current=mergedStr;
+          if(now===body){if(mergedStr!==body)applyPlanDoc(merged);}
+          else applyPlanDoc(mergeDocs(merged,next,JSON.parse(now)).doc); // edited again while saving: keep those edits on top
+        }).catch(()=>{}).finally(()=>{planInFlight.current=false;});
     },700);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[plan,planSides,planMade,listExtras,listChecked,listCleared,ready,user?.id,planCloud]);
+
+  /* household: check for the others' changes every few seconds while the plan or list is open */
+  useEffect(()=>{
+    if(!user||!household||!planCloud||(tab!=="week"&&tab!=="list"))return;
+    const id=setInterval(()=>{if(document.visibilityState==="visible")pullPlan(false).catch(()=>{});},5000);
+    return()=>clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[user?.id,household?.id,planCloud,tab]);
+  useEffect(()=>{
+    if(!user||!household||!(tab==="library"&&libFilter==="family"))return;
+    fetch("/api/household/recipes").then(r=>r.json()).then(d=>setHhRecipes(Array.isArray(d.recipes)?d.recipes:[])).catch(()=>{});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[user?.id,household?.id,tab,libFilter]);
+  const hhPost=async(payload:any)=>{
+    setHhBusy(true);setHhMsg("");
+    try{
+      const res=await fetch("/api/household",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+      const d=await res.json();
+      if(!res.ok)throw new Error(d.error||"Something went wrong. Try again.");
+      if("household" in d)setHousehold(d.household||null);
+      return d;
+    }catch(e:any){setHhMsg(e.message||"Something went wrong. Try again.");return null;}
+    finally{setHhBusy(false);}
+  };
+  const inviteToHousehold=async()=>{
+    if(!user){openSignIn();return;}
+    const d=await hhPost({action:"invite"});
+    if(!d?.url)return;
+    setHhInvite({url:d.url});
+    const text=`Join me on Every Chef so we can share a meal plan and grocery list.`;
+    try{if(navigator.share){await navigator.share({title:"Plan meals together",text,url:d.url});}}catch{}
+  };
+  const leaveOrRemove=async(who:string)=>{
+    const d=await hhPost(who==="leave"?{action:"leave"}:{action:"remove",userId:who});
+    setHhConfirm(null);
+    if(d){if(who==="leave"){setShowHousehold(false);setPlanMeta(null);setHhRecipes([]);}pullPlan(false).catch(()=>{});}
+  };
+  const hhName=(id?:string,name?:string)=>!id?"":household&&id===household.me?"you":(name||"Someone");
+  const ago=(t:number)=>{const m=Math.round((Date.now()-t)/60000);return m<1?"just now":m<60?`${m} min ago`:m<1440?`${Math.round(m/60)} hr ago`:`${Math.round(m/1440)} d ago`;};
 
   /* Community matches while typing: offer the free, instant recipe before making a new one */
   useEffect(()=>{
@@ -2102,69 +2200,17 @@ export default function App({onReady}:{onReady?:()=>void}={}){
     }catch{setSharedRecipes([]);}
   };
 
-  const syncToFamily=async(recipes: any[],code: string)=>{
-    if(!code)return;
-    try{
-      await fetch("/api/family",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({code,recipes}),
-      });
-    }catch{}
-  };
 
-  const createFamilyCode=async()=>{
-    const code=randomCode();
-    setFamilyCode(code);
-    try{localStorage.setItem("dw-family-code",code);}catch{}
-    setFamilyStatus("Creating code...");
-    setFamilyStatusType("ok");
-    try{
-      const res=await fetch("/api/family",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({code,recipes:saved}),
-      });
-      const data=await res.json();
-      if(!res.ok)throw new Error(JSON.stringify(data));
-      setFamilyStatus("Code created! Share "+code+" with family or friends to link collections.");
-      setFamilyStatusType("ok");
-    }catch(e:any){
-      setFamilyStatus("Save error: "+e.message);
-      setFamilyStatusType("err");
-    }
-  };
 
-  const joinFamilyCode=async()=>{
-    const code=joinInput.trim().toUpperCase();
-    if(code.length<4){setFamilyStatus("Please enter a valid code.");setFamilyStatusType("err");return;}
-    try{
-      const res=await fetch(`/api/family?code=${code}`);
-      const data=await res.json();
-      if(!res.ok||!data.found){
-        setFamilyStatus("Code not found. Double-check and try again.");
-        setFamilyStatusType("err");
-        return;
-      }
-      setFamilyCode(code);
-      try{localStorage.setItem("dw-family-code",code);}catch{}
-      await syncToFamily(saved,code);
-      setSharedRecipes(data.recipes||[]);
-      setJoinInput("");
-      setFamilyStatus(`Joined! You now have access to the shared collection for code ${code}.`);
-      setFamilyStatusType("ok");
-    }catch(e:any){setFamilyStatus("Error: "+e.message);setFamilyStatusType("err");}
-  };
+
+
+
 
   const leaveFamilyCode=()=>{
-    setFamilyCode("");setSharedRecipes([]);setFamilyStatus("");
+    setFamilyCode("");setSharedRecipes([]);
     try{localStorage.removeItem("dw-family-code");}catch{}
   };
 
-  /* keep shared in sync when saved changes */
-  useEffect(()=>{
-    if(ready&&familyCode)syncToFamily(saved,familyCode);
-  },[saved,ready]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* detect location */
   const detectLocation=()=>{
@@ -2900,7 +2946,11 @@ ${tiktok.text}`}]);
       if(plan[k])meals++;
       for(const r of dishes)for(const g of recipeGroceries(r))entries.push({name:g.name,amount:g.amount,recipe:r.title,src:`${k}:${r.title}`});
     }
-    for(const x of listExtras)entries.push({name:x.name,amount:x.amount||"",recipe:x.recipe||"",src:`x:${x.id}`,extraId:x.id});
+    for(const x of listExtras){
+      const by=household&&planMeta?.extrasBy?.[x.id];
+      const who=by?`Added by ${hhName(by.id,by.name)}`:"";
+      entries.push({name:x.name,amount:x.amount||"",recipe:x.recipe?(who&&household!.members.length>1?`${x.recipe} (${who.replace("Added by ","")})`:x.recipe):(household&&household.members.length>1&&who?who:""),src:`x:${x.id}`,extraId:x.id});
+    }
     const groups:Record<string,ListEntry[]>={};
     for(const e of entries){const k=groceryKey(e.name);if(!k)continue;(groups[k]=groups[k]||[]).push(e);}
     const items:ListItem[]=[];const staples:string[]=[];
@@ -3441,7 +3491,7 @@ ${tiktok.text}`}]);
           const activeSide=activePane>0?pairedSides[activePane-1]:null;
           const activeRecipe=activePane===0?recipe:(activeSide&&activeSide.status==="done"?activeSide.recipe:null);
           const asv=activeRecipe?isSaved(activeRecipe):false;
-          const backLabel=returnTab==="library"?"Library":returnTab==="saved"?"Saved":returnTab==="community"?"Community":returnTab==="week"?"This week":returnTab==="family"?"Family":"Search";
+          const backLabel=returnTab==="library"?"Library":returnTab==="saved"?"Saved":returnTab==="community"?"Community":returnTab==="week"?"This week":returnTab==="family"?"Household":"Search";
           const goBack=()=>{
             const dest=returnTab;
             if(returnDayKey)setPlanSides(p=>({...p,[returnDayKey]:pairedSides}));
@@ -4118,7 +4168,7 @@ ${tiktok.text}`}]);
     });
     const sortedCats=RECIPE_CATEGORIES.filter(c=>grouped[c]&&grouped[c].length>0);
     const historyFiltered=history.filter(matches);
-    const FILTERS:[string,string][]=[["all","All"],["mine","Mine"],["family","Family"],["sides","Sides"],["recent","Recent"]];
+    const FILTERS:[string,string][]=[["all","All"],["mine","Mine"],["family","Household"],["sides","Sides"],["recent","Recent"]];
     return(
       <div className="lib-page">
         <div className="pl-head">
@@ -4255,20 +4305,31 @@ ${tiktok.text}`}]);
     const todo=items.filter(x=>!x.checked), cart=items.filter(x=>x.checked);
     const store=RETAILERS.find(r=>r.id===retailer);
     const onList=new Set(listExtras.map(x=>groceryKey(x.name)));
-    const row=(it:ListItem)=>(
+    const shared=!!household&&household.members.length>1;
+    const row=(it:ListItem)=>{
+      const cb=shared&&it.checked?planMeta?.checkedBy?.[it.id]:null;
+      return(
       <li key={it.id} className={`gl-item${it.checked?" done":""}`}>
         <label className="gl-check">
           <input type="checkbox" checked={it.checked} onChange={()=>toggleListItem(it)}/>
           <span className="gl-text">
             <span className="gl-name">{it.name}</span>
-            {it.note&&<span className="gl-note">{it.note}</span>}
+            {cb?<span className="gl-note">Checked by {hhName(cb.id,cb.name)} · {ago(cb.at)}</span>:it.note&&<span className="gl-note">{it.note}</span>}
           </span>
         </label>
         {it.amount&&<span className="gl-amt">{it.amount}</span>}
         {store&&!it.checked&&<a className="gl-shop" href={store.url(it.name)} target="_blank" rel="noopener noreferrer" aria-label={`Find ${it.name} at ${store.name}`}>{store.name}</a>}
       </li>
-    );
-    const sub=!items.length?"":listRange==="extras"?`${todo.length} to get · things you added`:meals?`${todo.length} to get · from ${meals} planned meal${meals===1?"":"s"}`:`${todo.length} to get`;
+      );
+    };
+    // someone else checking things off in the last 10 minutes = they're at the store
+    const shopper=shared?(()=>{
+      const recent=Object.values(planMeta?.checkedBy||{}).filter(c=>c.id!==household!.me&&Date.now()-c.at<10*60000);
+      if(!recent.length)return null;
+      return {name:recent[0].name,n:recent.filter(c=>c.id===recent[0].id).length};
+    })():null;
+    const withWho=shared?` · shared with ${household!.members.filter(m=>m.id!==household!.me).map(m=>m.name).join(", ")}`:"";
+    const sub=!items.length?"":listRange==="extras"?`${todo.length} to get · things you added`:meals?`${todo.length} to get · from ${meals} planned meal${meals===1?"":"s"}${withWho}`:`${todo.length} to get${withWho}`;
     return(
       <div className="pl-page">
         <div className="pl-head">
@@ -4291,6 +4352,7 @@ ${tiktok.text}`}]);
             <button key={k} role="tab" aria-selected={listRange===k} className={`gl-range${listRange===k?" on":""}`} onClick={()=>setListRange(k)}>{l}</button>
           ))}
         </div>
+        {shopper&&<p className="gl-shopper" aria-live="polite"><span className="gl-shopper-dot" aria-hidden="true"/><span><b>{shopper.name} is shopping</b> · {shopper.n} checked off so far</span></p>}
         <form className="gl-add" onSubmit={e=>{e.preventDefault();const parts=listInput.split(/[,\n;]+/).map(x=>x.trim()).filter(Boolean);if(parts.length)addListExtras(parts.map(name=>({name})));setListInput("");}}>
           <label htmlFor="gl-input" className="sr-only">Add an item</label>
           <span aria-hidden="true" className="gl-plus">+</span>
@@ -4424,7 +4486,7 @@ ${tiktok.text}`}]);
                     <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
                   </button>
                 </div>
-                {tt(r)&&<div className="pl-meal-meta">{tt(r)}</div>}
+                {(tt(r)||(household&&planMeta?.planBy?.[k]))&&<div className="pl-meal-meta">{tt(r)}{household&&planMeta?.planBy?.[k]&&<span className="pl-by">{tt(r)?" · ":""}Added by {hhName(planMeta.planBy[k].id,planMeta.planBy[k].name)}</span>}</div>}
                 <div className="pl-sides">
                   {sides.map((s,si)=>(
                     <span key={si} className={`pl-side${s.status==="loading"?" loading":s.status==="error"?" error":""}`}>
@@ -4459,6 +4521,23 @@ ${tiktok.text}`}]);
           )}
         </div>
 
+        {household&&household.members.length>1?(
+          <button className="pl-hh" onClick={()=>setShowHousehold(true)} aria-label="Household settings">
+            <span className="pl-hh-avs" aria-hidden="true">{household.members.slice(0,4).map((m,i)=><span key={m.id} className="pl-hh-av" style={{background:HH_COLORS[i%HH_COLORS.length]}}>{m.name[0]?.toUpperCase()}</span>)}</span>
+            <span>Shared with {household.members.filter(m=>m.id!==household.me).map(m=>m.name).join(", ")}</span>
+            <span className="pl-hh-manage">Manage</span>
+          </button>
+        ):(
+          <button className="pl-hh pl-hh-new" onClick={()=>setShowHousehold(true)}>
+            {Ic.family(18)}<span>{household?"Waiting for someone to join":"Plan together with your household"}</span><span className="pl-hh-manage">{household?"Invite":"Set up"}</span>
+          </button>
+        )}
+        {(()=>{
+          const a=household&&planMeta?.activity?.find(x=>x.id!==household.me);
+          if(!a||Date.now()-a.at>24*36e5)return null;
+          return <p className="pl-activity" aria-live="polite"><span className="pl-hh-av" style={{background:HH_COLORS[Math.max(0,household!.members.findIndex(m=>m.id===a.id))%HH_COLORS.length]}} aria-hidden="true">{a.name[0]?.toUpperCase()}</span><span><b>{a.name}</b> {a.text} · {ago(a.at)}</span></p>;
+        })()}
+
         <button className={`pl-earlier${missed.length?" has-missed":""}`} aria-expanded={showEarlier} onClick={()=>setShowEarlier(v=>!v)}>
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{transform:showEarlier?"rotate(180deg)":"none"}}><path d="m6 15 6-6 6 6"/></svg>
           {showEarlier?"Hide earlier days":missed.length?`Earlier · ${missed.length} meal${missed.length===1?"":"s"} you didn't get to`:"Earlier days"}
@@ -4482,71 +4561,60 @@ ${tiktok.text}`}]);
 
   /* ── FAMILY VIEW ── */
   function FamilyView(){
-    const status=familyStatus?<p className={`fm-status ${familyStatusType}`} role="status">{familyStatus}</p>:null;
+    const shared=household&&household.members.length>1;
+    const legacy=!!familyCode&&sharedRecipes.length>0;
+    const card=(r:any,tag:string,back:string)=>{
+      const mine=saved.some((x:any)=>x.id===r.id||sameRecipe(x,r));
+      return(
+        <div key={(r._savedBy||"")+r.id} className={`recipe-card${photosOn?" has-pic":""}`} onClick={()=>{setReturnTab(back);setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
+          {photosOn&&<DishPic title={r.title} src={photoFor(r)} className="lib-pic"/>}
+          <div className="card-tag">{tag}</div>
+          <div className="card-title">{r.title}</div>
+          {r.tagline&&<div className="card-desc">{r.tagline}</div>}
+          <div className="card-meta">{tt(r)&&<span>{tt(r)}</span>}</div>
+          <div onClick={e=>e.stopPropagation()}>
+            <button className="fm-save" disabled={mine} onClick={()=>{const {_savedBy,...rest}=r;setSaved(l=>[{...rest,id:Date.now()},...l]);}}>{mine?"In your recipes":"Save to my recipes"}</button>
+          </div>
+        </div>
+      );
+    };
     return(
       <div className="fm-wrap">
-        <section className="ui-notice fm-card">
-          <h2 className="ui-notice-title">Share your collection</h2>
-          <p className="ui-notice-text">Everyone who uses the same family code sees each other's saved recipes and can add their own.</p>
-          {familyCode?(
-            <>
-              <div className="fm-code-label">Your family code</div>
-              <div className="fm-code" aria-label={`Family code ${familyCode.split("").join(" ")}`}>{familyCode}</div>
-              <p className="fm-help">Send this code to anyone you want to share with. They enter it in their Library under Family.</p>
-              <div className="ui-actions">
-                <button className="ui-btn-primary" onClick={()=>{navigator.clipboard?.writeText(familyCode);setFamilyStatus("Code copied.");setFamilyStatusType("ok");}}>Copy code</button>
-                <button className="ui-btn-secondary" style={{marginTop:0}} onClick={()=>{syncToFamily(saved,familyCode);setFamilyStatus("Synced. Your recipes are up to date.");setFamilyStatusType("ok");}}>Sync now</button>
-                <button className="fm-leave" onClick={leaveFamilyCode}>Leave this code</button>
-              </div>
-              {status}
-            </>
+        {!user?(
+          <section className="ui-notice fm-card">
+            <h2 className="ui-notice-title">Share with your household</h2>
+            <p className="ui-notice-text">Sign in to share a meal plan and grocery list with the people you live with, and see the recipes they save.</p>
+            <div className="ui-actions"><button className="ui-btn-primary" onClick={()=>openSignIn()}>Sign in</button></div>
+          </section>
+        ):shared?(
+          hhRecipes.length?(
+            <section className="fm-shared">
+              <h2 className="pl-week" style={{margin:"8px 0 12px"}}><span>Saved by {household!.members.filter(m=>m.id!==household!.me).map(m=>m.name).join(", ")} · {hhRecipes.length}</span></h2>
+              <div className="cards-grid lib-grid">{hhRecipes.map(r=>card(r,`${r._savedBy}'s`,"family"))}</div>
+            </section>
           ):(
-            <>
-              <div className="ui-actions">
-                <button className="ui-btn-primary" onClick={createFamilyCode}>Create a family code</button>
-              </div>
-              {status}
-            </>
-          )}
-        </section>
-
-        <section className="ui-notice fm-card">
-          <h2 className="ui-notice-title" style={{fontSize:18}}>Join someone else's</h2>
-          <label htmlFor="fm-join" className="ui-notice-text">Enter the code they shared with you</label>
-          <div className="fm-join-row">
-            <input id="fm-join" className="fm-join-input" placeholder="ABC123" maxLength={8} autoCapitalize="characters" autoComplete="off"
-              value={joinInput} onChange={e=>setJoinInput(e.target.value.toUpperCase())}
-              onKeyDown={e=>{if(e.key==="Enter"&&joinInput.trim())joinFamilyCode();}}/>
-            <button className="ui-btn-primary" onClick={joinFamilyCode} disabled={!joinInput.trim()}>Join</button>
-          </div>
-        </section>
-
-        {sharedRecipes.length>0&&(
+            <section className="ui-notice fm-card">
+              <h2 className="ui-notice-title">Nothing saved yet</h2>
+              <p className="ui-notice-text">Recipes {household!.members.filter(m=>m.id!==household!.me).map(m=>m.name).join(" and ")} save will show up here.</p>
+            </section>
+          )
+        ):(
+          <section className="ui-notice fm-card">
+            <h2 className="ui-notice-title">Share with your household</h2>
+            <p className="ui-notice-text">Invite the people you live with to share one meal plan and one grocery list. You'll see the recipes they save here.</p>
+            <div className="ui-actions"><button className="ui-btn-primary" onClick={()=>setShowHousehold(true)}>{household?"Invite someone":"Plan together"}</button></div>
+          </section>
+        )}
+        {legacy&&(
           <section className="fm-shared">
-            <h2 className="pl-week" style={{margin:"8px 0 12px"}}><span>Shared collection · {sharedRecipes.length} recipe{sharedRecipes.length!==1?"s":""}</span></h2>
-            <div className="cards-grid lib-grid">
-              {sharedRecipes.map((r:any)=>{
-                const mine=saved.some((x:any)=>x.id===r.id);
-                return(
-                  <div key={r.id} className={`recipe-card${photosOn?" has-pic":""}`} onClick={()=>{setReturnTab("family");setPairedSides([]);setActivePane(0);setReturnDayKey(null);setRecipe(r);setServings(null);setStatus("done");setTab("search");}}>
-                    {photosOn&&<DishPic title={r.title} src={photoFor(r)} className="lib-pic"/>}
-                    <div className="card-tag">Shared</div>
-                    <div className="card-title">{r.title}</div>
-                    {r.tagline&&<div className="card-desc">{r.tagline}</div>}
-                    <div className="card-meta">{tt(r)&&<span>{tt(r)}</span>}</div>
-                    <div onClick={e=>e.stopPropagation()}>
-                      <button className="fm-save" disabled={mine} onClick={()=>setSaved(l=>[r,...l.filter((x:any)=>x.id!==r.id)])}>{mine?"In your recipes":"Save to my recipes"}</button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <h2 className="pl-week" style={{margin:"20px 0 6px"}}><span>From your old family code · {sharedRecipes.length}</span></h2>
+            <p className="ui-notice-text" style={{margin:"0 0 12px"}}>Family codes have been replaced by households. Save anything you want to keep, then invite your family to your household. <button className="ck-textlink" style={{alignSelf:"auto",fontSize:"inherit"}} onClick={leaveFamilyCode}>Remove these</button></p>
+            <div className="cards-grid lib-grid">{sharedRecipes.map(r=>card(r,"Family code","family"))}</div>
           </section>
         )}
       </div>
     );
   }
-
 
   /* ── MODAL ── */
   function Modal(){
@@ -4555,7 +4623,7 @@ ${tiktok.text}`}]);
     const isSideMode=assignDay.startsWith("side_");
     const dayKey=isRedirect||isSideMode?null:assignDay;
     const sideDayKey=isSideMode?assignDay.slice(5):null;
-    const allRecipes=[...saved,...sharedRecipes.filter(r=>!saved.some(s=>s.id===r.id))];
+    const allRecipes=[...saved,...hhRecipes.filter(r=>!saved.some(s=>sameRecipe(s,r))),...sharedRecipes.filter(r=>!saved.some(s=>s.id===r.id))];
 
     // Filter by search
     const filtered=modalSearch.trim()===""?allRecipes:allRecipes.filter((r:any)=>
@@ -4775,6 +4843,66 @@ ${tiktok.text}`}]);
       {tab==="week"&&WeekView()}
       {tab==="list"&&ListView()}
       {Modal()}
+      {showHousehold&&(()=>{
+        const close=()=>{setShowHousehold(false);setHhInvite(null);setHhMsg("");setHhConfirm(null);};
+        const others=household?household.members.filter(m=>m.id!==household.me):[];
+        const owner=!!household&&household.owner===household.me;
+        const check=<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2F6B3A" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 7"/></svg>;
+        return(
+          <div className="share-overlay" onClick={close}>
+            <div className="share-sheet hh-sheet" role="dialog" aria-modal="true" aria-labelledby="hh-title" onClick={e=>e.stopPropagation()}>
+              <div className="ui-handle" aria-hidden="true"/>
+              <button className="ui-close" aria-label="Close" onClick={close}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+              <h2 id="hh-title" className="share-sheet-title">{others.length?"Your household":"Plan together"}</h2>
+              {!others.length&&<p className="hh-lede">Share one meal plan and one grocery list with the people you live with. Everyone sees changes as they happen.</p>}
+              {others.length>0?(
+                <ul className="hh-members">
+                  {household!.members.map((m,i)=>(
+                    <li key={m.id} className="hh-member">
+                      <span className="pl-hh-av hh-av" style={{background:HH_COLORS[i%HH_COLORS.length]}} aria-hidden="true">{m.name[0]?.toUpperCase()}</span>
+                      <span className="hh-member-name">{m.name}{m.id===household!.me?" (you)":""}{m.id===household!.owner?<span className="hh-owner"> · started it</span>:null}</span>
+                      {owner&&m.id!==household!.me&&(hhConfirm===m.id?(
+                        <span className="hh-confirm"><button className="hh-danger" disabled={hhBusy} onClick={()=>leaveOrRemove(m.id)}>Remove</button><button className="ck-textlink" style={{alignSelf:"auto"}} onClick={()=>setHhConfirm(null)}>Cancel</button></span>
+                      ):<button className="ck-textlink" style={{alignSelf:"auto"}} onClick={()=>setHhConfirm(m.id)}>Remove</button>)}
+                    </li>
+                  ))}
+                </ul>
+              ):(
+                <div className="hh-box">
+                  <span className="hh-box-label">What you share</span>
+                  <p className="hh-row">{check}<span><b>Meal plan.</b> Anyone can add, move or swap a meal.</span></p>
+                  <p className="hh-row">{check}<span><b>Grocery list.</b> Checks show up for everyone as you shop.</span></p>
+                  <p className="hh-row">{check}<span><b>Saved recipes.</b> See each other's in Library, under Household.</span></p>
+                  <span className="hh-box-label" style={{marginTop:6}}>Stays yours</span>
+                  <p className="hh-row" style={{color:"#4F4744"}}>Your Library, edits to your own recipes, and your dietary settings.</p>
+                </div>
+              )}
+              {hhInvite?(
+                <div className="hh-invite">
+                  <label htmlFor="hh-link" className="hh-box-label">Send this link</label>
+                  <div className="hh-link-row">
+                    <input id="hh-link" className="fr-input" readOnly value={hhInvite.url} onFocus={e=>e.currentTarget.select()}/>
+                    <button className="fr-add-btn" onClick={()=>{navigator.clipboard?.writeText(hhInvite.url).then(()=>setHhInvite({...hhInvite,copied:true})).catch(()=>{});}}>{hhInvite.copied?"Copied":"Copy"}</button>
+                  </div>
+                  <p className="hh-fine">Works for two weeks. They'll need a free account.</p>
+                </div>
+              ):(
+                <>
+                  <button className="ui-btn-primary hh-wide" disabled={hhBusy} onClick={inviteToHousehold}>{hhBusy?"One moment…":user?"Invite someone":"Sign in to invite someone"}</button>
+                  {!others.length&&<p className="hh-fine">Sends a link by text or email. They'll need a free account.</p>}
+                </>
+              )}
+              {hhMsg&&<p className="inspire-error" role="alert" style={{margin:"10px 0 0"}}>{hhMsg}</p>}
+              {household&&(hhConfirm==="leave"?(
+                <div className="hh-leave-confirm">
+                  <p>Leave the household? You'll keep a copy of the plan and list as they are now.</p>
+                  <span className="hh-confirm"><button className="hh-danger" disabled={hhBusy} onClick={()=>leaveOrRemove("leave")}>Leave</button><button className="ck-textlink" style={{alignSelf:"auto"}} onClick={()=>setHhConfirm(null)}>Cancel</button></span>
+                </div>
+              ):<button className="hh-leave" onClick={()=>setHhConfirm("leave")}>{others.length?"Leave household":"Stop sharing"}</button>)}
+            </div>
+          </div>
+        );
+      })()}
       {addSheet&&(()=>{
         const on=addSheet.items.filter(x=>x.on);
         const close=()=>setAddSheet(null);
