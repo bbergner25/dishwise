@@ -8,7 +8,7 @@ import { isRude } from "../lib/guard";
 import { TIME_RULE, totalRange, totalShort } from "../lib/times";
 import { STAPLES_NOTE, ingredientUses } from "../lib/pantry";
 import { mergeDocs } from "../lib/planMerge";
-import { sharedProduce } from "../lib/quickplan";
+import { sharedProduce, levelOf } from "../lib/quickplan";
 import { AISLES, aisleOf, groceryKey, displayName, totalAmount, recipeGroceries, isStaple } from "../lib/grocery";
 
 const C = {
@@ -396,7 +396,7 @@ const CSS = `
   .qp-card-text{margin:0;font-size:15px;line-height:1.45;color:#C9C3BA;}
   .qp-card-btn{min-height:50px;border:none;border-radius:25px;background:#F4A021;color:#151210;font-family:'Figtree',sans-serif;font-size:16px;font-weight:600;cursor:pointer;}
   .qp-card-btn:focus-visible,.qp-slim:focus-visible,.qp-opt:focus-visible,.qp-shuffle:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
-  .qp-slim{width:100%;min-height:46px;margin:0 0 12px;border-radius:23px;border:2px solid #1A1F2E;background:#fff;color:#151210;font-family:'Figtree',sans-serif;font-size:15px;font-weight:600;cursor:pointer;}
+  .qp-slim{width:100%;min-height:46px;margin:0 0 10px;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:23px;border:2px solid #1A1F2E;background:#fff;color:#151210;font-family:'Figtree',sans-serif;font-size:15px;font-weight:600;cursor:pointer;}
   .qp-sheet{max-height:92vh;overflow-y:auto;}
   .qp-sub{margin:0 0 8px;font-size:15px;line-height:1.45;color:#4F4744;}
   .qp-sub svg{vertical-align:-2px;}
@@ -411,8 +411,12 @@ const CSS = `
   .qp-opt.long{flex:1.5;}
   .qp-opt.on{background:#1A1F2E;color:#FDFAF5;font-weight:600;}
   .qp-opt.on.skip{background:#E3DACB;color:#151210;}
-  .qp-planned{flex:1;min-height:38px;display:flex;align-items:center;flex-wrap:wrap;padding:6px 12px;border-radius:19px;background:#FFF8EA;border:1px solid #F6DCA6;font-size:14px;}
-  .qp-planned span{color:#6E635F;}
+  .qp-planned{flex:1;min-width:0;min-height:42px;display:flex;align-items:center;gap:10px;padding:6px 14px;border-radius:14px;background:#FFF8EA;border:1px solid #F6DCA6;font-size:14px;}
+  .qp-planned-t{flex:1;min-width:0;display:flex;flex-direction:column;}
+  .qp-planned-t b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .qp-planned-t span{color:#6E635F;font-size:13px;}
+  .qp-switched{border-color:#F6DCA6;background:#FFF8EA;}
+  .qp-week2{display:block;margin:10px 0 0;min-height:40px;padding:0 16px;border-radius:20px;border:1px dashed #B8AFA3;background:#fff;color:#1A1F2E;font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
   .qp-legend{margin:8px 0 12px;font-size:13px;color:#6E635F;}
   .qp-go{width:100%;}
   .qp-pick{flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:6px;border-radius:14px;background:#fff;border:1px solid #ECE6DD;}
@@ -424,6 +428,11 @@ const CSS = `
   .qp-shuffle:disabled{opacity:.4;cursor:progress;}
   .qp-skipped{flex:1;min-height:42px;display:flex;align-items:center;flex-wrap:wrap;gap:4px;padding:8px 14px;border-radius:14px;background:#F5EFE4;color:#6E635F;font-size:14px;line-height:1.4;}
   .qp-note{margin:10px 0 12px;font-size:14px;line-height:1.45;color:#4F4744;}
+  .pl-hh-mini{display:inline-flex;align-items:center;gap:8px;min-height:40px;margin:0 0 10px;padding:4px 14px 4px 6px;border:1px solid #E3DCD0;border-radius:20px;background:#fff;font-family:'Figtree',sans-serif;font-size:14px;color:#151210;cursor:pointer;max-width:100%;}
+  .pl-hh-mini>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pl-hh-mini .pl-hh-av{width:26px;height:26px;font-size:12px;}
+  .pl-hh-link{display:flex;align-items:center;gap:8px;margin:20px auto 0;min-height:44px;padding:0 6px;border:none;background:none;color:#1A1F2E;font-family:'Figtree',sans-serif;font-size:15px;text-decoration:underline;cursor:pointer;}
+  .pl-activity-x{width:32px;height:32px;flex-shrink:0;border:none;background:none;color:#6E635F;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:16px;}
   .pl-hh{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;margin:2px 0 10px;padding:6px 14px 6px 8px;border:1px solid #E3DCD0;border-radius:24px;background:#fff;font-family:'Figtree',sans-serif;font-size:15px;color:#151210;text-align:left;cursor:pointer;}
   .pl-hh.pl-hh-new{padding-left:14px;color:#1A1F2E;}
   .pl-hh>span:nth-child(2){flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -1746,7 +1755,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
   const [planSides,setPlanSides] = useState<Record<string,{title:string;status:string;recipe:any}[]>>({}); // sides paired to each day's main dish
   const [planMade,setPlanMade]   = useState<Record<string,boolean>>({}); // dates whose planned meal was made
   const [showEarlier,setShowEarlier] = useState(false);  // Plan: earlier days expanded
-  const [qp,setQp] = useState<{stage:"days"|"loading"|"week";days:{key:string;level:QPLevel}[];picks:Record<string,{recipe:any;minutes:number}|null>;matches:Record<string,number>;seen:Record<string,string[]>;shared:string[];err?:string;busy?:string}|null>(null);
+  const [qp,setQp] = useState<{stage:"days"|"loading"|"week";days:{key:string;level:QPLevel}[];picks:Record<string,{recipe:any;minutes:number}|null>;matches:Record<string,number>;seen:Record<string,string[]>;shared:string[];replace:Record<string,boolean>;week2:boolean;err?:string;busy?:string}|null>(null);
   const [planAhead,setPlanAhead] = useState(14);         // Plan: how many days ahead are shown
   const [assignDay,setAssignDay] = useState<string|null>(null);
   const [modalSearch,setModalSearch] = useState("");
@@ -1767,7 +1776,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
   const [justAdded,setJustAdded]     = useState<any>(null); // most recent scanned/imported recipe, so "View" can open it directly
   const [returnTab,setReturnTab]     = useState<string|null>(null); // tab to return to when leaving a recipe opened from Saved/Community/Week/Family
   const [returnDayKey,setReturnDayKey] = useState<string|null>(null); // which day's sides to sync pairedSides back into, when returnTab is "week"
-  const [planPick,setPlanPick] = useState<{recipe:any;sides:any[]}|null>(null); // recipe being added to the plan from its page
+  const [planPick,setPlanPick] = useState<{recipe:any;sides:any[];moveFrom?:string}|null>(null); // recipe being added to the plan from its page
   const [planToast,setPlanToast] = useState<{day:string;title:string}|null>(null);
   const [nameClash,setNameClash] = useState<{id:any;title:string}|null>(null);
   const [communityHits,setCommunityHits] = useState<{q:string;results:{title:string;tagline:string;total:string;key?:string}[]}>({q:"",results:[]}); // free matches while typing   // saved a second recipe with a name you already have
@@ -1848,6 +1857,8 @@ export default function App({onReady}:{onReady?:()=>void}={}){
   const [hhConfirm,setHhConfirm]     = useState<string|null>(null); // "leave" or a member id to remove
   const [hhRecipes,setHhRecipes]     = useState<any[]>([]);
   const planInFlight=useRef(false);
+  const [hhSeenAt,setHhSeenAt] = useState(0); // household changes seen up to here
+  const markHhSeen=()=>{const t=Date.now();setHhSeenAt(t);try{localStorage.setItem("dw-hh-seen",String(t));}catch{}};
   const latestPlanPayload=useRef("");
   const [inspireStatus,setInspireStatus] = useState("idle");
   const inspireStart=useRef(0);
@@ -1986,6 +1997,9 @@ export default function App({onReady}:{onReady?:()=>void}={}){
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-plan-made",JSON.stringify(planMade));}catch{};},[planMade,ready]);
   useEffect(()=>{if(ready&&location)try{localStorage.setItem("dw-location",location);}catch{};},[location,ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-retailer",retailer);}catch{};},[retailer,ready]);
+  useEffect(()=>{try{setHhSeenAt(+(localStorage.getItem("dw-hh-seen")||0));}catch{}},[]);
+  // leaving the Plan screen counts as having seen the latest household change
+  useEffect(()=>{if(tab!=="week")return;return()=>{const t=Date.now();setHhSeenAt(t);try{localStorage.setItem("dw-hh-seen",String(t));}catch{}};},[tab]);
   // arriving from a household invite: open the plan
   useEffect(()=>{if(!ready)return;try{const t=sessionStorage.getItem("dw-open-tab");if(t){sessionStorage.removeItem("dw-open-tab");setTab(t);}}catch{}},[ready]);
   useEffect(()=>{if(ready)try{localStorage.setItem("dw-list",JSON.stringify(listPayload(listExtras,listChecked,listCleared)));}catch{};},[listExtras,listChecked,listCleared,ready]);
@@ -4360,17 +4374,20 @@ ${tiktok.text}`}]);
   // open nights this week, not counting ones they chose to skip
   const qpSkipped=():string[]=>{try{return JSON.parse(localStorage.getItem("dw-qp-skipped")||"[]");}catch{return [];}};
   const qpOpenDays=()=>{const sk=qpSkipped();return next7Keys.filter(k=>!plan[k]&&!sk.includes(k));};
+  const qp14=Array.from({length:14},(_,i)=>dateKey(addDays(startOfToday(),i)));
   const openQuickPlan=()=>{
     const rh=qpRhythm();
-    setQp({stage:"days",days:next7Keys.map(k=>({key:k,level:rh[keyToDate(k).getDay()]||"quick"})),picks:{},matches:{},seen:{},shared:[]});
+    setQp({stage:"days",days:qp14.map(k=>({key:k,level:rh[keyToDate(k).getDay()]||"quick"})),picks:{},matches:{},seen:{},shared:[],replace:{},week2:false});
   };
+  // nights the sheet is filling: open ones, plus planned ones they chose to change
+  const qpActive=(q:NonNullable<typeof qp>)=>q.days.filter((d,i)=>(i<7||q.week2)&&(!plan[d.key]||q.replace[d.key]));
   const qpRecent=()=>{
     const cutoff=dateKey(addDays(startOfToday(),-14));
     return Object.entries(plan).filter(([k,r]:any)=>k>=cutoff&&r?.title).map(([,r]:any)=>r.title);
   };
-  const qpFetch=async(days:{key:string;level:QPLevel}[],avoid:string[])=>{
+  const qpFetch=async(days:{key:string;level:QPLevel}[],avoid:string[],replace:Record<string,boolean>={})=>{
     const fixed:Record<string,any>={};
-    for(const k of next7Keys)if(plan[k])fixed[k]=plan[k];
+    for(const k of qp14)if(plan[k]&&!replace[k])fixed[k]=plan[k];
     const res=await fetch("/api/quickplan",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({days,diets,avoid,fixed})});
     const d=await res.json();
     if(!res.ok)throw new Error(d.error||"Couldn't plan the week just now.");
@@ -4378,10 +4395,10 @@ ${tiktok.text}`}]);
   };
   const qpFill=async()=>{
     if(!qp)return;
-    const days=qp.days.filter(d=>!plan[d.key]);
+    const days=qpActive(qp);
     setQp(q=>q&&{...q,stage:"loading",err:undefined});
     try{
-      const d=await qpFetch(days.filter(x=>x.level!=="skip"),qpRecent());
+      const d=await qpFetch(days.filter(x=>x.level!=="skip"),qpRecent(),qp.replace);
       const seen:Record<string,string[]>={};
       for(const [k,p] of Object.entries(d.picks||{}))if(p)seen[k]=[(p as any).recipe.title];
       setQp(q=>q&&{...q,stage:"week",picks:d.picks||{},matches:d.matches||{},shared:d.shared||[],seen});
@@ -4389,35 +4406,65 @@ ${tiktok.text}`}]);
   };
   const qpShuffle=async(key:string)=>{
     if(!qp)return;
-    const day=qp.days.find(d=>d.key===key);if(!day||day.level==="skip")return;
+    let day=qp.days.find(d=>d.key===key);if(!day)return;
+    const replacing=!!plan[key]&&!qp.replace[key];
+    if(replacing){ // switching a night that was already planned: keep it about as long
+      const lv=levelOf(withTimes(plan[key]))||day.level;
+      day={...day,level:lv==="skip"?"normal":lv as QPLevel};
+    }
+    if(day.level==="skip")return;
     setQp(q=>q&&{...q,busy:key});
     try{
       const others=Object.entries(qp.picks).filter(([k,p])=>k!==key&&p).map(([,p])=>p!.recipe.title);
-      const d=await qpFetch([day],[...qpRecent(),...others,...(qp.seen[key]||[])]);
+      const seenHere=[...(qp.seen[key]||[]),...(plan[key]?[plan[key].title]:[])];
+      const rep2={...qp.replace,[key]:true};
+      const d=await qpFetch([day],[...qpRecent(),...others,...seenHere],rep2);
       let p=d.picks?.[key]||null;
       // shown them all? start over from the full list for that night
-      if(!p&&(qp.seen[key]||[]).length>1){const again=await qpFetch([day],[...qpRecent(),...others,qp.picks[key]?.recipe?.title||""]);p=again.picks?.[key]||null;if(p)setQp(q=>q&&{...q,seen:{...q.seen,[key]:[]}});}
+      if(!p&&(qp.seen[key]||[]).length>1){const again=await qpFetch([day],[...qpRecent(),...others,qp.picks[key]?.recipe?.title||""],rep2);p=again.picks?.[key]||null;if(p)setQp(q=>q&&{...q,seen:{...q.seen,[key]:[]}});}
       if(!p){setQp(q=>q&&{...q,busy:undefined});return;}
-      const recipes=[...Object.entries(qp.picks).filter(([k,x])=>k!==key&&x).map(([,x])=>x!.recipe),p.recipe,...next7Keys.filter(k=>plan[k]).map(k=>plan[k])];
-      setQp(q=>q&&{...q,busy:undefined,picks:{...q.picks,[key]:p},seen:{...q.seen,[key]:[...(q.seen[key]||[]),p.recipe.title]},shared:sharedProduce(recipes).slice(0,4)});
+      const lv=day.level;
+      const recipes=[...Object.entries(qp.picks).filter(([k,x])=>k!==key&&x).map(([,x])=>x!.recipe),p.recipe,...qp14.filter(k=>plan[k]&&!rep2[k]).map(k=>plan[k])];
+      setQp(q=>q&&{...q,busy:undefined,replace:rep2,days:q.days.map(x=>x.key===key?{...x,level:lv}:x),picks:{...q.picks,[key]:p},seen:{...q.seen,[key]:[...(q.seen[key]||[]),p.recipe.title]},shared:sharedProduce(recipes).slice(0,4)});
+    }catch{setQp(q=>q&&{...q,busy:undefined});}
+  };
+  // add next week to a week that's already filled, keeping this week's picks
+  const qpFillWeek2=async()=>{
+    if(!qp)return;
+    const days=qp.days.slice(7).filter(d=>!plan[d.key]&&d.level!=="skip");
+    setQp(q=>q&&{...q,busy:"week2"});
+    try{
+      const others=Object.values(qp.picks).filter(Boolean).map(p=>p!.recipe.title);
+      const d=await qpFetch(days,[...qpRecent(),...others],qp.replace);
+      const seen:Record<string,string[]>={};
+      for(const [k,p] of Object.entries(d.picks||{}))if(p)seen[k]=[(p as any).recipe.title];
+      setQp(q=>q&&{...q,busy:undefined,week2:true,picks:{...q.picks,...(d.picks||{})},seen:{...q.seen,...seen}});
     }catch{setQp(q=>q&&{...q,busy:undefined});}
   };
   const qpAdd=()=>{
     if(!qp)return;
     const now=Date.now();
     const add:Record<string,any>={};
-    Object.entries(qp.picks).forEach(([k,p],i)=>{if(p&&!plan[k])add[k]={...p.recipe,id:now+i,_dish:p.recipe.title,_ts:now,_fromCache:true};});
+    const active=new Set(qpActive(qp).map(d=>d.key));
+    Object.entries(qp.picks).forEach(([k,p],i)=>{if(p&&active.has(k))add[k]={...p.recipe,id:now+i,_dish:p.recipe.title,_ts:now,_fromCache:true};});
     setPlan(pl=>({...pl,...add}));
+    // a switched night starts fresh: its old sides and "made it" go with the old dinner
+    const switched=Object.keys(add).filter(k=>plan[k]);
+    if(switched.length){
+      setPlanSides(ps=>{const n={...ps};for(const k of switched)delete n[k];return n;});
+      setPlanMade(pm=>{const n={...pm};for(const k of switched)delete n[k];return n;});
+    }
     // next week starts the same way
     try{
-      const rh=qpRhythm();for(const d of qp.days)if(!plan[d.key])rh[keyToDate(d.key).getDay()]=d.level;localStorage.setItem("dw-qp-rhythm",JSON.stringify(rh));
+      const rh=qpRhythm();for(const d of qpActive(qp))rh[keyToDate(d.key).getDay()]=d.level;localStorage.setItem("dw-qp-rhythm",JSON.stringify(rh));
       const todayK=dateKey(startOfToday());
-      const sk=[...qpSkipped().filter(k=>k>=todayK),...qp.days.filter(d=>d.level==="skip"&&!plan[d.key]).map(d=>d.key)];
+      const sk=[...qpSkipped().filter(k=>k>=todayK),...qpActive(qp).filter(d=>d.level==="skip").map(d=>d.key)];
       localStorage.setItem("dw-qp-skipped",JSON.stringify(sk.filter((k,i)=>sk.indexOf(k)===i)));
     }catch{}
     const n=Object.keys(add).length;
     setQp(null);
-    if(n)setListToast(`Added ${n} dinner${n===1?"":"s"} to your plan and list`);
+    const added=n-switched.length;
+    if(n)setListToast(added&&switched.length?`Added ${added}, switched ${switched.length} · list updated`:added?`Added ${added} dinner${added===1?"":"s"} to your plan and list`:`Switched ${switched.length} dinner${switched.length===1?"":"s"} · list updated`);
   };
 
   /* ── GROCERY LIST VIEW ── */
@@ -4620,6 +4667,7 @@ ${tiktok.text}`}]);
                     </span>
                   ))}
                   <button className="pl-add-side" onClick={()=>{setAssignDay(`side_${k}`);if(communityStatus==="idle")loadCommunity();}}>+ Side</button>
+                  <button className="pl-add-side" onClick={()=>setPlanPick({recipe:r,sides:[],moveFrom:k})}>Move</button>
                 </div>
               </>
             ):(
@@ -4642,23 +4690,34 @@ ${tiktok.text}`}]);
             </button>
           )}
         </div>
-
-        {household&&household.members.length>1?(
-          <button className="pl-hh" onClick={()=>setShowHousehold(true)} aria-label="Household settings">
+        {household&&household.members.length>1&&(
+          <button className="pl-hh-mini" onClick={()=>setShowHousehold(true)} aria-label={`Shared with ${household.members.filter(m=>m.id!==household.me).map(m=>m.name).join(", ")}. Manage household`}>
             <span className="pl-hh-avs" aria-hidden="true">{household.members.slice(0,4).map((m,i)=><span key={m.id} className="pl-hh-av" style={{background:HH_COLORS[i%HH_COLORS.length]}}>{m.name[0]?.toUpperCase()}</span>)}</span>
             <span>Shared with {household.members.filter(m=>m.id!==household.me).map(m=>m.name).join(", ")}</span>
-            <span className="pl-hh-manage">Manage</span>
-          </button>
-        ):(
-          <button className="pl-hh pl-hh-new" onClick={()=>setShowHousehold(true)}>
-            {Ic.family(18)}<span>{household?"Waiting for someone to join":"Plan together with your household"}</span><span className="pl-hh-manage">{household?"Invite":"Set up"}</span>
           </button>
         )}
         {(()=>{
+          // the latest change someone else made, until you've seen it
           const a=household&&planMeta?.activity?.find(x=>x.id!==household.me);
-          if(!a||Date.now()-a.at>24*36e5)return null;
-          return <p className="pl-activity" aria-live="polite"><span className="pl-hh-av" style={{background:HH_COLORS[Math.max(0,household!.members.findIndex(m=>m.id===a.id))%HH_COLORS.length]}} aria-hidden="true">{a.name[0]?.toUpperCase()}</span><span><b>{a.name}</b> {a.text} · {ago(a.at)}</span></p>;
+          if(!a||a.at<=hhSeenAt||Date.now()-a.at>24*36e5)return null;
+          return(
+            <p className="pl-activity" aria-live="polite">
+              <span className="pl-hh-av" style={{background:HH_COLORS[Math.max(0,household!.members.findIndex(m=>m.id===a.id))%HH_COLORS.length]}} aria-hidden="true">{a.name[0]?.toUpperCase()}</span>
+              <span style={{flex:1}}><b>{a.name}</b> {a.text} · {ago(a.at)}</span>
+              <button className="pl-activity-x" aria-label="Dismiss" onClick={markHhSeen}><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+            </p>
+          );
         })()}
+
+        {mealsPlanned===0&&qpOpenDays().length>=3?(
+          <section className="qp-card">
+            <h2 className="qp-card-title">Plan your week in one tap</h2>
+            <p className="qp-card-text">We'll pick dinners that fit how much time you have each night. Swap anything you don't love.</p>
+            <button className="qp-card-btn" onClick={openQuickPlan}>Plan my week</button>
+          </section>
+        ):(
+          <button className="qp-slim" onClick={openQuickPlan}>{Ic.shuffle(16)} {qpOpenDays().length?`Plan my week · ${qpOpenDays().length} open night${qpOpenDays().length===1?"":"s"}`:"Plan or switch dinners"}</button>
+        )}
 
         <button className={`pl-earlier${missed.length?" has-missed":""}`} aria-expanded={showEarlier} onClick={()=>setShowEarlier(v=>!v)}>
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{transform:showEarlier?"rotate(180deg)":"none"}}><path d="m6 15 6-6 6 6"/></svg>
@@ -4670,21 +4729,15 @@ ${tiktok.text}`}]);
           </ol>
         )}
 
-        {qpOpenDays().length>=3?(
-          <section className="qp-card">
-            <h2 className="qp-card-title">Plan your week in one tap</h2>
-            <p className="qp-card-text">We'll pick dinners that fit how much time you have each night. Swap anything you don't love.</p>
-            <button className="qp-card-btn" onClick={openQuickPlan}>Plan my week</button>
-          </section>
-        ):qpOpenDays().length>0&&(
-          <button className="qp-slim" onClick={openQuickPlan}>Fill the {qpOpenDays().length} open night{qpOpenDays().length===1?"":"s"} this week</button>
-        )}
         {mealsPlanned===0&&<p className="pl-hint">Or tap <strong>+ Add a meal</strong> on any day to pick from your saved recipes.</p>}
         <ol className="pl-days">
           {aheadKeys.flatMap((k,i)=>[i===0?null:weekDivider(k),row(k)])}
         </ol>
         {planAhead<PLAN_MAX_AHEAD&&(
           <button className="pl-more" onClick={()=>setPlanAhead(n=>Math.min(PLAN_MAX_AHEAD,n+14))}>Show 2 more weeks</button>
+        )}
+        {!(household&&household.members.length>1)&&(
+          <button className="pl-hh-link" onClick={()=>setShowHousehold(true)}>{Ic.family(18)} {household?"Waiting for someone to join your household":"Plan together with your household"}</button>
         )}
       </div>
     );
@@ -4979,10 +5032,16 @@ ${tiktok.text}`}]);
         const DOWS=["SUN","MON","TUE","WED","THU","FRI","SAT"];
         const todayK=dateKey(startOfToday());
         const date=(k:string)=>{const d=keyToDate(k);return <span className={`qp-date${k===todayK?" today":""}`}><span className="qp-dow">{DOWS[d.getDay()]}</span><span className="qp-dnum">{d.getDate()}</span></span>;};
-        const toFill=qp.days.filter(d=>!plan[d.key]&&d.level!=="skip").length;
-        const picked=Object.entries(qp.picks).filter(([k,p])=>p&&!plan[k]).map(([,p])=>p!.recipe);
+        const active=qpActive(qp);
+        const toFill=active.filter(d=>d.level!=="skip").length;
+        const activeKeys=new Set(active.map(d=>d.key));
+        const picked=Object.entries(qp.picks).filter(([k,p])=>p&&activeKeys.has(k)).map(([,p])=>p!.recipe);
         const listCount=(()=>{const keys=new Set<string>();for(const r of picked)for(const g of recipeGroceries(r))if(!isStaple(g.name))keys.add(groceryKey(g.name));return keys.size;})();
         const fmtShared=(xs:string[])=>xs.length===1?xs[0]:xs.slice(0,-1).join(", ")+" and "+xs[xs.length-1];
+        const shown=qp.days.filter((_,i)=>i<7||qp.week2);
+        const divider=(k:string,i:number)=>i===7?<li key={"nw"+k} className="pl-week" aria-hidden="true"><span>Next week</span></li>:null;
+        const week2Btn=<button className="qp-week2" onClick={()=>setQp(q=>q&&{...q,week2:!q.week2})}>{qp.week2?"Just this week":"+ Plan next week too"}</button>;
+        const nReplace=Object.keys(qp.replace).filter(k=>qp.replace[k]&&plan[k]&&activeKeys.has(k)&&qp.picks[k]).length;
         return(
           <div className="share-overlay" onClick={close}>
             <div className="share-sheet qp-sheet" role="dialog" aria-modal="true" aria-labelledby="qp-title" onClick={e=>e.stopPropagation()}>
@@ -4994,11 +5053,11 @@ ${tiktok.text}`}]);
                   <p className="qp-sub">{(()=>{try{return localStorage.getItem("dw-qp-rhythm")?"Set up like last week. Tap a day to change it.":"Tap a day to change how much time you have.";}catch{return "Tap a day to change how much time you have.";}})()}</p>
                   {qp.err&&<p className="inspire-error" role="alert" style={{margin:"0 0 8px"}}>{qp.err}</p>}
                   <ul className="qp-days">
-                    {qp.days.map(d=>(
+                    {shown.flatMap((d,i)=>[divider(d.key,i),(
                       <li key={d.key} className="qp-day">
                         {date(d.key)}
-                        {plan[d.key]?(
-                          <span className="qp-planned"><b>{plan[d.key].title}</b><span>&nbsp;· already planned</span></span>
+                        {plan[d.key]&&!qp.replace[d.key]?(
+                          <span className="qp-planned"><span className="qp-planned-t"><b>{plan[d.key].title}</b><span>Already planned</span></span><button className="ck-textlink" style={{alignSelf:"auto",fontSize:14}} onClick={()=>setQp(q=>q&&{...q,replace:{...q.replace,[d.key]:true}})}>Change</button></span>
                         ):(
                           <span className="qp-seg" role="radiogroup" aria-label={`${keyToDate(d.key).toLocaleDateString("en-US",{weekday:"long"})}: how much time`}>
                             {QP_LEVELS.map(([v,l])=>(
@@ -5008,8 +5067,9 @@ ${tiktok.text}`}]);
                           </span>
                         )}
                       </li>
-                    ))}
+                    )])}
                   </ul>
+                  {week2Btn}
                   <p className="qp-legend">Quick is under 30 min · Normal 30–60 · Take my time is an hour or more</p>
                   <button className="ui-btn-primary qp-go" disabled={!toFill||qp.stage==="loading"} onClick={qpFill}>
                     {qp.stage==="loading"?"Picking dinners…":toFill?`Fill ${toFill} dinner${toFill===1?"":"s"}`:"Nothing to fill"}
@@ -5017,34 +5077,39 @@ ${tiktok.text}`}]);
                 </>
               ):(
                 <>
-                  <h2 id="qp-title" className="share-sheet-title">Your week</h2>
-                  <p className="qp-sub">Tap <span aria-hidden="true">{Ic.shuffle(14)}</span><span className="sr-only">shuffle</span> to swap a dinner for another one.</p>
+                  <h2 id="qp-title" className="share-sheet-title">{qp.week2?"Your next two weeks":"Your week"}</h2>
+                  <p className="qp-sub">Tap <span aria-hidden="true">{Ic.shuffle(14)}</span><span className="sr-only">shuffle</span> to swap any dinner, even ones already planned.</p>
                   <ul className="qp-days">
-                    {qp.days.map(d=>{
+                    {shown.flatMap((d,i)=>{
                       const p=qp.picks[d.key];
-                      const fixedR=plan[d.key];
-                      return(
+                      const kept=plan[d.key]&&!qp.replace[d.key]?plan[d.key]:null;
+                      return [divider(d.key,i),(
                         <li key={d.key} className="qp-day">
                           {date(d.key)}
-                          {fixedR?(
-                            <span className="qp-pick"><span className="qp-pick-text"><strong>{fixedR.title}</strong><span>Already planned</span></span></span>
+                          {kept?(
+                            <span className="qp-pick">
+                              {photosOn&&<DishPic title={kept.title} src={photoFor(kept)} className="qp-pic"/>}
+                              <span className="qp-pick-text"><strong>{kept.title}</strong><span>Already planned</span></span>
+                              <button className="qp-shuffle" aria-label={`Swap ${kept.title} for another dinner`} disabled={qp.busy===d.key} onClick={()=>qpShuffle(d.key)}>{Ic.shuffle(18)}</button>
+                            </span>
                           ):d.level==="skip"?(
                             <span className="qp-skipped">Skipped</span>
                           ):p?(
-                            <span className="qp-pick">
+                            <span className={`qp-pick${plan[d.key]?" qp-switched":""}`}>
                               {photosOn&&<DishPic title={p.recipe.title} src={photoFor(p.recipe)} className="qp-pic"/>}
-                              <span className="qp-pick-text"><strong>{p.recipe.title}</strong><span>{QP_LABEL[d.level]} · {totalShort(p.recipe)}</span></span>
+                              <span className="qp-pick-text"><strong>{p.recipe.title}</strong><span>{plan[d.key]?`Replaces ${plan[d.key].title}`:`${QP_LABEL[d.level]} · ${totalShort(p.recipe)}`}</span></span>
                               <button className="qp-shuffle" aria-label={`Swap ${p.recipe.title} for another dinner`} disabled={qp.busy===d.key} onClick={()=>qpShuffle(d.key)}>{Ic.shuffle(18)}</button>
                             </span>
                           ):(
                             <span className="qp-skipped">No {QP_LABEL[d.level].toLowerCase()} dinners left to pick from{diets.length?` with your filters`:""}. <button className="ck-textlink" style={{alignSelf:"auto",fontSize:"inherit"}} onClick={()=>{setQp(q=>q&&{...q,stage:"days"});}}>Change time</button></span>
                           )}
                         </li>
-                      );
+                      )];
                     })}
                   </ul>
+                  {!qp.week2&&<button className="qp-week2" disabled={qp.busy==="week2"} onClick={qpFillWeek2}>{qp.busy==="week2"?"Picking next week…":"+ Plan next week too"}</button>}
                   {(qp.shared.length>0||listCount>0)&&<p className="qp-note">{qp.shared.length>0?`Uses ${fmtShared(qp.shared)} more than once, so less goes to waste. `:""}{listCount?`Adds ${listCount} item${listCount===1?"":"s"} to your list.`:""}</p>}
-                  <button className="ui-btn-primary qp-go" disabled={!picked.length} onClick={qpAdd}>Add {picked.length} dinner{picked.length===1?"":"s"} to my plan</button>
+                  <button className="ui-btn-primary qp-go" disabled={!picked.length} onClick={qpAdd}>{picked.length-nReplace>0?`Add ${picked.length-nReplace} dinner${picked.length-nReplace===1?"":"s"}`:""}{picked.length-nReplace>0&&nReplace?" and ":""}{nReplace?`switch ${nReplace}`:""}{picked.length?"":"Nothing to add"}</button>
                   <button className="hh-leave" style={{color:"#1A1F2E",marginTop:6}} onClick={()=>setQp(q=>q&&{...q,stage:"days"})}>Change times</button>
                 </>
               )}
@@ -5162,6 +5227,13 @@ ${tiktok.text}`}]);
         const r=planPick.recipe;
         const days=Array.from({length:14},(_,i)=>dateKey(addDays(startOfToday(),i)));
         const pick=(k:string,withSides:boolean)=>{
+          if(planPick.moveFrom){ // moving a planned dinner: trade places with whatever is on that day
+            const from=planPick.moveFrom;
+            setPlan(p=>{const n={...p};const there=n[k];n[k]=n[from];if(there)n[from]=there;else delete n[from];return n;});
+            setPlanSides(p=>{const n={...p};const a=n[from],b=n[k];if(a)n[k]=a;else delete n[k];if(b)n[from]=b;else delete n[from];return n;});
+            setPlanMade(p=>{const n={...p};delete n[from];delete n[k];return n;});
+            setPlanPick(null);setPlanToast({day:k,title:r.title});return;
+          }
           assignMain(k,r);
           const sides=withSides?planPick.sides.map((x:any)=>({title:x.title,status:"done",recipe:x.recipe})):[];
           setPlanSides(p=>{const n={...p};if(sides.length)n[k]=sides;else delete n[k];return n;});
@@ -5173,12 +5245,12 @@ ${tiktok.text}`}]);
             <div className="share-sheet pp-sheet" role="dialog" aria-modal="true" aria-labelledby="pp-title" onClick={e=>e.stopPropagation()}>
               <div className="ui-handle" aria-hidden="true"/>
               <button className="ui-close" aria-label="Close" onClick={()=>setPlanPick(null)}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
-              <h2 id="pp-title" className="share-sheet-title">Add to your plan</h2>
+              <h2 id="pp-title" className="share-sheet-title">{planPick.moveFrom?"Move to another day":"Add to your plan"}</h2>
               <p className="share-sheet-dish">{r.title}{planPick.sides.length>0?` with ${planPick.sides.map((x:any)=>x.title).join(", ")}`:""}</p>
               <ul className="pp-days">
                 {days.map((k,i)=>{
                   const cur=plan[k];
-                  const same=!!cur&&sameRecipe(cur,planPick.recipe);
+                  const same=planPick.moveFrom?k===planPick.moveFrom:!!cur&&sameRecipe(cur,planPick.recipe);
                   const d=keyToDate(k);
                   return(
                     <li key={k}>
@@ -5186,10 +5258,10 @@ ${tiktok.text}`}]);
                         <span className="pp-date"><span className="pp-dow">{["SUN","MON","TUE","WED","THU","FRI","SAT"][d.getDay()]}</span><span className="pp-dnum">{d.getDate()}</span></span>
                         <span className="pp-text">
                           <span className="pp-label">{i===0?"Today":i===1?"Tomorrow":d.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"})}</span>
-                          <span className="pp-meta">{same?"Already planned":cur?cur.title:"Open"}</span>
+                          <span className="pp-meta">{same?(planPick.moveFrom?"Planned here now":"Already planned"):cur?cur.title:"Open"}</span>
                         </span>
                         {cur&&!same&&photosOn&&photoFor(cur)&&<span className="pp-thumb"><DishPic title={cur.title} src={photoFor(cur)} className="pp-pic"/></span>}
-                        <span className="pp-tag">{same?"✓":cur?"Replace":"+ Add"}</span>
+                        <span className="pp-tag">{same?"✓":cur?(planPick.moveFrom?"Swap":"Replace"):planPick.moveFrom?"Move":"+ Add"}</span>
                       </button>
                     </li>
                   );

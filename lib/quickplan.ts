@@ -19,10 +19,16 @@ export function levelOf(r: any): Level | null {
 
 // Dinner, not dessert, brunch, a snack or a drink
 const NOT_DINNER = /\b(cake|cookies?|brownies?|pie|tart|crumble|pudding|mousse|cheesecake|tiramisu|panna cotta|brul[eé]e|gelato|ice cream|sorbet|macarons?|baklava|mochi|churros?|financiers?|pavlova|profiteroles?|toffee|tres leches|cobbler|muffins?|banana bread|scones?|pancakes?|waffles?|french toast|granola|oatmeal|smoothie|cocktail|lemonade|latte|dip|salsa|guacamole|hummus|dressing|vinaigrette|sauce|frosting|jam|syrup|biscuits? and gravy|cinnamon rolls?|donuts?|doughnuts?|fudge|truffles?|bars?)\b/i;
+// Side dishes on their own aren't dinner: coleslaw, roasted carrots, garlic bread, rice pilaf…
+const SIDE = /\b(coleslaw|slaw|mashed|roasted (vegetables|veggies|carrots|potatoes|broccoli|brussels sprouts|cauliflower|asparagus|green beans)|garlic bread|cornbread|dinner rolls|rolls|fries|potato salad|pasta salad|macaroni salad|rice pilaf|pilaf|green beans|corn on the cob|baked beans|creamed spinach|steamed|saut[ée]ed (greens|spinach|green beans)|side salad|caesar salad|house salad|garden salad|cucumber salad|fruit salad|biscuits|focaccia|naan|pickles?|relish|gravy|stuffing|mac and cheese bites)\b/i;
+// what makes a dinner even without meat
+const MAIN_WORD = /\b(soup|stew|curry|chili|risotto|pizza|lasagna|pasta|spaghetti|penne|rigatoni|noodles|ramen|pho|bowls?|casserole|pie|tacos?|burritos?|enchiladas?|quesadillas?|fajitas|quiche|frittata|shakshuka|stir[- ]fry|fried rice|paella|gnocchi|dumplings?|sandwich(es)?|burgers?|wraps?|bake|tagine|dal|biryani|pad thai|lo mein|mac and cheese|gratin|tart|galette|stroganoff|goulash|bolognese|carbonara|alfredo|pot roast|meatloaf)\b/i;
 export function isDinner(r: any): boolean {
   const t = String(r?.title || "");
-  if (NOT_DINNER.test(t)) return false;
-  return (r?.steps?.length || 0) >= 3;
+  const savory = /\b(cottage|shepherd'?s?|pot pie|chicken|beef|pork|meat|fish|tamale|turkey|steak|savory|tomato|onion|leek|mushroom|cheese|spinach)\b/i.test(t);
+  if ((NOT_DINNER.test(t) && !(savory && /\b(pie|tart|galette|bake)\b/i.test(t))) || SIDE.test(t)) return false;
+  if ((r?.steps?.length || 0) < 3) return false;
+  return mainOf(r) !== "other" || MAIN_WORD.test(t);
 }
 
 const ings = (r: any): string[] => (r?.ingredient_groups || []).flatMap((g: any) => (g?.items || []).map((i: any) => String(i?.name || "").toLowerCase()));
