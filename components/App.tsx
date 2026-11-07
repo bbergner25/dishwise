@@ -751,7 +751,11 @@ const CSS = `
   .cook-top{display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 8px;max-width:760px;width:100%;margin:0 auto;box-sizing:border-box;}
   .cook-close{width:44px;height:44px;border:none;background:#F5EFE4;border-radius:22px;display:flex;align-items:center;justify-content:center;color:#151210;cursor:pointer;flex-shrink:0;}
   .cook-title{flex:1;min-width:0;font-family:'Fraunces',serif;font-weight:600;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;}
-  .cook-count{width:72px;text-align:right;font-size:14px;font-weight:600;color:#6E635F;flex-shrink:0;}
+  .cook-voice{flex-shrink:0;height:40px;padding:0 12px;border-radius:20px;border:1.5px solid #E3DCD0;background:#fff;color:#151210;display:flex;align-items:center;gap:6px;font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+  .cook-voice.on{background:#1A1F2E;border-color:#1A1F2E;color:#FDFAF5;}
+  .cook-voice:focus-visible,.cook-again:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
+  .cook-again{align-self:flex-start;display:flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border-radius:20px;border:none;background:#F5EFE4;color:#151210;font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;cursor:pointer;margin-top:-6px;}
+  .cook-count{width:56px;text-align:right;font-size:14px;font-weight:600;color:#6E635F;flex-shrink:0;}
   .cook-progress{height:4px;background:#EFE8DC;max-width:760px;width:calc(100% - 24px);margin:0 auto;border-radius:2px;overflow:hidden;flex-shrink:0;}
   .cook-progress div{height:4px;background:#F4A021;border-radius:2px;transition:width .3s ease;}
   .cook-timer-strip{display:flex;gap:6px;flex-wrap:wrap;max-width:760px;width:100%;margin:12px auto 0;padding:0 20px;box-sizing:border-box;}
@@ -1926,6 +1930,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
   const [shareMode,setShareMode] = useState<"link"|"original"|"ask"|"private">("link"); // imports share the original; scans ask first     // the recipe the share sheet is for (main dish or a side)
   const [cookRecipe,setCookRecipe]   = useState<any>(null);     // recipe open in cooking mode
   const [cookStep,setCookStep]       = useState(0);             // 0 = gather ingredients, 1..N = steps
+  const [readAloud,setReadAloud]     = useState(false);         // cooking mode reads each step out loud
   const [cookTimers,setCookTimers]   = useState<Record<string,{end:number;dur:number;done?:boolean}>>({}); // key "step.timer"
   const [,setCookTick]               = useState(0);             // forces a re-render each second while a timer runs
   const cookSwipeX = useRef<number|null>(null);
@@ -2067,6 +2072,30 @@ export default function App({onReady}:{onReady?:()=>void}={}){
     };
   },[cookRecipe]);
 
+  /* cooking mode: read steps out loud (the phone's own voice, no cost) */
+  useEffect(()=>{try{setReadAloud(localStorage.getItem("dw-read-aloud")==="1");}catch{}},[]);
+  const say=(text:string)=>{
+    try{
+      const ss=window.speechSynthesis;if(!ss||!text)return;
+      ss.cancel();
+      const u=new SpeechSynthesisUtterance(text);
+      const voices=ss.getVoices().filter(v=>/^en[-_]US/i.test(v.lang));
+      const v=voices.find(v=>/premium|enhanced|natural/i.test(v.name))||voices.find(v=>/samantha|ava|allison|google us english/i.test(v.name))||voices[0];
+      if(v)u.voice=v;
+      u.lang="en-US";u.rate=0.97;
+      ss.speak(u);
+    }catch{}
+  };
+  const stepSpeech=(r:any,i:number)=>i===0?"Gather your ingredients. Tap Start cooking when you're ready.":`Step ${i}. ${(r?.steps||[])[i-1]||""}`;
+  useEffect(()=>{if(!cookRecipe)try{window.speechSynthesis?.cancel();}catch{}},[cookRecipe]);
+  const toggleReadAloud=()=>{
+    const on=!readAloud;
+    setReadAloud(on);
+    try{localStorage.setItem("dw-read-aloud",on?"1":"0");}catch{}
+    if(!on)try{window.speechSynthesis?.cancel();}catch{}
+    else if(cookRecipe)say(stepSpeech(cookRecipe,cookStep));
+  };
+
   /* cooking mode: tick running timers; chime + vibrate when one finishes */
   useEffect(()=>{
     if(!Object.values(cookTimers).some(t=>!t.done))return;
@@ -2080,6 +2109,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
       }
       if(finished){
         setCookTimers(next);
+        if(readAloud){const steps=Object.keys(next).filter(k=>next[k].done&&!cookTimers[k]?.done).map(k=>k.split(".")[0]);say(`Time's up for step ${Array.from(new Set(steps)).join(" and ")}.`);}
         try{ navigator.vibrate&&navigator.vibrate([300,150,300]); }catch{}
         playChime(audioCtxRef.current);
       }else setCookTick(x=>x+1);
@@ -2706,7 +2736,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
 
   /* cooking mode */
   const openCookMode=(r:any)=>{
-    setCookRecipe(r);setCookStep(0);setCookTimers({});setShowRecipeMenu(false);
+    setCookRecipe(r);setCookStep(0);setCookTimers({});setShowRecipeMenu(false);if(readAloud)say(stepSpeech(r,0));
     // older recipes: ask once which ingredients go in at each step, then keep the answer with the recipe
     const steps=r?.steps||[];
     const valid=Array.isArray(r?.step_ingredients)&&r.step_ingredients.length===steps.length;
@@ -5714,7 +5744,7 @@ ${tiktok.text}`}]);
         const timers=idx>0?stepTimers(stepText):[];
         const now=Date.now();
         const otherTimers=Object.entries(cookTimers).filter(([k])=>Number(k.split(".")[0])!==idx).map(([k,t])=>({key:k,step:Number(k.split(".")[0]),t,left:Math.max(0,Math.ceil((t.end-now)/1000))}));
-        const go=(n:number)=>setCookStep(Math.max(0,Math.min(last,n)));
+        const go=(n:number)=>{const to=Math.max(0,Math.min(last,n));if(to===idx)return;setCookStep(to);if(readAloud)say(stepSpeech(r,to));};
         return(
           <div className="cook-overlay" role="dialog" aria-modal="true" aria-label={`Cooking ${r.title}`}
             onTouchStart={(e)=>{cookSwipeX.current=e.touches[0].clientX;}}
@@ -5729,6 +5759,12 @@ ${tiktok.text}`}]);
                 <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
               </button>
               <div className="cook-title">{r.title}</div>
+              <button className={`cook-voice${readAloud?" on":""}`} aria-pressed={readAloud} aria-label={readAloud?"Stop reading steps out loud":"Read steps out loud"} onClick={toggleReadAloud}>
+                {readAloud
+                  ?<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+                  :<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m16 9 5 6M21 9l-5 6"/></svg>}
+                <span>{readAloud?"Reading":"Read aloud"}</span>
+              </button>
               <div className="cook-count">{idx===0?"Get ready":`${idx} / ${last}`}</div>
             </div>
             <div className="cook-progress" aria-hidden="true"><div style={{width:`${last?(idx/last)*100:0}%`}}/></div>
@@ -5765,6 +5801,10 @@ ${tiktok.text}`}]);
                 <>
                   <div className="cook-eyebrow">Step {idx}</div>
                   <p className="cook-step-text">{stepText}</p>
+                  {readAloud&&<button className="cook-again" onClick={()=>say(stepSpeech(r,idx))}>
+                    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+                    Read it again
+                  </button>}
                   {timers.length>0&&(
                     <div className={`cook-timers${timers.length>1?" stacked":""}`}>
                       {timers.map((tm,ti)=>{
