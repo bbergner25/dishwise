@@ -845,6 +845,8 @@ const CSS = `
   .rx-nutri-cell{flex:1;display:flex;flex-direction:column;align-items:center;padding:4px 2px;}
   .rx-nutri-cell strong{font-family:'Fraunces',serif;font-size:20px;line-height:1.2;}
   .rx-nutri-cell>span{font-size:12px;color:#6E635F;}
+  .rx-nutri-alt{display:block;margin:2px 8px 2px;padding-top:8px;border-top:1px solid #F1EBE2;font-size:13px;color:#6E635F;text-align:center;}
+  .nu-alt{margin:-8px 0 14px;font-size:14px;color:#4F4744;}
   .nu-sub{margin:-4px 0 12px;font-size:14px;color:#6E635F;}
   .nu-cal{margin:0 0 14px;font-size:16px;color:#4F4744;}
   .nu-cal strong{font-family:'Fraunces',serif;font-size:44px;color:#151210;margin-right:6px;line-height:1;}
@@ -4130,6 +4132,7 @@ ${tiktok.text}`}]);
                 <span className="rx-nutri-row" aria-hidden="true">
                   {cells.map(([v,l])=><span key={l} className="rx-nutri-cell">{ready?<strong>{v}</strong>:<span className="gen-skel" style={{width:36,height:18,margin:"2px auto 4px"}}/>}<span>{l}</span></span>)}
                 </span>
+                {ready&&(()=>{const sv=servesOf(recipe);if(sv<2||sv>10)return null;const more=sv+2;return <span className="rx-nutri-alt">Cut into {more} instead: about {Math.round(n.calories*sv/more/10)*10} calories each</span>;})()}
               </button>
             );
           })()}
@@ -5549,8 +5552,9 @@ ${tiktok.text}`}]);
               <div className="ui-handle" aria-hidden="true"/>
               <button className="ui-close" aria-label="Close" onClick={close}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
               <h2 id="nu-title" className="share-sheet-title">Nutrition</h2>
-              <p className="nu-sub">Per serving{recipe.servings?` · recipe serves ${recipe.servings}`:""}</p>
+              <p className="nu-sub">Per serving{servesOf(recipe)>1?`: ${fracOf(servesOf(recipe))} of the recipe, which serves ${servesOf(recipe)}`:""}</p>
               <p className="nu-cal"><strong>{n.calories}</strong> calories</p>
+              {(()=>{const sv=servesOf(recipe);if(sv<2||sv>10)return null;const alts=[sv+2,sv+4].map(m=>`${m} pieces: about ${Math.round(n.calories*sv/m/10)*10}`);return <p className="nu-alt">Smaller portions · {alts.join(" · ")} calories each</p>;})()}
               {bar("Protein",n.protein,kc.p,"#2F6B3A")}
               {bar("Carbs",n.carbs,kc.c,"#F4A021")}
               {bar("Fat",n.fat,kc.f,"#B36A00")}
