@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
 import crypto from "crypto";
+import { memberInfo } from "../../../lib/household";
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL!,
@@ -50,9 +51,13 @@ export async function POST(req: NextRequest) {
     if (recipe._scanned && !recipe._shareOK) return NextResponse.json({ error: "Confirm this is your own recipe to share it." }, { status: 403 });
     const {
       _scanned, _shareOK, _imported, _fromCache, _ts, id,
-      _dish, _photo, photo, photoData, _shareSlug, _shareToken,
+      _dish, _photo, photo, photoData, _shareSlug, _shareToken, _byName,
       ...clean
     } = recipe;
+    // the sharer's first name, so people who make their own version can credit them (they can turn this off)
+    if (body?.showName !== false) {
+      try { const { userId } = await auth(); if (userId) { const m = await memberInfo(userId); if (m.name && m.name !== "Someone") (clean as any)._byName = m.name.slice(0, 40); } } catch {}
+    }
     // keep the credit for imported recipes: where it came from stays on the shared page
     if (typeof clean._sourceUrl !== "string" || !/^https?:\/\//.test(clean._sourceUrl)) delete (clean as any)._sourceUrl;
 

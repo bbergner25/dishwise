@@ -24,7 +24,7 @@ export default function Privacy() {
       <h2>What other people can see</h2>
       <ul>
         <li><strong>The Community library.</strong> When you search for a dish that hasn't been made yet (without diet filters), the new recipe joins the shared Community library so others can open it too. It's not linked to your name or account.</li>
-        <li><strong>Recipes you share.</strong> Anyone with the link can see that recipe, and edits you make show up on the link. Recipes you keep to yourself are private to your account.</li>
+        <li><strong>Recipes you share.</strong> Anyone with the link can see that recipe and your first name (you can turn the name off under your account), and edits you make show up on the link. If someone saves it and makes their own version, theirs says it was adapted from yours. Recipes you keep to yourself are private to your account.</li>
         <li><strong>Your household.</strong> If you join a household, its members can see and change the shared meal plan and grocery list, see your first name and who added or checked off what, and see the recipes you save. Only people you invite with a link can join.</li>
       </ul>
 

@@ -753,6 +753,17 @@ const CSS = `
   .cook-top{display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 8px;max-width:760px;width:100%;margin:0 auto;box-sizing:border-box;}
   .cook-close{width:44px;height:44px;border:none;background:#F5EFE4;border-radius:22px;display:flex;align-items:center;justify-content:center;color:#151210;cursor:pointer;flex-shrink:0;}
   .cook-title{flex:1;min-width:0;font-family:'Fraunces',serif;font-weight:600;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;}
+  .rx-credit{display:inline-flex;align-items:center;gap:8px;margin:8px 0 2px;padding:5px 12px 5px 5px;border:1px solid #E3DCD0;border-radius:18px;background:#fff;font-family:'Figtree',sans-serif;font-size:14px;color:#4F4744;cursor:pointer;text-align:left;max-width:100%;}
+  .rx-credit u{color:#151210;text-underline-offset:2px;}
+  .rx-credit-av{width:24px;height:24px;border-radius:12px;background:#C2410C;color:#FDFAF5;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .rx-credit:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
+  .edit-credit{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid #ECE6DD;border-radius:12px;background:#fff;font-size:15px;}
+  .edit-credit-remove{flex-shrink:0;height:34px;padding:0 12px;border-radius:17px;border:1px solid #E3DCD0;background:#fff;font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;color:#B8340F;cursor:pointer;}
+  .edit-credit-note{margin:6px 0 4px;font-size:13px;color:#6E635F;}
+  .account-toggle{display:flex;align-items:center;gap:14px;margin:4px 20px 8px;padding:12px 14px;border:1px solid #ECE6DD;border-radius:14px;background:#fff;cursor:pointer;}
+  .account-toggle>span{flex:1;display:flex;flex-direction:column;gap:3px;font-size:15px;}
+  .account-toggle>span>span{font-size:13px;line-height:1.4;color:#6E635F;}
+  .account-toggle input{width:22px;height:22px;accent-color:#1A1F2E;flex-shrink:0;}
   .cook-voice{flex-shrink:0;height:40px;padding:0 12px;border-radius:20px;border:1.5px solid #E3DCD0;background:#fff;color:#151210;display:flex;align-items:center;gap:6px;font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
   .cook-voice.on{background:#1A1F2E;border-color:#1A1F2E;color:#FDFAF5;}
   .cook-voice:focus-visible,.cook-again:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
@@ -1932,6 +1943,8 @@ export default function App({onReady}:{onReady?:()=>void}={}){
   const [shareMode,setShareMode] = useState<"link"|"original"|"ask"|"private">("link"); // imports share the original; scans ask first     // the recipe the share sheet is for (main dish or a side)
   const [cookRecipe,setCookRecipe]   = useState<any>(null);     // recipe open in cooking mode
   const [cookStep,setCookStep]       = useState(0);             // 0 = gather ingredients, 1..N = steps
+  const [shareName,setShareName]     = useState(true);          // first name on recipes you share
+  useEffect(()=>{try{setShareName(localStorage.getItem("dw-share-name")!=="0");}catch{}},[]);
   const [readAloud,setReadAloud]     = useState(false);         // cooking mode reads each step out loud
   const [cookTimers,setCookTimers]   = useState<Record<string,{end:number;dur:number;done?:boolean}>>({}); // key "step.timer"
   const [,setCookTick]               = useState(0);             // forces a re-render each second while a timer runs
@@ -2032,7 +2045,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
         const res=await fetch(`/api/share?slug=${encodeURIComponent(slug)}`);
         const data=await res.json().catch(()=>({found:false}));
         if(!data?.found||!data.recipe)return;
-        const r={...data.recipe,id:Date.now(),_dish:data.recipe.title||slug,_ts:Date.now(),_fromCache:true,_shareFrom:slug};
+        const r={...data.recipe,id:Date.now(),_dish:data.recipe.title||slug,_ts:Date.now(),_fromCache:true,_shareFrom:slug,_adapt:{slug,title:data.recipe.title||"",by:data.recipe._byName||""}};
         setReturnTab(null);setPairedSides([]);setActivePane(0);setReturnDayKey(null);
         setRecipe(r);setServings(null);setStatus("done");setTab("search");
         window.scrollTo({top:0});
@@ -2739,10 +2752,22 @@ export default function App({onReady}:{onReady?:()=>void}={}){
   };
   const closePairedSide=()=>{setPairedSides([]);setActivePane(0);setReturnDayKey(null);};
 
+  // "Adapted from … by Billy": opens the original, in its latest version
+  const openOriginal=async(a:{slug:string})=>{
+    try{
+      const res=await fetch(`/api/share?slug=${encodeURIComponent(a.slug)}`);
+      const data=await res.json().catch(()=>({found:false}));
+      if(!data?.found||!data.recipe){alert("The original isn't shared anymore.");return;}
+      const r={...data.recipe,id:Date.now(),_dish:data.recipe.title||a.slug,_ts:Date.now(),_fromCache:true,_shareFrom:a.slug,_adapt:{slug:a.slug,title:data.recipe.title||"",by:data.recipe._byName||""}};
+      setReturnTab(null);setPairedSides([]);setActivePane(0);setReturnDayKey(null);
+      setRecipe(r);setServings(null);setStatus("done");setTab("search");window.scrollTo({top:0});
+    }catch{}
+  };
+
   /* share — works for the main dish or a paired side. One recipe keeps one link; edits update it. */
   const pushShare=async(r:any)=>{
     const {_fromCache,_ts,id,_shareSlug,_shareToken,...shareable}=r as any; // _scanned/_shareOK go along so the server can check them
-    const res=await fetch("/api/share",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({recipe:shareable,slug:_shareSlug,token:_shareToken})});
+    const res=await fetch("/api/share",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({recipe:shareable,slug:_shareSlug,token:_shareToken,showName:(()=>{try{return localStorage.getItem("dw-share-name")!=="0";}catch{return true;}})()})});
     return await res.json();
   };
   const shareRecipe=async(r:any,opts?:{confirmedOwn?:boolean})=>{
@@ -3053,7 +3078,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
         const res=await fetch(`/api/share?slug=${encodeURIComponent(slug)}`);
         const data=await res.json().catch(()=>({found:false}));
         if(data&&data.found&&data.recipe){
-          const r={...data.recipe,id:Date.now(),_dish:data.recipe.title||slug,_ts:Date.now(),_fromCache:true,_shareFrom:slug};
+          const r={...data.recipe,id:Date.now(),_dish:data.recipe.title||slug,_ts:Date.now(),_fromCache:true,_shareFrom:slug,_adapt:{slug,title:data.recipe.title||"",by:data.recipe._byName||""}};
           setShowQrScanner(false);setQrStatus("idle");
           setReturnTab(null);setPairedSides([]);setActivePane(0);setReturnDayKey(null);
           setRecipe(r);setServings(null);setStatus("done");setTab("search");
@@ -3187,7 +3212,7 @@ ${tiktok.text}`}]);
     try{
       const q=recipe._dish||recipe.title||"";
       const parsed=await callAPI([{role:"user",content:buildRemixPrompt(q,diets,seasonal,location,remixChips)}]);
-      const r={...parsed,id:Date.now(),_dish:q,_ts:Date.now()};
+      const r={...parsed,id:Date.now(),_dish:q,_ts:Date.now(),...(recipe._adapt?{_adapt:recipe._adapt,_adapted:true}:{})};
       setRecipe(r);setServings(null);
       setHistory((h:any[])=>[r,...h.filter((x:any)=>x.id!==r.id)].slice(0,30));
       setRemixChips([]);
@@ -4061,8 +4086,16 @@ ${tiktok.text}`}]);
           </div>
         ):photo&&<img src={photo} className="rx-photo" alt={recipe.title}/>}
         <header className={`rx-head${photosOn?" rx-head-over":""}`}>
-          <div className="rx-eyebrow">{recipe._author?`From @${recipe._author} on TikTok`:recipe._scanned?"Scanned recipe":recipe._imported?"Imported recipe":recipe._fromCache?"Community recipe":"Every Chef original"}</div>
+          <div className="rx-eyebrow">{recipe._adapt&&!recipe._adapt.off&&!recipe._author?(recipe._edited||recipe._adapted?"Your version":"Shared recipe"):recipe._author?`From @${recipe._author} on TikTok`:recipe._scanned?"Scanned recipe":recipe._imported?"Imported recipe":recipe._fromCache?"Community recipe":"Every Chef original"}</div>
           <h1 className="rx-title">{recipe.title}</h1>
+          {recipe._adapt?.slug&&!recipe._adapt.off&&(
+            <button className="rx-credit" onClick={()=>openOriginal(recipe._adapt)} aria-label={`Open the original${recipe._adapt.by?` by ${recipe._adapt.by}`:""}`}>
+              {recipe._adapt.by&&<span className="rx-credit-av" aria-hidden="true">{recipe._adapt.by[0].toUpperCase()}</span>}
+              <span>{recipe._edited||recipe._adapted
+                ?<>Adapted from <u>{recipe._adapt.title||"a shared recipe"}</u>{recipe._adapt.by?<> by {recipe._adapt.by}</>:null}</>
+                :<>Shared by {recipe._adapt.by||"someone"} · <u>see the original</u></>}</span>
+            </button>
+          )}
           {recipe.tagline&&<p className="rx-tagline">{recipe.tagline}</p>}
           {recipe.seasonal_note&&<div className="rx-seasonal"><span style={{display:"flex"}}>{Ic.leaf(13)}</span> {recipe.seasonal_note}</div>}
           <div className="rx-meta">
@@ -5703,6 +5736,10 @@ ${tiktok.text}`}]);
                 <div className="account-sheet-email">{user.emailAddresses?.[0]?.emailAddress||""}</div>
               </div>
             </div>
+            <label className="account-toggle">
+              <span><b>Show my name on recipes I share</b><span>People who make their own version see "Adapted from … by {user.firstName||"you"}". Off: "Adapted from a shared recipe".</span></span>
+              <input type="checkbox" role="switch" checked={shareName} onChange={e=>{setShareName(e.target.checked);try{localStorage.setItem("dw-share-name",e.target.checked?"1":"0");}catch{}}}/>
+            </label>
             <div className="account-sheet-actions">
               <button className="account-sheet-btn danger" onClick={doSignOut}>Sign out</button>
               <a className="account-sheet-btn" href="/privacy">Privacy policy</a>
@@ -6006,6 +6043,20 @@ ${tiktok.text}`}]);
                 value={editRecipe.title||""}
                 onChange={e=>setEditRecipe((r:any)=>({...r,title:e.target.value}))}
               />
+              {editRecipe._adapt?.slug&&(
+                <>
+                  <div className="edit-section-label">Credit</div>
+                  {editRecipe._adapt.off?(
+                    <p className="edit-credit-note">Credit removed. <button className="ck-textlink" style={{display:"inline",padding:0}} onClick={()=>setEditRecipe((r:any)=>({...r,_adapt:{...r._adapt,off:false}}))}>Put it back</button></p>
+                  ):(
+                    <div className="edit-credit">
+                      <span>Adapted from <b>{editRecipe._adapt.title||"a shared recipe"}</b>{editRecipe._adapt.by?` by ${editRecipe._adapt.by}`:""}</span>
+                      <button className="edit-credit-remove" onClick={()=>setEditRecipe((r:any)=>({...r,_adapt:{...r._adapt,off:true}}))}>Remove</button>
+                    </div>
+                  )}
+                  {!editRecipe._adapt.off&&<p className="edit-credit-note">Changed it so much it's really yours? Remove the credit.</p>}
+                </>
+              )}
               {/* Ingredients */}
               <div className="edit-section-label">Ingredients</div>
               {(editRecipe.ingredient_groups||[{label:"",items:editRecipe.ingredients||[]}]).map((g:any,gi:number)=>(
