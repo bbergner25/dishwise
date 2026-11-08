@@ -1627,10 +1627,11 @@ function syncGroceries(before: any, after: any): string[]{
 async function rewriteStepsWithout(edited: any, removedNames: string[], addedNames: string[]=[]): Promise<{steps:string[];tagline?:string}>{
   const kept=flatIngs(edited).map((i:any)=>`${i.amount||""} ${i.name}`.trim());
   const out=await callAPI([{role:"user",content:
-`You are editing a home recipe. The cook took these ingredients off the list: ${removedNames.join(", ")}.${addedNames.length?`
-They also added: ${addedNames.join(", ")}.`:""}
+`You are editing a home recipe. ${removedNames.length?`The cook took these ingredients off the list: ${removedNames.join(", ")}.`:"The cook didn't take any ingredients off the list."}${addedNames.length?`
+They added: ${addedNames.join(", ")}.`:""}
 First decide, for each ingredient taken off, whether one of the added ingredients replaces it: the same thing under another name (e.g. "hamburger" and "ground beef"), or a swap the cook clearly intended (e.g. chicken thighs for chicken breasts). Where there's a replacement, keep the step exactly as it was and just use the new ingredient's name. Never drop a cooking step (like browning meat) because its ingredient was renamed or swapped.
 Only for ingredients that were truly removed with no replacement: rewrite the method steps so they no longer use or mention them. Keep everything else the same: same order, same voice, same times and temperatures. Only merge or drop a step if it no longer makes sense without the removed ingredients. If no step uses them, return the steps unchanged.
+Every added ingredient that isn't a replacement must be used in the method: work it into the step where a cook would actually add it (for example, aromatics go in with the other aromatics, a sauce ingredient is whisked in with the sauce, a topping goes on at the end), with its amount if that helps. Change as little else as possible.
 Also update the short description the same way (new names for replaced ingredients, no mention of truly removed ones). Keep its length, tone and wording otherwise; if it doesn't mention them, return it unchanged.
 Recipe title: ${edited.title||""}
 Current description: ${JSON.stringify(edited.tagline||"")}
@@ -6107,7 +6108,7 @@ ${tiktok.text}`}]);
               {(()=>{
                 const missing=unusedIngs(editRecipe).filter((i:any)=>!/^(salt|pepper|black pepper|kosher salt|sea salt|water)\b/i.test(i.name||"")&&!/to taste|garnish|for serving/i.test(`${i.amount||""} ${i.name||""}`));
                 if(!missing.length)return null;
-                return <div className="edit-unused" role="note">Not used in any step yet: <strong>{missing.map((i:any)=>(i.name||"").split(/[,(]/)[0].trim()).join(", ")}</strong>. Add a step so it doesn't get missed.</div>;
+                return <div className="edit-unused" role="note">Not used in any step yet: <strong>{missing.map((i:any)=>(i.name||"").split(/[,(]/)[0].trim()).join(", ")}</strong>. {removedIngs(editRecipe,recipe).length?"Saving will work new ingredients into the steps.":"Add it to a step so it doesn't get missed."}</div>;
               })()}
               {(()=>{
                 const removed=removedIngs(recipe,editRecipe);
@@ -6171,7 +6172,10 @@ ${tiktok.text}`}]);
                 const key=names.map(n=>n.toLowerCase()).sort().join("|");
                 // Rewrite the steps on save if something was removed and they haven't been updated yet.
                 // After a failed attempt (status "error"), Save keeps the steps as they are.
-                if(names.length&&stepsSyncedFor!==key&&stepRewrite!=="error"&&(edited.steps||[]).length){
+                // ...and when ingredients were added that no step uses yet, so they get worked into the method
+                const addedNames=removedIngs(edited,recipe).map((r:any)=>(r.name||"").split(/[,(]/)[0].trim()).filter(Boolean);
+                const addedUnused=unusedIngs(edited).filter((i:any)=>addedNames.some(a=>normIng(a)===normIng((i.name||"").split(/[,(]/)[0]))&&!/^(salt|pepper|black pepper|kosher salt|sea salt|water)\b/i.test(i.name||"")&&!/to taste|garnish|for serving/i.test(`${i.amount||""} ${i.name||""}`));
+                if(((names.length&&stepsSyncedFor!==key)||addedUnused.length)&&stepRewrite!=="error"&&(edited.steps||[]).length){
                   setStepRewrite("loading");
                   try{
                     const res=await rewriteStepsWithout(edited,names,removedIngs(edited,recipe).map((r:any)=>(r.name||"").split(/[,(]/)[0].trim()).filter(Boolean));
