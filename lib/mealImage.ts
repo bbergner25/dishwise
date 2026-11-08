@@ -3,6 +3,7 @@
 // Redis keeps the photo URL per dish, a short lock while one is being made, and the month's spend.
 import { Redis } from "@upstash/redis";
 import { put } from "@vercel/blob";
+import { coreTitle } from "./dupes";
 import sharp from "sharp";
 
 export const redis = new Redis({
@@ -21,6 +22,7 @@ export function normalizeDish(title: string): string {
   return (title || "").toLowerCase().trim().replace(/\s+/g, " ");
 }
 export const photoKey = (title: string) => `dish-photo:v1:${normalizeDish(title)}`;
+const coreKey = (core: string) => `dish-photo-core:v1:${core}`;
 const lockKey = (title: string) => `dish-photo-lock:v1:${normalizeDish(title)}`;
 export const spendKey = () => `dish-photo-spend:${new Date().toISOString().slice(0, 7)}`;
 
@@ -160,6 +162,12 @@ export async function ensurePhoto(recipe: any, opts: { force?: boolean; skipBudg
     const existing = await redis.get<DishPhoto>(photoKey(title));
     if (existing?.url) return { url: existing.url, status: "exists" };
   }
+  // the same dish under another name ("Tater Tot Hotdish (No Cream of Mushroom Soup)") shares its photo
+  if (!opts.force && !opts.key) {
+    const core = coreTitle(title);
+    const twin = (await redis.get<DishPhoto>(coreKey(core))) || (await redis.get<DishPhoto>(photoKey(core)));
+    if (twin?.url) { await redis.set(photoKey(title), twin); return { url: twin.url, status: "reused" }; }
+  }
   if (!opts.skipBudget && (await spentCents()) >= MONTHLY_BUDGET_CENTS) return { status: "over-budget" };
   const got = await redis.set(lockKey(title), "1", { nx: true, ex: 90 });
   if (!got && !opts.force) return { status: "in-progress" };
@@ -168,7 +176,9 @@ export async function ensurePhoto(recipe: any, opts: { force?: boolean; skipBudg
     const png = await callGemini(prompt, opts.model || IMAGE_MODEL);
     await addSpend(COST_TENTHS);
     const url = await storePhoto(title, png);
-    await redis.set(photoKey(title), { url, model: opts.model || IMAGE_MODEL, at: new Date().toISOString(), prompt } satisfies DishPhoto);
+    const entry = { url, model: opts.model || IMAGE_MODEL, at: new Date().toISOString(), prompt } satisfies DishPhoto;
+    await redis.set(photoKey(title), entry);
+    if (!opts.key) await redis.set(coreKey(coreTitle(title)), entry, { nx: true }); // first photo of a dish serves its variations
     return { url, status: "created", prompt };
   } catch (e: any) {
     console.error("[dish-photo]", title, e?.message || e);

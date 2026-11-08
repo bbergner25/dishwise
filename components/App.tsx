@@ -3239,7 +3239,14 @@ ${tiktok.text}`}]);
     try{
       const q=recipe._dish||recipe.title||"";
       const parsed=await callAPI([{role:"user",content:buildRemixPrompt(q,diets,seasonal,location,remixChips)}]);
-      const r={...parsed,id:Date.now(),_dish:q,_ts:Date.now(),...(recipe._adapt?{_adapt:recipe._adapt,_adapted:true}:{})};
+      // a remix keeps the original's photo unless it would look different (checked just below)
+      const parent=recipe;
+      const r:any={...parsed,id:Date.now(),_dish:q,_ts:Date.now(),_ownPhoto:photoName(parent),...(parent._adapt?{_adapt:parent._adapt,_adapted:true}:{})};
+      editChangesLook(parent,r).then(looksNew=>{
+        if(!looksNew)return;
+        const untag=(x:any)=>{if(!x||x.id!==r.id)return x;const {_ownPhoto,...rest}=x;return rest;};
+        setRecipe((x:any)=>untag(x));setSaved((l:any[])=>l.map(untag));setHistory((h:any[])=>h.map(untag));
+      });
       setRecipe(r);setServings(null);
       setHistory((h:any[])=>[r,...h.filter((x:any)=>x.id!==r.id)].slice(0,30));
       setRemixChips([]);
