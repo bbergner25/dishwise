@@ -1418,16 +1418,17 @@ const photoName=(r:any)=>r?._ownPhoto?String(r._ownPhoto):(r?.title||"");
 const ingNames=(r:any)=>new Set((r?.ingredient_groups||[]).flatMap((g:any)=>(g.items||[]).map((i:any)=>String(i.name||"").toLowerCase().split(/[,(]/)[0].trim())).filter(Boolean));
 // would this edit change what the finished dish looks like in a photo?
 async function editChangesLook(before:any,after:any):Promise<boolean>{
-  const norm=(t:any)=>String(t||"").toLowerCase().trim().replace(/\s+/g," ");
-  if(norm(before?.title)!==norm(after?.title))return true;
+  // a new name alone never changes how the dish looks, so renames keep their photo
   const a=ingNames(before),b=ingNames(after);
-  const removed=Array.from(a).filter(x=>!b.has(x)),added=Array.from(b).filter(x=>!a.has(x));
-  if(!removed.length&&!added.length)return false;   // only amounts, notes or steps changed
+  // sauces, sugar, starch, oils, vinegars, spices, broth: mixed in, invisible in a photo
+  const visible=(n:string)=>{const ai=aisleOf(n);return ai!=="Pantry"&&ai!=="Spices & baking";};
+  const removed=(Array.from(a) as string[]).filter(x=>!b.has(x)&&visible(x)),added=(Array.from(b) as string[]).filter(x=>!a.has(x)&&visible(x));
+  if(!removed.length&&!added.length)return false;   // only amounts, notes, steps or mixed-in ingredients changed
   try{
     const j=await callAPI([{role:"user",content:`A recipe for "${after.title}" was edited.
 Ingredients removed: ${removed.join("; ")||"none"}
 Ingredients added: ${added.join("; ")||"none"}
-Would a photo of the finished dish look noticeably different? Renaming the same ingredient (e.g. "hamburger" to "ground beef"), brand changes, and seasoning or spice tweaks do NOT count. Swapping a main ingredient (e.g. chicken for tofu, rice for noodles) or adding/removing something visible DOES count.
+Would a photo of the finished dish look noticeably different? Renaming the same ingredient (e.g. "hamburger" to "ground beef"), brand changes, seasoning or spice tweaks, and anything mixed into a sauce or marinade (sugar, honey, starch, garlic, ginger, vinegar, oils) do NOT count. When unsure, answer false. Swapping a main ingredient (e.g. chicken for tofu, rice for noodles) or adding/removing something visible DOES count.
 Reply with ONLY valid JSON: {"looks_different":true or false}`}]);
     return j?.looks_different===true;
   }catch{return false;}
@@ -3875,6 +3876,14 @@ ${tiktok.text}`}]);
                         <>
                           <button role="menuitem" className="rx-menu-item" onClick={()=>{setShowRecipeMenu(false);setTimeout(()=>window.print(),60);}}>{Ic.printer(17)} Print</button>
                           <button role="menuitem" className="rx-menu-item" onClick={()=>{setShowRecipeMenu(false);photoInputRef.current?.click();}}>{Ic.camera(17)} Add a photo</button>
+                          {activePane===0&&originOf(recipe)&&recipe._ownPhoto&&(
+                            <button role="menuitem" className="rx-menu-item" onClick={()=>{
+                              setShowRecipeMenu(false);
+                              const o=originOf(recipe)!;const tag=(r:any)=>r&&r.id===recipe.id?{...r,_ownPhoto:o.title||o.q}:r;
+                              setRecipe((r:any)=>tag(r));setSaved((l:any[])=>l.map(tag));
+                              setPlan((p:any)=>{let ch=false;const m={...p};for(const k in m){if(m[k]?.id===recipe.id){m[k]=tag(m[k]);ch=true;}}return ch?m:p;});
+                            }}>{Ic.camera(17)} Use the original's photo</button>
+                          )}
                           <button role="menuitem" className="rx-menu-item" onClick={()=>{setShowRecipeMenu(false);setEditRecipe(JSON.parse(JSON.stringify(recipe)));setStepRewrite("idle");setStepsSyncedFor("");setShowEditPanel(true);}}>
                             <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                             Edit recipe
@@ -6219,7 +6228,9 @@ ${tiktok.text}`}]);
                 }
                 const fromLibrary=!recipe._scanned&&!recipe._imported&&!recipe._author&&!recipe._adapt;
                 const origin=edited._origin||recipe._origin||(fromLibrary&&!recipe._edited&&(recipe._dish||recipe.title)?{q:recipe._dish||recipe.title,title:recipe.title}:undefined);
-                const updated={...edited,_edited:true,grocery_items:syncGroceries(recipe,edited),...(origin?{_origin:origin}:{})};
+                // renamed: keep showing the same photo
+                const keepPhoto=!edited._ownPhoto&&String(edited.title||"").trim().toLowerCase()!==String(recipe.title||"").trim().toLowerCase()?{_ownPhoto:photoName(recipe)}:{};
+                const updated={...edited,_edited:true,grocery_items:syncGroceries(recipe,edited),...(origin?{_origin:origin}:{}),...keepPhoto};
                 // ingredients or steps changed: the step-by-step ingredient list gets redone next time cook mode opens
                 if(JSON.stringify(recipe.ingredient_groups)!==JSON.stringify(edited.ingredient_groups)||JSON.stringify(recipe.steps)!==JSON.stringify(edited.steps))delete (updated as any).step_ingredients;
                 // in the background: if the edit changes how the dish looks, give this recipe its own photo
