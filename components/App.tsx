@@ -754,6 +754,7 @@ const CSS = `
   .cook-close{width:44px;height:44px;border:none;background:#F5EFE4;border-radius:22px;display:flex;align-items:center;justify-content:center;color:#151210;cursor:pointer;flex-shrink:0;}
   .cook-title{flex:1;min-width:0;font-family:'Fraunces',serif;font-weight:600;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;}
   .rx-credit{display:inline-flex;align-items:center;gap:8px;margin:8px 0 2px;padding:5px 12px 5px 5px;border:1px solid #E3DCD0;border-radius:18px;background:#fff;font-family:'Figtree',sans-serif;font-size:14px;color:#4F4744;cursor:pointer;text-align:left;max-width:100%;}
+  .rx-credit-av.rx-credit-ec{background:#1A1F2E;color:#F4A021;font-family:'Fraunces',serif;font-style:italic;}
   .rx-credit u{color:#151210;text-underline-offset:2px;}
   .rx-credit-av{width:24px;height:24px;border-radius:12px;background:#C2410C;color:#FDFAF5;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
   .rx-credit:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
@@ -2761,6 +2762,22 @@ export default function App({onReady}:{onReady?:()=>void}={}){
   };
   const closePairedSide=()=>{setPairedSides([]);setActivePane(0);setReturnDayKey(null);};
 
+  // your edit of a Community / Every Chef recipe: where it came from (older edits fall back to the original search)
+  const originOf=(r:any):{q:string;title?:string;off?:boolean}|null=>{
+    if(!r?._edited||r._scanned||r._imported||r._author||r._adapt)return null;
+    const o=r._origin||(r._dish?{q:r._dish,title:""}:null);
+    return o&&!o.off?o:null;
+  };
+  const openLibraryOriginal=async(o:{q:string;title?:string})=>{
+    try{
+      const res=await fetch(`/api/cache?q=${encodeURIComponent(o.title||o.q)}`);let d=await res.json();
+      if(!d?.found&&o.title){const r2=await fetch(`/api/cache?q=${encodeURIComponent(o.q)}`);d=await r2.json();}
+      if(!d?.found||!d.recipe){alert("The original isn't in the Community anymore.");return;}
+      const r={...d.recipe,id:Date.now(),_dish:o.q,_ts:Date.now(),_fromCache:true};
+      setReturnTab(null);setPairedSides([]);setActivePane(0);setReturnDayKey(null);
+      setRecipe(r);setServings(null);setStatus("done");setTab("search");window.scrollTo({top:0});
+    }catch{}
+  };
   // "Adapted from … by Billy": opens the original, in its latest version
   const openOriginal=async(a:{slug:string})=>{
     try{
@@ -4095,8 +4112,13 @@ ${tiktok.text}`}]);
           </div>
         ):photo&&<img src={photo} className="rx-photo" alt={recipe.title}/>}
         <header className={`rx-head${photosOn?" rx-head-over":""}`}>
-          <div className="rx-eyebrow">{recipe._adapt&&!recipe._adapt.off&&!recipe._author?(recipe._edited||recipe._adapted?"Your version":"Shared recipe"):recipe._author?`From @${recipe._author} on TikTok`:recipe._scanned?"Scanned recipe":recipe._imported?"Imported recipe":recipe._fromCache?"Community recipe":"Every Chef original"}</div>
+          <div className="rx-eyebrow">{originOf(recipe)?"Your version":recipe._adapt&&!recipe._adapt.off&&!recipe._author?(recipe._edited||recipe._adapted?"Your version":"Shared recipe"):recipe._author?`From @${recipe._author} on TikTok`:recipe._scanned?"Scanned recipe":recipe._imported?"Imported recipe":recipe._fromCache?"Community recipe":"Every Chef original"}</div>
           <h1 className="rx-title">{recipe.title}</h1>
+          {(()=>{const o=originOf(recipe);if(!o)return null;return(
+            <button className="rx-credit" onClick={()=>openLibraryOriginal(o)} aria-label="Open the original recipe">
+              <span className="rx-credit-av rx-credit-ec" aria-hidden="true">e</span>
+              <span>Adapted from {o.title?<u>{o.title}</u>:<u>the original</u>} in the Community</span>
+            </button>);})()}
           {recipe._adapt?.slug&&!recipe._adapt.off&&(
             <button className="rx-credit" onClick={()=>openOriginal(recipe._adapt)} aria-label={`Open the original${recipe._adapt.by?` by ${recipe._adapt.by}`:""}`}>
               {recipe._adapt.by&&<span className="rx-credit-av" aria-hidden="true">{recipe._adapt.by[0].toUpperCase()}</span>}
@@ -6054,6 +6076,18 @@ ${tiktok.text}`}]);
                 value={editRecipe.title||""}
                 onChange={e=>setEditRecipe((r:any)=>({...r,title:e.target.value}))}
               />
+              {!editRecipe._adapt&&(originOf(editRecipe)||editRecipe._origin?.off)&&(()=>{const o=editRecipe._origin||{q:editRecipe._dish,title:""};return(
+                <>
+                  <div className="edit-section-label">Credit</div>
+                  {o.off?(
+                    <p className="edit-credit-note">Credit removed. <button className="ck-textlink" style={{display:"inline",padding:0}} onClick={()=>setEditRecipe((r:any)=>({...r,_origin:{...o,off:false}}))}>Put it back</button></p>
+                  ):(
+                    <div className="edit-credit">
+                      <span>Adapted from <b>{o.title||"the original"}</b> in the Community</span>
+                      <button className="edit-credit-remove" onClick={()=>setEditRecipe((r:any)=>({...r,_origin:{...o,off:true}}))}>Remove</button>
+                    </div>
+                  )}
+                </>);})()}
               {editRecipe._adapt?.slug&&(
                 <>
                   <div className="edit-section-label">Credit</div>
@@ -6183,7 +6217,9 @@ ${tiktok.text}`}]);
                     setStepRewrite("idle");
                   }catch{setStepRewrite("error");return;}
                 }
-                const updated={...edited,_edited:true,grocery_items:syncGroceries(recipe,edited)};
+                const fromLibrary=!recipe._scanned&&!recipe._imported&&!recipe._author&&!recipe._adapt;
+                const origin=edited._origin||recipe._origin||(fromLibrary&&!recipe._edited&&(recipe._dish||recipe.title)?{q:recipe._dish||recipe.title,title:recipe.title}:undefined);
+                const updated={...edited,_edited:true,grocery_items:syncGroceries(recipe,edited),...(origin?{_origin:origin}:{})};
                 // ingredients or steps changed: the step-by-step ingredient list gets redone next time cook mode opens
                 if(JSON.stringify(recipe.ingredient_groups)!==JSON.stringify(edited.ingredient_groups)||JSON.stringify(recipe.steps)!==JSON.stringify(edited.steps))delete (updated as any).step_ingredients;
                 // in the background: if the edit changes how the dish looks, give this recipe its own photo
