@@ -821,6 +821,17 @@ const CSS = `
   .ck-search-scan{width:44px;height:44px;border:none;border-radius:12px;background:#F5EFE4;color:#151210;display:flex;align-items:center;justify-content:center;cursor:pointer;}
   .ck-search-go{height:44px;padding:0 18px;border:none;border-radius:12px;background:#F4A021;color:#151210;font-family:'Figtree',sans-serif;font-size:15px;font-weight:600;cursor:pointer;}
   .ck-chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .ck-filters{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;}
+  .ck-filters .ck-chip-season{padding:0 18px;}
+  .ck-filter{justify-content:center;min-width:0;height:44px;border-radius:22px;}
+  .ck-filter-text{overflow:hidden;text-overflow:ellipsis;min-width:0;}
+  .diet-sub{margin:-4px 0 14px;font-size:15px;line-height:1.45;color:#4F4744;}
+  .diet-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .diet-opt{height:48px;border-radius:14px;border:1px solid #E3DCD0;background:#fff;color:#151210;font-family:'Figtree',sans-serif;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;}
+  .diet-opt.on{background:#1A1F2E;border-color:#1A1F2E;color:#FDFAF5;font-weight:600;}
+  .diet-opt:focus-visible,.ck-filter:focus-visible{outline:3px solid #F4A021;outline-offset:2px;}
+  .diet-actions{display:flex;align-items:center;gap:14px;margin-top:16px;}
+  .diet-done{flex:1;}
   .ck-chip{height:38px;padding:0 15px;border-radius:19px;border:1px solid #E3DCD0;background:#fff;color:#151210;font-family:'Figtree',sans-serif;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex-shrink:0;}
   .ck-chip:hover{border-color:#B8AFA3;}
   .ck-chip.on{border-color:#1A1F2E;background:#F5EFE4;color:#1A1F2E;font-weight:500;}
@@ -1876,6 +1887,11 @@ export default function App({onReady}:{onReady?:()=>void}={}){
   const [trendingDishes,setTrendingDishes]     = useState<string[]>([]);
   const [query,setQuery]         = useState("");
   const [diets,setDiets]         = useState<string[]>([]);
+  const [showDietSheet,setShowDietSheet] = useState(false);
+  // diet is a standing choice: remembered on this device
+  useEffect(()=>{try{const d=JSON.parse(localStorage.getItem("dw-diets")||"[]");if(Array.isArray(d))setDiets(d.filter((x:any)=>DIETS.includes(x)));}catch{}},[]);
+  const dietsLoaded=useRef(false);
+  useEffect(()=>{if(!dietsLoaded.current){dietsLoaded.current=true;return;}try{localStorage.setItem("dw-diets",JSON.stringify(diets));}catch{}},[diets]);
   const [seasonal,setSeasonal]   = useState(false);
   const [location,setLocation]   = useState("");
   const [detecting,setDetecting] = useState(false);
@@ -3455,11 +3471,12 @@ ${tiktok.text}`}]);
                 );
               })()}
 
-              <div className="ck-chips" role="group" aria-label="Dietary filters">
-                {DIETS.map(d=>(
-                  <button key={d} aria-pressed={diets.includes(d)} className={`ck-chip${diets.includes(d)?" on":""}`} onClick={()=>toggleDiet(d)}>{d}</button>
-                ))}
-                <button aria-pressed={seasonal} className={`ck-chip ck-chip-season${seasonal?" on":""}`} onClick={()=>setSeasonal(v=>!v)}>
+              <div className="ck-filters">
+                <button className={`ck-chip ck-filter${diets.length?" on-dark":""}`} aria-haspopup="dialog" onClick={()=>setShowDietSheet(true)}>
+                  <span className="ck-filter-text">{diets.length===0?"Diet: Any":diets.length<=2?diets.join(" + "):`${diets.length} diets`}</span>
+                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <button aria-pressed={seasonal} className={`ck-chip ck-filter ck-chip-season${seasonal?" on":""}`} onClick={()=>setSeasonal(v=>!v)}>
                   <span style={{display:"flex"}}>{Ic.leaf(13)}</span> In season
                 </button>
               </div>
@@ -5609,6 +5626,27 @@ ${tiktok.text}`}]);
           </div>
         );
       })()}
+      {showDietSheet&&(
+        <div className="share-overlay" onClick={()=>setShowDietSheet(false)}>
+          <div className="share-sheet" role="dialog" aria-modal="true" aria-labelledby="diet-title" onClick={e=>e.stopPropagation()}>
+            <div className="ui-handle" aria-hidden="true"/>
+            <button className="ui-close" aria-label="Close" onClick={()=>setShowDietSheet(false)}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+            <h2 id="diet-title" className="share-sheet-title">How do you eat?</h2>
+            <p className="diet-sub">Every search, plan and suggestion follows this. Pick as many as you like.</p>
+            <div className="diet-grid" role="group" aria-label="Diets">
+              {DIETS.map(d=>(
+                <button key={d} aria-pressed={diets.includes(d)} className={`diet-opt${diets.includes(d)?" on":""}`} onClick={()=>toggleDiet(d)}>
+                  {diets.includes(d)&&<svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 7"/></svg>}{d}
+                </button>
+              ))}
+            </div>
+            <div className="diet-actions">
+              {diets.length>0&&<button className="ck-textlink" onClick={()=>setDiets([])}>Clear</button>}
+              <button className="ui-btn-primary diet-done" onClick={()=>setShowDietSheet(false)}>Done</button>
+            </div>
+          </div>
+        </div>
+      )}
       {showHousehold&&(()=>{
         const close=()=>{setShowHousehold(false);setHhInvite(null);setHhMsg("");setHhConfirm(null);};
         const others=household?household.members.filter(m=>m.id!==household.me):[];
