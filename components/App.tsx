@@ -2629,12 +2629,14 @@ export default function App({onReady}:{onReady?:()=>void}={}){
     fetch("/api/recipe-image",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({recipe:r,key:name})})
       .then(x=>x.json()).then(d=>{if(d.url)setDishPhotos(p=>({...p,[k]:d.url}));}).catch(()=>{});
   };
+  // only for recipes someone keeps: saved, planned or cooked. A search they glance at and leave costs nothing.
+  const keeps=(r:any)=>!!r&&(isSaved(r)||Object.values(plan).some((p:any)=>p&&(r.id!=null?p.id===r.id:p.title===r.title)));
   useEffect(()=>{
     if(status!=="done"||!recipe)return;
-    ensureDishPhoto(recipe);
-    pairedSides.forEach(p=>p.recipe&&ensureDishPhoto(p.recipe));
+    if(keeps(recipe))ensureDishPhoto(recipe);
+    pairedSides.forEach(p=>p.recipe&&keeps(p.recipe)&&ensureDishPhoto(p.recipe));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[status,recipe?.title,recipe?._ownPhoto,pairedSides.length,photosServerOn,dishPhotos]);
+  },[status,recipe?.title,recipe?._ownPhoto,pairedSides.length,photosServerOn,dishPhotos,saved.length,plan]);
   // older recipes get their realistic re-estimated times; new ones already carry total_time
   const withTimes=(r:any)=>{if(!r||r.total_time||isOwnRecipe(r))return r;const f=dishTimes[dishKey(r.title)];return f?{...r,...f}:r;};
   const tt=(r:any)=>totalShort(withTimes(r));
@@ -2829,6 +2831,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
 
   /* cooking mode */
   const openCookMode=(r:any)=>{
+    ensureDishPhoto(r); // cooking it counts as keeping it
     setCookRecipe(r);setCookStep(0);setCookTimers({});setShowRecipeMenu(false);if(readAloud){unlockAudio();say(stepSpeech(r,0));ttsUrl(stepSpeech(r,1));}
     // older recipes: ask once which ingredients go in at each step, then keep the answer with the recipe
     const steps=r?.steps||[];

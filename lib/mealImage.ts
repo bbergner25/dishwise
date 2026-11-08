@@ -34,6 +34,13 @@ export async function getPhotos(titles: string[]): Promise<Record<string, string
   const vals = await redis.mget<(DishPhoto | null)[]>(...uniq.map((t) => `dish-photo:v1:${t}`));
   const out: Record<string, string> = {};
   uniq.forEach((t, i) => { const v = vals[i]; if (v?.url) out[t] = v.url; });
+  // no photo under this exact name: a variation of a dish we have shows that dish's photo (no new image made)
+  const missing = uniq.filter((t) => !out[t] && !t.includes(" #"));
+  if (missing.length) {
+    const cores = missing.map((t) => coreTitle(t));
+    const twins = await redis.mget<(DishPhoto | null)[]>(...cores.flatMap((c) => [coreKey(c), photoKey(c)]));
+    missing.forEach((t, i) => { const v = twins[i * 2] || twins[i * 2 + 1]; if (v?.url) out[t] = v.url; });
+  }
   return out;
 }
 
