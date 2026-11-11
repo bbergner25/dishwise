@@ -1,4 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Redis } from "@upstash/redis";
+import { overLimit, clientIp } from "../../../lib/guard";
+import { safeFetch, readText } from "../../../lib/safeFetch";
+
+const redis = new Redis({ url: process.env.KV_REST_API_URL!, token: process.env.KV_REST_API_TOKEN! });
 
 const PAYWALLED = ["nytimes.com", "wsj.com", "washingtonpost.com", "ft.com", "economist.com"];
 
@@ -102,12 +107,11 @@ function captionFromHtml(html: string): string {
 
 async function getText(url: string): Promise<{ finalUrl: string; html: string } | null> {
   try {
-    const r = await fetch(url, {
-      redirect: "follow",
+    const r = await safeFetch(url, {
       headers: { "User-Agent": BROWSER_UA, "Accept": "text/html,application/xhtml+xml", "Accept-Language": "en-US,en;q=0.9" },
       signal: AbortSignal.timeout(10000),
     });
-    return { finalUrl: r.url, html: await r.text() };
+    return { finalUrl: r.url, html: await readText(r) };
   } catch { return null; }
 }
 
@@ -198,8 +202,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  if (!url || !url.startsWith("http")) {
+  if (!url || typeof url !== "string" || url.length > 2000 || !/^https?:\/\//i.test(url)) {
     return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
+  }
+  const ip = clientIp(req);
+  if (await overLimit(redis, `fetchurl:${ip}`, 30, 600) || await overLimit(redis, `fetchurlday:${ip}`, 150, 86400)) {
+    return NextResponse.json({ error: "That's a lot of links in a short time. Try again in a few minutes." }, { status: 429 });
   }
 
   try {
@@ -219,7 +227,7 @@ export async function POST(req: NextRequest) {
   const PAYWALL_MSG = "This site is behind a paywall, so we couldn't read the recipe. Take screenshots of the ingredients and steps and use Photograph a recipe card instead (up to 4 at once).";
 
   try {
-    const res = await fetch(url, {
+    const res = await safeFetch(url, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -236,7 +244,7 @@ export async function POST(req: NextRequest) {
       }, { status: 422 });
     }
 
-    const html = await res.text();
+    const html = await readText(res);
 
     // Try JSON-LD first — works on AllRecipes, Food Network, Epicurious, etc.
     const jsonLdText = extractJsonLd(html);
@@ -255,6 +263,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ text: text.slice(0, 15000) });
   } catch (e: any) {
+    if (/^BLOCKED/.test(String(e?.message))) return NextResponse.json({ error: "That link can't be opened. Paste the link to a recipe page on a public website." }, { status: 400 });
     const msg = e?.name === "TimeoutError"
       ? "The site took too long to respond. Try again or a different URL."
       : paywalled ? PAYWALL_MSG : "Could not reach this site. Try Serious Eats, Simply Recipes, or Food52.";

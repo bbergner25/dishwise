@@ -6,10 +6,13 @@ import { Redis } from "@upstash/redis";
 import { createHash } from "crypto";
 import { put } from "@vercel/blob";
 import { Mp3Encoder } from "@breezystack/lamejs";
-import { overLimit, clientIp, isRude } from "../../../lib/guard";
+import { overLimit, overCap, isRude } from "../../../lib/guard";
+import { caller } from "../../../lib/aiGate";
 
 export const maxDuration = 60;
 const redis = new Redis({ url: process.env.KV_REST_API_URL!, token: process.env.KV_REST_API_TOKEN! });
+// new sentences voiced per day, everyone together (each is paid for once, then shared)
+const DAILY_CAP = Number(process.env.SPEAK_DAILY_CAP || 2000);
 const VOICE = process.env.TTS_VOICE || "Sulafat"; // warm
 const MODELS = [process.env.GEMINI_TTS_MODEL, "gemini-2.5-flash-preview-tts", "gemini-2.5-flash-tts"].filter(Boolean) as string[];
 
@@ -57,7 +60,10 @@ export async function POST(req: NextRequest) {
     const k = `tts:v1:${id}`;
     const hit = await redis.get<string>(k);
     if (hit) return NextResponse.json({ url: hit });
-    if (await overLimit(redis, `speak:${clientIp(req)}`, 80, 600)) return NextResponse.json({ error: "Too many" }, { status: 429 });
+    const { who, signedIn } = await caller(req);
+    if (await overLimit(redis, `speak:${who}`, signedIn ? 80 : 30, 600) ||
+        await overLimit(redis, `speakday:${who}`, signedIn ? 400 : 60, 86400) ||
+        await overCap(redis, "speakday:all", DAILY_CAP, 86400)) return NextResponse.json({ error: "Too many" }, { status: 429 });
     const { pcm, rate } = await speak(text);
     const mp3 = toMp3(pcm, rate);
     const blob = await put(`speech/${id}.mp3`, mp3, { access: "public", contentType: "audio/mpeg", addRandomSuffix: false, allowOverwrite: true, cacheControlMaxAge: 60 * 60 * 24 * 365 });

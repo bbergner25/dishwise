@@ -4,7 +4,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
 import { createHash } from "crypto";
-import { overLimit, clientIp } from "../../../lib/guard";
+import { overLimit, overCap } from "../../../lib/guard";
+import { caller, DAILY_CAP } from "../../../lib/aiGate";
 
 export const maxDuration = 60;
 const redis = new Redis({ url: process.env.KV_REST_API_URL!, token: process.env.KV_REST_API_TOKEN! });
@@ -60,7 +61,11 @@ export async function POST(req: NextRequest) {
     const hit = await redis.get<any>(key);
     if (hit) return NextResponse.json({ n: hit });
 
-    if (await overLimit(redis, `nutrition:${clientIp(req)}`, 40, 600)) return NextResponse.json({ error: "Too many tries" }, { status: 429 });
+    // new estimates only: per person, then the same daily ceiling as every other Claude call
+    const { who, signedIn } = await caller(req);
+    if (await overLimit(redis, `nutrition:${who}`, signedIn ? 40 : 10, 600) ||
+        await overLimit(redis, `nutritionday:${who}`, signedIn ? 150 : 25, 86400) ||
+        await overCap(redis, "aiday:all", DAILY_CAP, 86400)) return NextResponse.json({ error: "Too many tries" }, { status: 429 });
     if (!process.env.ANTHROPIC_API_KEY) return NextResponse.json({ error: "Not configured" }, { status: 500 });
 
     const prompt = `Estimate the nutrition PER SERVING for this recipe, using typical values for each ingredient at the amounts given.

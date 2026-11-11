@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
 import crypto from "crypto";
 import { memberInfo } from "../../../lib/household";
+import { isRude, overLimit } from "../../../lib/guard";
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL!,
@@ -38,11 +39,18 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    // A share link is a public page on everychef.app, so it takes an account to make one.
+    let userId: string | null = null;
+    try { userId = (await auth()).userId; } catch {}
+    if (!userId) return NextResponse.json({ error: "Sign in to share a recipe." }, { status: 401 });
+    if (await overLimit(redis, `share:${userId}`, 30, 3600)) return NextResponse.json({ error: "That's a lot of links in a short time. Try again later." }, { status: 429 });
+
     const body = await req.json();
     let recipe = body?.recipe;
-    if (!recipe?.title) {
+    if (!recipe?.title || typeof recipe.title !== "string" || recipe.title.length > 160) {
       return NextResponse.json({ error: "Missing recipe" }, { status: 400 });
     }
+    if (isRude(recipe.title) || isRude(recipe.tagline)) return NextResponse.json({ error: "This recipe can't be shared." }, { status: 400 });
 
     // Strip internal app flags and any embedded binary/photo data that
     // would bloat the stored value or cause serialization issues
@@ -56,7 +64,7 @@ export async function POST(req: NextRequest) {
     } = recipe;
     // the sharer's first name, so people who make their own version can credit them (they can turn this off)
     if (body?.showName !== false) {
-      try { const { userId } = await auth(); if (userId) { const m = await memberInfo(userId); if (m.name && m.name !== "Someone") (clean as any)._byName = m.name.slice(0, 40); } } catch {}
+      try { const m = await memberInfo(userId); if (m.name && m.name !== "Someone") (clean as any)._byName = m.name.slice(0, 40); } catch {}
     }
     // keep the credit for imported recipes: where it came from stays on the shared page
     if (typeof clean._sourceUrl !== "string" || !/^https?:\/\//.test(clean._sourceUrl)) delete (clean as any)._sourceUrl;
@@ -90,7 +98,7 @@ export async function POST(req: NextRequest) {
     await redis.set(`recipe-share:${shareId}`, clean);
     await redis.set(`recipe-share-token:${shareId}`, newToken);
     // remember who made it, so deleting an account also removes their links
-    try { const { userId } = await auth(); if (userId) await redis.sadd(`user-shares:${userId}`, shareId); } catch {}
+    try { await redis.sadd(`user-shares:${userId}`, shareId); } catch {}
 
     return NextResponse.json({ shareId, url: `${appUrl}/r/${shareId}`, token: newToken });
   } catch (err) {

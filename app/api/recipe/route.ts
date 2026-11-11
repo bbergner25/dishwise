@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { Redis } from "@upstash/redis";
-import { overLimit, clientIp, RECIPE_SYSTEM as SYSTEM } from "../../../lib/guard";
+import { RECIPE_SYSTEM as SYSTEM } from "../../../lib/guard";
+import { aiGate } from "../../../lib/aiGate";
 
 // Generating a full recipe takes ~15–40s. Without this, Vercel cuts the function off
 // at its short default and the request comes back as a 504 timeout.
@@ -10,7 +10,7 @@ export const maxDuration = 60;
 const MODEL = "claude-sonnet-4-6";
 const ALLOWED_MODELS = new Set([MODEL, "claude-haiku-5-5"]); // Haiku for small helper jobs
 const MAX_TOKENS = 2048;
-const DAILY_CAP = Number(process.env.ANTHROPIC_DAILY_CALL_CAP || 5000); // all users together
+const MAX_TEXT = 30_000; // the longest thing the app sends is an imported page, about 13,000 characters
 // Keeps this connection to Every Chef's own job, so it's useless as a free general-purpose AI.
 
 
@@ -42,22 +42,15 @@ export async function POST(req: NextRequest) {
   const messages = Array.isArray(body?.messages) ? body.messages : null;
   if (!messages || !messages.length || messages.length > 4 ||
       messages.some((m: any) => !["user", "assistant"].includes(m?.role)) ||
-      messages.reduce((n: number, m: any) => n + textLength(m.content), 0) > 120_000 ||
+      messages.reduce((n: number, m: any) => n + textLength(m.content), 0) > MAX_TEXT ||
       messages.reduce((n: number, m: any) => n + (Array.isArray(m.content) ? m.content.filter((b: any) => b?.type === "image").length : 0), 0) > 4) {
     return NextResponse.json({ error: "Request not allowed" }, { status: 400 });
   }
 
   // Rate limits: per person (signed in) or per network (signed out), plus a daily ceiling for everyone.
-  let who = `ip:${clientIp(req)}`;
-  try { const { userId } = await auth(); if (userId) who = `u:${userId}`; } catch {}
-  const signedIn = who.startsWith("u:");
-  if (await overLimit(redis, `ai10m:${who}`, signedIn ? 60 : 30, 600) ||
-      await overLimit(redis, `aiday:${who}`, signedIn ? 400 : 120, 86400)) {
-    return NextResponse.json({ error: "RATE_LIMIT: too many new recipes in a short time" }, { status: 429 });
-  }
-  if (await overLimit(redis, "aiday:all", DAILY_CAP, 86400)) {
-    return NextResponse.json({ error: { message: "overloaded: daily limit reached" } }, { status: 529 });
-  }
+  const stop = await aiGate(req, redis);
+  if (stop === "person") return NextResponse.json({ error: "RATE_LIMIT: too many new recipes in a short time" }, { status: 429 });
+  if (stop === "all") return NextResponse.json({ error: { message: "overloaded: daily limit reached" } }, { status: 529 });
 
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {

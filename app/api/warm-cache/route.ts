@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
 import { DISH_TITLES } from "../../../lib/dishes";
 import { buildPrompt } from "../../../lib/prompts";
+import { adminAccess } from "../../../lib/admin";
 
 export const maxDuration = 60;
 
@@ -42,13 +43,12 @@ async function generateRecipe(req: NextRequest, dish: string): Promise<any> {
 }
 
 export async function GET(req: NextRequest) {
-  const secret = req.nextUrl.searchParams.get("secret");
-  if (!secret || secret !== process.env.WARM_SECRET) {
-    return NextResponse.json({ error: "Unauthorized — set ?secret=... to match WARM_SECRET in your Vercel env vars." }, { status: 401 });
+  if (!(await adminAccess(req.nextUrl.searchParams.get("secret"))).canAct) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const start = parseInt(req.nextUrl.searchParams.get("start") || "0", 10);
-  const count = parseInt(req.nextUrl.searchParams.get("count") || "10", 10);
+  const count = Math.min(Math.max(parseInt(req.nextUrl.searchParams.get("count") || "10", 10) || 10, 1), 20);
 
   const batch = DISH_TITLES.slice(start, start + count);
 

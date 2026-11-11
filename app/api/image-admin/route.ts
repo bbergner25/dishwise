@@ -1,4 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
+import { adminAccess } from "../../../lib/admin";
 // Private admin page for dish photos. Open in a browser:
 //   /api/image-admin?secret=WARM_SECRET                         → status + links
 //   /api/image-admin?secret=WARM_SECRET&action=test&dishes=Kung Pao Noodles|Cottage Pie|Fish Tacos
@@ -122,11 +123,14 @@ export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const cronOk = !!process.env.CRON_SECRET && req.headers.get("authorization") === `Bearer ${process.env.CRON_SECRET}`;
   if (cronOk) { const t0 = Date.now(); const photos = await pollAndContinue(); const left = 50000 - (Date.now() - t0); const times = left > 8000 ? await fixTimes(left - 8000) : null; return NextResponse.json({ photos, times }); } // daily Vercel cron keeps the backfill moving
-  if (!process.env.WARM_SECRET || sp.get("secret") !== process.env.WARM_SECRET) {
+  const admin = await adminAccess(sp.get("secret"));
+  if (!admin.ok) {
+    if (admin.bySignIn) return page("Admin", `<h1>Admin</h1><p>${admin.userId ? "This account isn't an admin." : "Sign in to Every Chef in this browser with your admin account, then open this page again."}</p><p><a href="/">Open Every Chef</a></p>`);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const secret = encodeURIComponent(sp.get("secret")!);
-  const action = sp.get("action") || "status";
+  const secret = encodeURIComponent(admin.key);
+  // Anything beyond the home page needs the key its links carry (an old or copied link just lands on the home page)
+  const action = admin.canAct ? sp.get("action") || "status" : "status";
 
   if (action === "test") {
     const titles = (sp.get("dishes") || "Kung Pao Noodles|Cottage Pie|Fish Tacos").split("|").map((s) => s.trim()).filter(Boolean).slice(0, 4);
@@ -702,7 +706,10 @@ Reply with ONLY valid JSON: {"dishes":["..."]}` }] }),
     <li><a href="?secret=${secret}&action=brands">Brand names in Community titles: check and clean up</a></li>
     <li><a href="?secret=${secret}&action=taste">Recipe taste test: Sonnet vs Haiku</a></li>
     <li><a href="?secret=${secret}&action=reports">Reported recipes${reportCount ? ` (${reportCount} waiting)` : ""}</a></li>
-    <li><a href="?secret=${secret}&action=links">Shared links: point an old link at the current one</a></li></ul>`)).body, {
+    <li><a href="?secret=${secret}&action=links">Shared links: point an old link at the current one</a></li>
+    <li><a href="/api/trending-agent?secret=${secret}">Refresh Trending now</a> (about 20¢)</li></ul>
+    ${admin.bySignIn ? `<p class="muted">Admin is tied to your sign-in. Links from this page work only for you and stop working within two days.</p>`
+      : `<p class="muted" style="padding:12px 14px;background:#FFF6E6;border:1px solid #F1D9A8;border-radius:12px"><strong>Safer admin:</strong> ${me ? `your account ID is <code>${esc(me)}</code>. Add it in Vercel as <code>ADMIN_USER_IDS</code> and redeploy.` : `sign in to Every Chef in this browser and reload this page to see your account ID, then add it in Vercel as <code>ADMIN_USER_IDS</code>.`} After that this page opens at /api/image-admin with no secret in the link, only while you're signed in.</p>`}`)).body, {
       headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", ...(running ? { Refresh: "60" } : {}) },
     });
 }

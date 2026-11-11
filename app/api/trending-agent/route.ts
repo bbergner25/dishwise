@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
 import { buildPrompt } from "../../../lib/prompts";
+import { adminAccess } from "../../../lib/admin";
 
 export const maxDuration = 60;
 
@@ -97,12 +98,11 @@ async function generateRecipe(req: NextRequest, dish: string): Promise<any> {
 // Also called automatically by Vercel cron on the 1st and 15th
 export async function GET(req: NextRequest) {
   // Accept either query param secret or Vercel cron Authorization header
-  const secret = req.nextUrl.searchParams.get("secret");
   const authHeader = req.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET || process.env.WARM_SECRET;
   const authorized =
-    (secret && secret === process.env.WARM_SECRET) ||
-    (authHeader && authHeader === `Bearer ${cronSecret}`);
+    (!!cronSecret && authHeader === `Bearer ${cronSecret}`) ||
+    (await adminAccess(req.nextUrl.searchParams.get("secret"))).canAct;
 
   if (!authorized) {
     // Vercel's scheduled run only sends a key when CRON_SECRET is set in the project's settings.

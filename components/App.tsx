@@ -1869,6 +1869,17 @@ async function callAPI(messages: any[], model:string="claude-sonnet-4-6"): Promi
   return out;
 }
 
+// A plain dish search: the server writes the recipe and files it in the Community itself.
+async function makeDish(dish:string,fresh=false): Promise<any>{
+  const res=await fetch("/api/dish",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({dish,fresh})});
+  const raw=await res.text();
+  if(!res.ok)throw new Error("HTTP "+res.status+": "+raw.slice(0,300));
+  let data:any;try{data=JSON.parse(raw);}catch{throw new Error("Not JSON: "+raw.slice(0,200));}
+  if(data.not_a_dish)throw new Error("NOT_A_DISH");
+  if(!data.recipe)throw new Error("Empty response");
+  return data.recipe;
+}
+
 /* ── MAIN APP ── */
 export default function App({onReady}:{onReady?:()=>void}={}){
   const {user,isLoaded}          = useUser();
@@ -2553,8 +2564,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
           parsed=cacheData.recipe;
           fromCache=true;
         }else{
-          parsed=await callAPI([{role:"user",content:buildPrompt(q,diets,seasonal,location)}]);
-          fetch("/api/cache",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({dish:q,recipe:parsed})}).catch(()=>{});
+          parsed=await makeDish(q,!!opts?.fresh);
         }
       }else{
         parsed=await callAPI([{role:"user",content:buildPrompt(q,diets,seasonal,location)}]);
@@ -2743,8 +2753,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
       if(cacheData.found&&cacheData.recipe){
         parsed=cacheData.recipe; fromCache=true;
       }else{
-        parsed=await callAPI([{role:"user",content:buildPrompt(sideTitle,[],false,"")}]);
-        fetch("/api/cache",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({dish:sideTitle,recipe:parsed})}).catch(()=>{});
+        parsed=await makeDish(sideTitle);
       }
       const r={...parsed,id:Date.now(),_dish:sideTitle,_ts:Date.now(),_fromCache:fromCache};
       setPairedSides(p=>p.map((x,i)=>i===newIdx?{...x,status:"done",recipe:r}:x));
@@ -2761,8 +2770,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
         let parsed:any; let fromCache=false;
         if(cacheData.found&&cacheData.recipe){parsed=cacheData.recipe; fromCache=true;}
         else{
-          parsed=await callAPI([{role:"user",content:buildPrompt(title,[],false,"")}]);
-          fetch("/api/cache",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({dish:title,recipe:parsed})}).catch(()=>{});
+          parsed=await makeDish(title);
         }
         const r={...parsed,id:Date.now(),_dish:title,_ts:Date.now(),_fromCache:fromCache};
         setPairedSides(p=>p.map((x,i)=>i===idx?{...x,status:"done",recipe:r}:x));
@@ -2816,6 +2824,8 @@ export default function App({onReady}:{onReady?:()=>void}={}){
     return await res.json();
   };
   const shareRecipe=async(r:any,opts?:{confirmedOwn?:boolean})=>{
+    // making a public link needs an account (imported recipes just pass along the original link)
+    if(!user&&!r?._imported){openSignIn();return;}
     setShareTarget(r);setShowShare(true);setShareUrl(null);
     // Recipes imported from a link are someone else's published work: share their original link instead.
     if(r?._imported){setShareMode(r._sourceUrl?"original":"private");setShareUrl(r._sourceUrl||null);setShareLoading(false);return;}
@@ -2893,8 +2903,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
       let parsed:any; let fromCache=false;
       if(cacheData.found&&cacheData.recipe){parsed=cacheData.recipe; fromCache=true;}
       else{
-        parsed=await callAPI([{role:"user",content:buildPrompt(sideTitle,[],false,"")}]);
-        fetch("/api/cache",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({dish:sideTitle,recipe:parsed})}).catch(()=>{});
+        parsed=await makeDish(sideTitle);
       }
       const r={...parsed,id:Date.now(),_dish:sideTitle,_ts:Date.now(),_fromCache:fromCache};
       setPlanSides(p=>({...p,[dayKey]:(p[dayKey]||[]).map(x=>x.title===sideTitle?{...x,status:"done",recipe:r}:x)}));
@@ -2910,8 +2919,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
         let parsed:any; let fromCache=false;
         if(cacheData.found&&cacheData.recipe){parsed=cacheData.recipe; fromCache=true;}
         else{
-          parsed=await callAPI([{role:"user",content:buildPrompt(title,[],false,"")}]);
-          fetch("/api/cache",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({dish:title,recipe:parsed})}).catch(()=>{});
+          parsed=await makeDish(title);
         }
         const r={...parsed,id:Date.now(),_dish:title,_ts:Date.now(),_fromCache:fromCache};
         setPlanSides(p=>({...p,[dayKey]:(p[dayKey]||[]).map(x=>x.title===title?{...x,status:"done",recipe:r}:x)}));

@@ -34,6 +34,19 @@ export async function overLimit(redis: any, key: string, max: number, windowSec:
   }
 }
 
+// The same count, for spending ceilings: when the counter can't be read, the answer is "over",
+// so a database hiccup can't switch the ceiling off.
+export async function overCap(redis: any, key: string, max: number, windowSec: number): Promise<boolean> {
+  try {
+    const k = `rl:${key}:${Math.floor(Date.now() / 1000 / windowSec)}`;
+    const n = await redis.incr(k);
+    if (n === 1) await redis.expire(k, windowSec + 5);
+    return n > max;
+  } catch {
+    return true;
+  }
+}
+
 export function clientIp(req: Request): string {
   const h = req.headers;
   return (h.get("x-forwarded-for") || "").split(",")[0].trim() || h.get("x-real-ip") || "unknown";
