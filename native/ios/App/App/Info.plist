@@ -66,6 +66,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Every Chef uses the camera to scan recipe cards and photograph what's in your fridge.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Every Chef uses your location once to find your city, so it can suggest what is in season near you.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Every Chef reads the recipe photos and screenshots you choose.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>

@@ -19,7 +19,7 @@ export async function DELETE() {
     // links this person shared stop working
     const shares = ((await redis.smembers(`user-shares:${userId}`)) || []) as string[];
     const keys = [
-      `recipes:${userId}`, `plan:${userId}`, `user-shares:${userId}`,
+      `recipes:${userId}`, `recipes-removed:${userId}`, `plan:${userId}`, `user-shares:${userId}`,
       ...shares.flatMap((s) => [`recipe-share:${s}`, `recipe-share-token:${s}`, `recipe-share-redirect:${s}`]),
     ];
     for (let i = 0; i < keys.length; i += 50) await redis.del(...keys.slice(i, i + 50));

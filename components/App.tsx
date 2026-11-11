@@ -369,8 +369,8 @@ const CSS = `
   .star{font-size:15px;cursor:pointer;color:#EDE8E0;transition:color .1s;line-height:1;background:none;border:none;padding:0;}
   .star.filled{color:#F4A021;}
   /* Confirm remove */
-  .confirm-remove{display:flex;align-items:center;gap:8px;margin-top:8px;background:#FFF8F2;border:1.5px solid #E8431A;border-radius:10px;padding:8px 12px;}
-  .confirm-remove-text{font-size:12px;color:#151210;font-weight:500;flex:1;}
+  .confirm-remove{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px;background:#FFF8F2;border:1.5px solid #E8431A;border-radius:10px;padding:8px 12px;}
+  .confirm-remove-text{font-size:12px;color:#151210;font-weight:500;flex:1 1 100%;}
   .confirm-remove-yes{padding:4px 12px;background:#E8431A;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Figtree',sans-serif;}
   .confirm-remove-no{padding:4px 12px;background:transparent;border:1.5px solid #D4CCC0;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;color:#151210;font-family:'Figtree',sans-serif;}
   .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;}
@@ -1440,7 +1440,7 @@ async function editChangesLook(before:any,after:any):Promise<boolean>{
 Ingredients removed: ${removed.join("; ")||"none"}
 Ingredients added: ${added.join("; ")||"none"}
 Would a photo of the finished dish look noticeably different? Renaming the same ingredient (e.g. "hamburger" to "ground beef"), brand changes, seasoning or spice tweaks, and anything mixed into a sauce or marinade (sugar, honey, starch, garlic, ginger, vinegar, oils) do NOT count. When unsure, answer false. Swapping a main ingredient (e.g. chicken for tofu, rice for noodles) or adding/removing something visible DOES count.
-Reply with ONLY valid JSON: {"looks_different":true or false}`}]);
+Reply with ONLY valid JSON: {"looks_different":true or false}`}],"claude-haiku-5-5");
     return j?.looks_different===true;
   }catch{return false;}
 }
@@ -1870,14 +1870,14 @@ async function callAPI(messages: any[], model:string="claude-sonnet-4-6"): Promi
 }
 
 // A plain dish search: the server writes the recipe and files it in the Community itself.
-async function makeDish(dish:string,fresh=false): Promise<any>{
-  const res=await fetch("/api/dish",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({dish,fresh})});
+async function makeDish(dish:string,opts:{fresh?:boolean;diets?:string[]}={}): Promise<{recipe:any;fromCache:boolean}>{
+  const res=await fetch("/api/dish",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({dish,fresh:!!opts.fresh,diets:opts.diets||[]})});
   const raw=await res.text();
   if(!res.ok)throw new Error("HTTP "+res.status+": "+raw.slice(0,300));
   let data:any;try{data=JSON.parse(raw);}catch{throw new Error("Not JSON: "+raw.slice(0,200));}
   if(data.not_a_dish)throw new Error("NOT_A_DISH");
   if(!data.recipe)throw new Error("Empty response");
-  return data.recipe;
+  return {recipe:data.recipe,fromCache:!!data.fromCache};
 }
 
 /* ── MAIN APP ── */
@@ -2255,38 +2255,107 @@ export default function App({onReady}:{onReady?:()=>void}={}){
     }).catch(()=>{});
   },[]);
 
-  /* cloud sync — load on sign-in, then (and only then) allow pushing.
-     Pushing before the cloud copy has been read would overwrite it with this
-     device's (possibly empty) local list. */
+  /* library sync: the account holds the saved recipes, and each device sends only what it changed.
+     The account remembers deletions, so a recipe removed on one device is removed everywhere, and
+     an edit is never overwritten by another device's older copy. Unsent changes are remembered on
+     the device and retried. Re-read whenever the app comes back to the foreground. */
+  const libSynced=useRef<Record<string,string>>({});   // id → the recipe as the account last had it
+  const libPending=useRef<{dirty:Record<string,1>;gone:Record<string,1>}>({dirty:{},gone:{}});
+  const libTimer=useRef<any>(null);
+  const libTries=useRef(0);
+  const savedNow=useRef<any[]>(saved);savedNow.current=saved;
+  const libKeep=()=>{try{if(user)localStorage.setItem(`dw-lib-pending:${user.id}`,JSON.stringify(libPending.current));}catch{}};
+  const pullLibrary=async()=>{
+    const res=await fetch("/api/recipes");
+    if(!res.ok)throw new Error("library read failed");
+    const d=await res.json();
+    const cloud:any[]=Array.isArray(d.recipes)?d.recipes:[];
+    const removed=new Set<string>((Array.isArray(d.removed)?d.removed:[]).map(String));
+    const P=libPending.current,before=libSynced.current;
+    const synced:Record<string,string>={};
+    for(const r of cloud)synced[String(r.id)]=JSON.stringify(r);
+    libSynced.current=synced;
+    setSaved(local=>{
+      const cloudBy=new Map<string,any>(cloud.map(r=>[String(r.id),r]));
+      const out:any[]=[];const seen=new Set<string>();
+      for(const r of local){
+        const id=String(r.id);if(seen.has(id))continue;
+        if(P.dirty[id]){out.push(r);seen.add(id);continue;}                    // this device's unsent change wins
+        if(cloudBy.has(id)){out.push(synced[id]===JSON.stringify(r)?r:cloudBy.get(id));seen.add(id);continue;} // the account's copy
+        if(removed.has(id)||before[id]!==undefined)continue;                   // removed on another device
+        out.push(r);seen.add(id);                                              // only on this device so far: it gets sent up
+      }
+      const fresh=cloud.filter(r=>!seen.has(String(r.id))&&!P.gone[String(r.id)]);
+      if(!fresh.length&&out.length===local.length&&out.every((r,i)=>r===local[i]))return local;
+      return [...fresh,...out];
+    });
+  };
+  const pushLibrary=async()=>{
+    libTimer.current=null;
+    const P=libPending.current;
+    const gone=Object.keys(P.gone);
+    const changed=savedNow.current.filter((r:any)=>P.dirty[String(r.id)]);
+    if(!changed.length&&!gone.length)return;
+    try{
+      // a first sync from a device with lots of its own recipes goes up in batches
+      for(let i=0;i<Math.max(changed.length,1);i+=40){
+        const batch=changed.slice(i,i+40);
+        const res=await fetch("/api/recipes",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({changed:batch,removed:i===0?gone:[]})});
+        if(!res.ok)throw new Error("library save failed");
+        for(const r of batch){
+          const id=String(r.id),sent=JSON.stringify(r);
+          libSynced.current[id]=sent;
+          const cur=savedNow.current.find((x:any)=>String(x.id)===id);
+          if(!cur||JSON.stringify(cur)===sent)delete P.dirty[id]; // changed again meanwhile? it stays queued
+        }
+        if(i===0)for(const id of gone){delete libSynced.current[id];delete P.gone[id];}
+        libKeep();
+      }
+      libTries.current=0;
+    }catch{
+      // not saved to the account yet: keep it queued and try again shortly (and on the next change or reopen)
+      if(libTries.current++<5&&!libTimer.current)libTimer.current=setTimeout(pushLibrary,15000);
+    }
+  };
   useEffect(()=>{
     if(!isLoaded||!user||!ready)return;
     setCloudSynced(false);
+    libSynced.current={};
+    try{const p=JSON.parse(localStorage.getItem(`dw-lib-pending:${user.id}`)||"null");libPending.current={dirty:p?.dirty||{},gone:p?.gone||{}};}catch{libPending.current={dirty:{},gone:{}};}
     let cancelled=false;
     (async()=>{
       try{
-        const res=await fetch("/api/recipes");
-        if(!res.ok)return; // stay un-synced: never overwrite the cloud copy after a failed read
-        const data=await res.json();
-        const cloud:any[]=data.recipes||[];
+        await pullLibrary();
         if(cancelled)return;
-        if(cloud.length){
-          setSaved(local=>{
-            const merged=[...local];
-            for(const r of cloud){if(!merged.some(x=>x.id===r.id))merged.push(r);}
-            return merged;
-          });
-        }
         setCloudSynced(true);
-      }catch{}
+      }catch{} // stay un-synced: never send anything after a failed read
     })();
-    return()=>{cancelled=true;};
+    const onVisible=()=>{
+      if(document.visibilityState!=="visible"||cancelled)return;
+      if(libTimer.current)return; // an unsent change is about to go; it reads again next time
+      pullLibrary().catch(()=>{});
+    };
+    document.addEventListener("visibilitychange",onVisible);
+    return()=>{cancelled=true;document.removeEventListener("visibilitychange",onVisible);if(libTimer.current){clearTimeout(libTimer.current);libTimer.current=null;}};
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[isLoaded,user?.id,ready]);
 
-  /* cloud sync — push on save change (only after the initial cloud read) */
+  /* library sync: work out what changed since the account's copy, and send just that */
   useEffect(()=>{
     if(!ready||!user||!cloudSynced)return;
-    fetch("/api/recipes",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({recipes:saved})}).catch(()=>{});
+    const P=libPending.current,S=libSynced.current;
+    const now=new Set<string>();
+    for(const r of saved){
+      const id=String(r.id);now.add(id);
+      if(S[id]!==JSON.stringify(r)){P.dirty[id]=1;delete P.gone[id];}
+    }
+    for(const id of Object.keys(S))if(!now.has(id)){P.gone[id]=1;delete P.dirty[id];}
+    for(const id of Object.keys(P.dirty))if(!now.has(id))delete P.dirty[id];
+    libKeep();
+    if(!Object.keys(P.dirty).length&&!Object.keys(P.gone).length)return;
+    if(libTimer.current)clearTimeout(libTimer.current);
+    libTries.current=0;
+    libTimer.current=setTimeout(pushLibrary,600);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[saved,ready,user?.id,cloudSynced]);
 
@@ -2533,7 +2602,8 @@ export default function App({onReady}:{onReady?:()=>void}={}){
     navigator.geolocation.getCurrentPosition(async(pos)=>{
       try{
         const{latitude:lat,longitude:lon}=pos.coords;
-        const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
+        // rounded to about a mile: enough to find the city
+        const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat.toFixed(2)}&lon=${lon.toFixed(2)}&format=json`);
         const d=await r.json();
         const city=d.address?.city||d.address?.town||d.address?.village||"";
         const state=d.address?.state||d.address?.country||"";
@@ -2564,8 +2634,11 @@ export default function App({onReady}:{onReady?:()=>void}={}){
           parsed=cacheData.recipe;
           fromCache=true;
         }else{
-          parsed=await makeDish(q,!!opts?.fresh);
+          parsed=(await makeDish(q,{fresh:opts?.fresh})).recipe;
         }
+      }else if(!seasonal){
+        // a diet search: the server keeps each diet's version, so a repeat is instant and free
+        parsed=(await makeDish(q,{fresh:opts?.fresh,diets})).recipe;
       }else{
         parsed=await callAPI([{role:"user",content:buildPrompt(q,diets,seasonal,location)}]);
       }
@@ -2753,7 +2826,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
       if(cacheData.found&&cacheData.recipe){
         parsed=cacheData.recipe; fromCache=true;
       }else{
-        parsed=await makeDish(sideTitle);
+        parsed=(await makeDish(sideTitle)).recipe;
       }
       const r={...parsed,id:Date.now(),_dish:sideTitle,_ts:Date.now(),_fromCache:fromCache};
       setPairedSides(p=>p.map((x,i)=>i===newIdx?{...x,status:"done",recipe:r}:x));
@@ -2770,7 +2843,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
         let parsed:any; let fromCache=false;
         if(cacheData.found&&cacheData.recipe){parsed=cacheData.recipe; fromCache=true;}
         else{
-          parsed=await makeDish(title);
+          parsed=(await makeDish(title)).recipe;
         }
         const r={...parsed,id:Date.now(),_dish:title,_ts:Date.now(),_fromCache:fromCache};
         setPairedSides(p=>p.map((x,i)=>i===idx?{...x,status:"done",recipe:r}:x));
@@ -2903,7 +2976,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
       let parsed:any; let fromCache=false;
       if(cacheData.found&&cacheData.recipe){parsed=cacheData.recipe; fromCache=true;}
       else{
-        parsed=await makeDish(sideTitle);
+        parsed=(await makeDish(sideTitle)).recipe;
       }
       const r={...parsed,id:Date.now(),_dish:sideTitle,_ts:Date.now(),_fromCache:fromCache};
       setPlanSides(p=>({...p,[dayKey]:(p[dayKey]||[]).map(x=>x.title===sideTitle?{...x,status:"done",recipe:r}:x)}));
@@ -2919,7 +2992,7 @@ export default function App({onReady}:{onReady?:()=>void}={}){
         let parsed:any; let fromCache=false;
         if(cacheData.found&&cacheData.recipe){parsed=cacheData.recipe; fromCache=true;}
         else{
-          parsed=await makeDish(title);
+          parsed=(await makeDish(title)).recipe;
         }
         const r={...parsed,id:Date.now(),_dish:title,_ts:Date.now(),_fromCache:fromCache};
         setPlanSides(p=>({...p,[dayKey]:(p[dayKey]||[]).map(x=>x.title===title?{...x,status:"done",recipe:r}:x)}));
@@ -3378,7 +3451,7 @@ ${tiktok.text}`}]);
         {status==="error"&&(()=>{
           const notDish=/NOT_A_DISH/.test(errorMsg);
           const limited=/RATE_LIMIT/.test(errorMsg);
-          const busy=!limited&&/credit balance|billing|insufficient|overloaded|429|529/i.test(errorMsg);
+          const busy=!limited&&/credit balance|billing|insufficient|overloaded|HTTP 429|HTTP 529/i.test(errorMsg);
           const slow=/timed? ?out|timeout|504/i.test(errorMsg);
           return(
             <div className="gen-page">
@@ -5281,7 +5354,7 @@ ${tiktok.text}`}]);
                 const rid=assignDay.replace("fromSaved_","");
                 const r=allRecipes.find(s=>String(s.id)===rid);
                 return(
-                  <div key={k} className="modal-item" onClick={()=>{if(r){assignMain(k,r);setAssignDay(null);setModalSearch("");}}}>
+                  <div key={k} className="modal-item" role="button" tabIndex={0} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();(e.currentTarget as HTMLElement).click();}}} onClick={()=>{if(r){assignMain(k,r);setAssignDay(null);setModalSearch("");}}}>
                     <div className="modal-item-title">{i===0?"Today":i===1?"Tomorrow":fmtPlanDay(k)}</div>
                     {plan[k]&&<div className="modal-item-meta">Currently: {plan[k].title}</div>}
                   </div>
@@ -5295,7 +5368,7 @@ ${tiktok.text}`}]);
                   <div className="modal-cat-label">Suggested sides</div>
                   <div className="modal-list" style={{marginBottom:12}}>
                     {sideSuggestions.map((s,i)=>(
-                      <div key={i} className="modal-item" onClick={()=>{addPlanSide(sideDayKey!,s.title);setAssignDay(null);setModalSearch("");}}>
+                      <div key={i} className="modal-item" role="button" tabIndex={0} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();(e.currentTarget as HTMLElement).click();}}} onClick={()=>{addPlanSide(sideDayKey!,s.title);setAssignDay(null);setModalSearch("");}}>
                         <div className="modal-item-title">{s.title}</div>
                         <div className="modal-item-meta">{s.tagline}</div>
                       </div>
@@ -5315,7 +5388,7 @@ ${tiktok.text}`}]);
                   <p style={{color:"#7A6E6A",fontSize:13,textAlign:"center",padding:"20px 0"}}>{modalSearch?`No recipes match “${modalSearch}”`:"No matches in Saved or Community."}</p>
                 ):(
                   filteredForSide.map((r:any,i:number)=>(
-                    <div key={i} className="modal-item" onClick={()=>{addPlanSide(sideDayKey!,r.title,r);setAssignDay(null);setModalSearch("");}}>
+                    <div key={i} className="modal-item" role="button" tabIndex={0} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();(e.currentTarget as HTMLElement).click();}}} onClick={()=>{addPlanSide(sideDayKey!,r.title,r);setAssignDay(null);setModalSearch("");}}>
                       <div className="modal-item-title">{r.title}</div>
                       <div className="modal-item-meta">{tt(r)}</div>
                     </div>
@@ -5340,7 +5413,7 @@ ${tiktok.text}`}]);
                     <div key={cat}>
                       <div className="modal-cat-label">{cat}</div>
                       {grouped[cat].map((r:any)=>(
-                        <div key={r.id} className="modal-item" onClick={()=>{assignMain(dayKey!,r);setAssignDay(null);setModalSearch("");}}>
+                        <div key={r.id} className="modal-item" role="button" tabIndex={0} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();(e.currentTarget as HTMLElement).click();}}} onClick={()=>{assignMain(dayKey!,r);setAssignDay(null);setModalSearch("");}}>
                           <div className="modal-item-title">{r.title}</div>
                           <div className="modal-item-meta">{tt(r)}</div>
                         </div>
@@ -5348,7 +5421,7 @@ ${tiktok.text}`}]);
                     </div>
                   )):(
                     filtered.map((r:any)=>(
-                      <div key={r.id} className="modal-item" onClick={()=>{assignMain(dayKey!,r);setAssignDay(null);setModalSearch("");}}>
+                      <div key={r.id} className="modal-item" role="button" tabIndex={0} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();(e.currentTarget as HTMLElement).click();}}} onClick={()=>{assignMain(dayKey!,r);setAssignDay(null);setModalSearch("");}}>
                         <div className="modal-item-title">{r.title}</div>
                         <div className="modal-item-meta">{tt(r)}</div>
                       </div>

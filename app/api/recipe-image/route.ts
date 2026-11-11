@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getTimeFixes } from "../../../lib/times";
+import { isRude, isCleanRecipe } from "../../../lib/guard";
 import { redis, normalizeDish, getPhotos, ensurePhoto, imagesEnabled, USER_DAILY_LIMIT, PREVIEW_USERS } from "../../../lib/mealImage";
 
 export const maxDuration = 60;
@@ -28,7 +29,13 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ status: "signed-out" }, { status: 401 });
   let recipe: any, key: string | undefined;
   try { const b = await req.json(); recipe = b?.recipe; if (typeof b?.key === "string" && b.key.length < 200) key = b.key; } catch { return NextResponse.json({ error: "Invalid body" }, { status: 400 }); }
-  if (!recipe?.title) return NextResponse.json({ error: "Missing recipe" }, { status: 400 });
+  if (!recipe?.title || typeof recipe.title !== "string" || recipe.title.length > 160 || isRude(recipe.title) || JSON.stringify(recipe).length > 60_000) return NextResponse.json({ error: "Missing recipe" }, { status: 400 });
+  // A dish's first photo becomes everyone's, so for a Community dish it's made from the Community's
+  // own recipe, not from whatever this phone sent. (Edited recipes keep their own photo under `key`.)
+  if (!key) {
+    const filed = await redis.get<any>(`recipe-cache:v1:${normalizeDish(recipe.title)}`).catch(() => null);
+    if (filed && isCleanRecipe(filed)) recipe = filed;
+  }
 
   const dayKey = `dish-photo-user:${userId}:${new Date().toISOString().slice(0, 10)}`;
   const used = await redis.incr(dayKey);

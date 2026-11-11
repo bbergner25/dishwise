@@ -19,7 +19,7 @@ export default function Privacy() {
       </ul>
 
       <h2>How recipes and photos are made</h2>
-      <p>New recipes are written by Anthropic's Claude AI, and dish photos are made by Google's Gemini AI. We send them the recipe request and recipe details, not your name or email.</p>
+      <p>New recipes and nutrition estimates are written by Anthropic's Claude AI. Dish photos and the read-aloud voice are made by Google's Gemini AI. We send them the recipe request and recipe details (for read aloud, the text of the step), not your name or email.</p>
 
       <h2>What other people can see</h2>
       <ul>

@@ -22,7 +22,7 @@ export async function GET() {
         generatedAt: data.generatedAt,
         cycle: data.cycle,
         source: "agent",
-        lastRun: lastRun ? { at: lastRun.at, ok: lastRun.ok, error: lastRun.error } : null,
+        lastRun: lastRun ? { at: lastRun.at, ok: lastRun.ok } : null,
       });
     }
 
