@@ -1299,6 +1299,93 @@ const CSS = `
   .ds-link{border:none;background:none;padding:0;min-height:44px;margin:-12px 0;font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;color:var(--amber-deep);cursor:pointer;}
   .ds-link:focus-visible{outline:3px solid var(--amber);outline-offset:2px;border-radius:6px;}
   .sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+  /* Recipe page */
+  .rx-title{font-size:32px;line-height:1.1;letter-spacing:-.4px;}
+  .rx-eyebrow{font-size:12px;font-weight:700;letter-spacing:1.2px;color:var(--muted);}
+  .rx-tagline{font-size:16px;line-height:1.45;color:var(--ink2);}
+  .rx-strip{display:flex;margin-top:6px;background:#fff;border-radius:var(--r-md);box-shadow:var(--sh2);}
+  .rx-strip-cell{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 4px;border:none;border-right:1px solid var(--line2);background:none;font-family:'Figtree',sans-serif;color:var(--ink);text-align:center;}
+  .rx-strip-cell:last-child{border-right:none;}
+  .rx-strip-cell strong{font-size:20px;font-weight:700;line-height:1.2;white-space:nowrap;}
+  .rx-strip-cell>span:last-child{font-size:12px;color:var(--muted);}
+  .rx-strip-btn{cursor:pointer;border-radius:0 var(--r-md) var(--r-md) 0;}
+  .rx-strip-btn:disabled{cursor:default;}
+  .rx-strip-btn:focus-visible{outline:3px solid var(--amber);outline-offset:2px;}
+  .rx-ing-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:4px;}
+  .rx-ing-head .section-label{margin:0;}
+  .rx-serves{display:flex;align-items:center;gap:4px;font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;color:var(--ink);}
+  .rx-serves span{min-width:76px;text-align:center;}
+  .rx-serves button{width:44px;height:44px;border-radius:22px;border:1px solid var(--line);background:#fff;box-shadow:var(--sh1);color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;}
+  .rx-serves button:focus-visible{outline:3px solid var(--amber);outline-offset:2px;}
+  .rx-ing{border-bottom-color:var(--line2);}
+  .rx-ing-main{font-weight:400;}
+  @media print{.rx-serves button{display:none;}.rx-strip{box-shadow:none;border:1px solid #ccc;}}
+
+  /* shared parts */
+  .ck-title,.lib-title,.pl-title{font-size:32px;line-height:1.1;letter-spacing:-.4px;}
+  .ds-title{margin:0;font-family:'Fraunces',serif;font-size:32px;line-height:1.1;font-weight:700;letter-spacing:-.4px;color:var(--ink);}
+  .ds-btn-secondary{height:44px;padding:0 16px;border-radius:22px;border:1px solid var(--line);background:#fff;box-shadow:var(--sh1);font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;color:var(--ink);display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;cursor:pointer;flex-shrink:0;}
+  .ds-btn-secondary:focus-visible,.ds-linkrow:focus-visible{outline:3px solid var(--amber);outline-offset:2px;}
+  .ds-linkrow{display:flex;align-items:center;gap:10px;width:100%;min-height:56px;padding:0 16px;border:none;border-radius:var(--r-md);background:var(--sand);font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;color:var(--ink);text-align:left;cursor:pointer;}
+  .ds-linkrow span{flex:1;}
+  /* Plan */
+  .pl-head{align-items:flex-end;margin-bottom:16px;}
+  .pl-range{margin:2px 0 0;}
+  .pl-strip{display:flex;gap:2px;margin:0 -6px 16px;}
+  .pl-strip-day{flex:1;height:68px;border:none;border-radius:var(--r-md);background:none;padding:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-family:'Figtree',sans-serif;color:var(--ink);cursor:pointer;}
+  .pl-strip-dow{font-size:12px;font-weight:600;color:var(--muted);}
+  .pl-strip-num{font-size:16px;font-weight:700;}
+  .pl-strip-dot{width:6px;height:6px;border-radius:3px;background:transparent;}
+  .pl-strip-dot.on{background:var(--amber);}
+  .pl-strip-day.today{background:var(--navy);color:var(--cream);}
+  .pl-strip-day.today .pl-strip-dow{color:#C9C2B6;}
+  .pl-strip-day:focus-visible{outline:3px solid var(--amber);outline-offset:2px;}
+  .pl-page .ds-linkrow{margin-bottom:8px;}
+  .pl-rel.today{color:var(--amber-deep);}
+  .pl-cook{width:100%;height:48px;margin-top:12px;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .pl-day:has(.pl-meal-top) .pl-meal{border:none;border-radius:var(--r-md);padding:12px;box-shadow:var(--sh2);}
+  .pl-day.today:has(.pl-meal-top) .pl-meal{border-radius:var(--r-lg);}
+  .pl-add-meal{height:56px;border-radius:var(--r-md);font-size:14px;font-weight:600;color:var(--muted);}
+  .pl-day{scroll-margin-top:90px;}
+  .pl-day.today .pl-dnum{color:var(--navy);}
+
+  /* Grocery list */
+  .gl-progress{display:flex;align-items:center;gap:12px;margin:0 0 16px;font-size:14px;font-weight:600;color:var(--ink2);}
+  .gl-progress-bar{flex:1;height:8px;border-radius:4px;background:var(--sand);overflow:hidden;}
+  .gl-progress-bar div{height:8px;border-radius:4px;background:var(--green);transition:width .25s;}
+  .gl-ranges{gap:8px;margin:0 -20px 12px 0;padding-right:20px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;}
+  .gl-ranges::-webkit-scrollbar{display:none;}
+  .gl-range{flex-shrink:0;white-space:nowrap;}
+  .gl-range{height:44px;padding:0 16px;border-radius:22px;border:1px solid var(--line);background:#fff;color:var(--ink);font-weight:600;}
+  .gl-range.on{border-color:var(--navy);}
+  .gl-add{min-height:48px;border-radius:var(--r-md);box-shadow:var(--sh1);}
+  .gl-aisle{margin-top:24px;}
+  .gl-check input{appearance:none;-webkit-appearance:none;width:24px;height:24px;border-radius:8px;border:2px solid var(--muted);background:#fff;cursor:pointer;}
+  .gl-check input:checked{border-color:var(--green);background:var(--green) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/16px no-repeat;}
+  .gl-name{font-size:16px;}
+  .gl-note{font-size:12px;}
+  .gl-amt{font-size:14px;font-weight:600;color:var(--ink2);}
+  .gl-shop{width:44px;height:44px;margin-right:-10px;padding:0;border:none;border-radius:22px;background:none;color:var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .gl-shop:focus-visible{outline:3px solid var(--amber);outline-offset:-2px;}
+  /* Library and Community cards: the photo, the name, the time */
+  .lib-grid{gap:20px 12px;}
+  .lib-grid .recipe-card.has-pic{position:relative;padding:0 !important;background:none;box-shadow:none;border:none;border-radius:0;overflow:visible;}
+  .lib-grid .recipe-card.has-pic:hover{box-shadow:none;}
+  .lib-grid .recipe-card.has-pic .lib-pic{height:auto;aspect-ratio:1;margin:0 0 8px;border-radius:var(--r-md);}
+  .lib-grid .card-title{margin:6px 0 2px;font-family:'Figtree',sans-serif;font-size:16px;font-weight:600;line-height:1.25;}
+  .lib-grid .card-meta{font-size:14px;gap:0;}
+  .lib-grid .card-meta span+span::before{content:" · ";white-space:pre;}
+  .cat-badge{font-size:12px;font-weight:700;color:var(--ink2);background:var(--sand);}
+  .lib-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .lib-plan,.lib-remove{width:44px;height:44px;border-radius:22px;border:1px solid var(--line);background:#fff;color:var(--ink);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;flex-shrink:0;}
+  .lib-remove{color:var(--muted);}
+  .lib-plan:focus-visible,.lib-remove:focus-visible{outline:3px solid var(--amber);outline-offset:2px;}
+  .lib-grid .recipe-card.has-pic .lib-actions{margin:0;padding:0;border:none;}
+  .lib-grid .recipe-card.has-pic .lib-plan{position:absolute;top:6px;right:6px;border:none;background:rgba(253,250,245,.86);box-shadow:var(--sh2);}
+  .lib-grid .recipe-card.has-pic .lib-remove{position:absolute;right:-8px;bottom:-10px;border:none;background:none;}
+  .lib-grid .recipe-card.has-pic .card-meta{padding-right:32px;min-height:20px;}
+  .lib-grid .recipe-card.has-pic .confirm-remove{margin-top:8px;}
+
   /* Cook home */
   .ck-page{gap:12px;padding-top:20px;}
   .ck-search{height:56px;padding:0 6px 0 16px;border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh1);gap:10px;}
@@ -4309,10 +4396,6 @@ ${tiktok.text}`}]);
         {photosOn?(
           <div className="rx-hero-wrap">
             <DishPic title={recipe.title} src={photoFor(recipe,photo)} className="rx-hero"/>
-            <div className="rx-hero-chips" aria-hidden="true">
-              {totalRange(withTimes(recipe))&&<span className="glass-chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>{totalRange(withTimes(recipe))}</span>}
-              <span className="glass-chip">Serves {curS}</span>
-            </div>
           </div>
         ):photo&&<img src={photo} className="rx-photo" alt={recipe.title}/>}
         <header className={`rx-head${photosOn?" rx-head-over":""}`}>
@@ -4333,34 +4416,28 @@ ${tiktok.text}`}]);
           )}
           {recipe.tagline&&<p className="rx-tagline">{recipe.tagline}</p>}
           {recipe.seasonal_note&&<div className="rx-seasonal"><span style={{display:"flex"}}>{Ic.leaf(13)}</span> {recipe.seasonal_note}</div>}
-          <div className="rx-meta">
-            <div className="rx-meta-item rx-meta-total"><span className="rx-meta-label">Total time</span><span className="rx-meta-value">{totalRange(withTimes(recipe))||"—"}</span></div>
-            <div className="rx-meta-div"/>
-            <div className="rx-meta-item rx-meta-serves">
-              <div style={{display:"flex",flexDirection:"column",gap:2}}>
-                <span className="rx-meta-label">Serves</span>
-                <span className="rx-meta-value">{curS}</span>
-              </div>
-              <div className="rx-stepper">
-                <button aria-label="Fewer servings" onClick={()=>setServings(Math.max(1,curS-1))}>−</button>
-                <button aria-label="More servings" onClick={()=>setServings(curS+1)}>+</button>
-              </div>
-            </div>
-          </div>
-          {(()=>{const w=withTimes(recipe);const nice=(t:string)=>{const m=toMinutes(t);return m?fmtMinutes(m):t;};const parts=[w?.prep_time&&w.prep_time!=="—"&&`Prep ${nice(w.prep_time)}`,w?.cook_time&&w.cook_time!=="—"&&`Cook ${nice(w.cook_time)}`].filter(Boolean);return parts.length?<p className="rx-meta-sub">{parts.join(" · ")}</p>:null;})()}
           {(()=>{
+            // one strip: total time, hands-on time, and calories (tap for the full nutrition estimate)
+            const w=withTimes(recipe);
+            const nice=(t:string)=>{const m=toMinutes(t);return m?fmtMinutes(m):t;};
+            const total=totalRange(w);
+            const hands=w?.prep_time&&w.prep_time!=="—"?nice(w.prep_time):"";
             const n=nutri[nutriKey(recipe)];
-            if(!n||n==="error")return null;
+            const showCal=!!n&&n!=="error";
             const ready=typeof n==="object";
-            const cells:[string,string][]=ready?[[String(n.calories),"calories"],[`${n.protein}g`,"protein"],[`${n.carbs}g`,"carbs"],[`${n.fat}g`,"fat"]]:[["","calories"],["","protein"],["","carbs"],["","fat"]];
+            if(!total&&!hands&&!showCal)return null;
             return(
-              <button className="rx-nutri" disabled={!ready} onClick={()=>setShowNutri(true)} aria-label={ready?`Nutrition per serving, estimated: ${n.calories} calories, ${n.protein} grams protein, ${n.carbs} grams carbs, ${n.fat} grams fat. Tap for details`:"Estimating nutrition"}>
-                <span className="rx-nutri-top"><span>Per serving{servesOf(recipe)>1?` · ${fracOf(servesOf(recipe))} of the recipe`:""}</span><span className="rx-nutri-est"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>Estimate</span></span>
-                <span className="rx-nutri-row" aria-hidden="true">
-                  {cells.map(([v,l])=><span key={l} className="rx-nutri-cell">{ready?<strong>{v}</strong>:<span className="gen-skel" style={{width:36,height:18,margin:"2px auto 4px"}}/>}<span>{l}</span></span>)}
-                </span>
-                {ready&&(()=>{const sv=servesOf(recipe);if(sv<2||sv>10)return null;const more=sv+2;return <span className="rx-nutri-alt">Cut into {more} instead: about {Math.round(n.calories*sv/more/10)*10} calories each</span>;})()}
-              </button>
+              <div className="rx-strip">
+                {total&&<div className="rx-strip-cell"><strong>{total}</strong><span>Total</span></div>}
+                {hands&&<div className="rx-strip-cell"><strong>{hands}</strong><span>Hands-on</span></div>}
+                {showCal&&(
+                  <button className="rx-strip-cell rx-strip-btn" disabled={!ready} onClick={()=>setShowNutri(true)}
+                    aria-label={ready?`About ${n.calories} calories per serving, estimated. ${n.protein} grams protein, ${n.carbs} grams carbs, ${n.fat} grams fat. Tap for details`:"Estimating nutrition"}>
+                    {ready?<strong>{n.calories}</strong>:<span className="gen-skel" style={{width:40,height:20,margin:"2px auto"}}/>}
+                    <span>Calories ›</span>
+                  </button>
+                )}
+              </div>
             );
           })()}
           <div className="rx-shop">
@@ -4382,7 +4459,14 @@ ${tiktok.text}`}]);
         <div className="recipe-body">
         <div className="two-col">
           <div>
-            <h2 className="section-label">Ingredients</h2>
+            <div className="rx-ing-head">
+              <h2 className="section-label">Ingredients</h2>
+              <div className="rx-serves" role="group" aria-label="Servings">
+                <button aria-label="Fewer servings" onClick={()=>setServings(Math.max(1,curS-1))}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M5 12h14"/></svg></button>
+                <span aria-live="polite">Serves {curS}</span>
+                <button aria-label="More servings" onClick={()=>setServings(curS+1)}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+              </div>
+            </div>
             {groups.map((g:any,gi:number)=>(
               <div key={gi} className="ing-group">
                 {g.label&&<div className="ing-group-label">{g.label}</div>}
@@ -4399,7 +4483,7 @@ ${tiktok.text}`}]);
             ))}
           </div>
           <div>
-            <h2 className="section-label">Method</h2>
+            <h2 className="section-label">Steps</h2>
             <ol className="steps-list">
               {(recipe.steps||[]).map((step:string,i:number)=>(
                 <li key={i} className="step-item">
@@ -4559,7 +4643,7 @@ ${tiktok.text}`}]);
               ))}
             </div>
             <div>
-              <h2 className="section-label">Method</h2>
+              <h2 className="section-label">Steps</h2>
               <ol className="steps-list">
                 {(r.steps||[]).map((step:string,i:number)=>(
                   <li key={i} className="step-item">
@@ -4768,7 +4852,7 @@ ${tiktok.text}`}]);
     return(
       <div className="lib-page">
         <div className="pl-head">
-          <h1 className="ck-title" style={{margin:0}}>Library</h1>
+          <h1 className="ds-title">Library</h1>
           <span className="pl-range">{allRecipes.length} recipe{allRecipes.length===1?"":"s"}</span>
         </div>
         {libFilter!=="family"&&(
@@ -4869,10 +4953,14 @@ ${tiktok.text}`}]);
                               </button>
                             ))}
                           </div>
-                          <div className="card-actions" onClick={e=>e.stopPropagation()}>
-                            <button className="card-btn" onClick={()=>{setAssignDay("fromSaved_"+r.id);setTab("week");}}>+ Week</button>
+                          <div className="card-actions lib-actions" onClick={e=>e.stopPropagation()}>
+                            <button className="lib-plan" aria-label={`Add ${r.title} to your plan`} title="Add to plan" onClick={()=>{setAssignDay("fromSaved_"+r.id);setTab("week");}}>
+                              <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4M12 13v4M10 15h4"/></svg>
+                            </button>
                             {!isSharedOnly&&!isConfirming&&(
-                              <button className="card-btn danger" onClick={()=>setConfirmRemove(r.id)}>Remove</button>
+                              <button className="lib-remove" aria-label={`Remove ${r.title} from your Library`} title="Remove" onClick={()=>setConfirmRemove(r.id)}>
+                                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>
+                              </button>
                             )}
                             {!isSharedOnly&&isConfirming&&(
                               <div className="confirm-remove" onClick={e=>e.stopPropagation()}>
@@ -5071,7 +5159,7 @@ ${tiktok.text}`}]);
           </span>
         </label>
         {it.amount&&<span className="gl-amt">{it.amount}</span>}
-        {store&&!it.checked&&<a className="gl-shop" href={store.url(it.name)} target="_blank" rel="noopener noreferrer" aria-label={`Find ${it.name} at ${store.name}`}>{store.name}</a>}
+        {store&&!it.checked&&<a className="gl-shop" href={store.url(it.name)} target="_blank" rel="noopener noreferrer" aria-label={`Find ${it.name} at ${store.name}`} title={`Find at ${store.name}`}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 5h5v5M19 5l-8 8"/><path d="M11 7H6v11h11v-5"/></svg></a>}
       </li>
       );
     };
@@ -5087,7 +5175,7 @@ ${tiktok.text}`}]);
       <div className="pl-page">
         <div className="pl-head">
           <div>
-            <h1 className="ck-title" style={{margin:0}}>Groceries</h1>
+            <h1 className="ds-title">Groceries</h1>
             <div className="pl-range" aria-live="polite">{sub}</div>
           </div>
           <div className="rx-shop-select-wrap">
@@ -5100,6 +5188,12 @@ ${tiktok.text}`}]);
             <svg className="rx-shop-chev" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
           </div>
         </div>
+        {items.length>0&&(
+          <div className="gl-progress">
+            <div className="gl-progress-bar" role="progressbar" aria-label="In the cart" aria-valuemin={0} aria-valuemax={items.length} aria-valuenow={cart.length}><div style={{width:`${Math.round(cart.length/items.length*100)}%`}}/></div>
+            <span>{cart.length} of {items.length}</span>
+          </div>
+        )}
         <div className="gl-ranges" role="tablist" aria-label="Which list">
           {([["this",`This week${listThisWeek.meals?` · ${listThisWeek.meals} meal${listThisWeek.meals===1?"":"s"}`:""}`],["next",`Next week${nextMeals?` · ${nextMeals}`:""}`],["extras","Just extras"]] as [typeof listRange,string][]).map(([k,l])=>(
             <button key={k} role="tab" aria-selected={listRange===k} className={`gl-range${listRange===k?" on":""}`} onClick={()=>setListRange(k)}>{l}</button>
@@ -5187,7 +5281,7 @@ ${tiktok.text}`}]);
       const sides=planSides[k]||[];
       const made=!!planMade[k];
       return(
-        <li key={k} className={`pl-day${isToday?" today":""}${past?" past":""}`}>
+        <li key={k} id={`pl-${k}`} className={`pl-day${isToday?" today":""}${past?" past":""}`}>
           <div className="pl-date" aria-label={d.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}>
             <span className="pl-dow">{DOW[d.getDay()]}</span>
             <span className="pl-dnum">{d.getDate()}</span>
@@ -5253,6 +5347,12 @@ ${tiktok.text}`}]);
                   <button className="pl-add-side" onClick={()=>{setAssignDay(`side_${k}`);if(communityStatus==="idle")loadCommunity();}}>+ Side</button>
                   <button className="pl-add-side" onClick={()=>setPlanPick({recipe:r,sides:[],moveFrom:k})}>Move</button>
                 </div>
+                {isToday&&!made&&(r.steps||[]).length>0&&(
+                  <button className="ui-btn-primary pl-cook" onClick={()=>{openMeal(k);openCookMode(r);}}>
+                    <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 11h16v2a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6z"/><path d="M9 4 8 7M13 4l-1 3"/></svg>
+                    Start cooking
+                  </button>
+                )}
               </>
             ):(
               <button className="pl-add-meal" onClick={()=>setAssignDay(k)}>+ Add a meal</button>
@@ -5265,15 +5365,30 @@ ${tiktok.text}`}]);
       <div className="pl-page">
         <div className="pl-head">
           <div>
-            <div className="pl-range">{today.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"})}</div>
-            <h1 className="ck-title" style={{margin:0}}>Plan</h1>
+            <h1 className="ds-title">Plan</h1>
+            <div className="pl-range">{mealsPlanned>0?`${mealsPlanned} dinner${mealsPlanned===1?"":"s"} planned this week`:today.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"})}</div>
           </div>
-          {mealsPlanned>0&&(
-            <button className="pl-groceries" onClick={()=>goNav("list")}>
-              {Ic.cart(17)} Groceries · {listLeft}
+          {!(mealsPlanned===0&&qpOpenDays().length>=3)&&(
+            <button className="ds-btn-secondary" onClick={openQuickPlan} aria-label={qpOpenDays().length?`Plan my week, ${qpOpenDays().length} open night${qpOpenDays().length===1?"":"s"}`:"Plan or switch dinners"}>
+              {Ic.shuffle(16)} Plan my week
             </button>
           )}
         </div>
+        <div className="pl-strip" role="group" aria-label="The next seven days">
+          {next7Keys.map(k=>{const d=keyToDate(k);const on=k===todayKey;return(
+            <button key={k} className={`pl-strip-day${on?" today":""}`} aria-label={`${d.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}: ${plan[k]?plan[k].title:"nothing planned"}`}
+              onClick={()=>document.getElementById(`pl-${k}`)?.scrollIntoView({behavior:"smooth",block:"center"})}>
+              <span className="pl-strip-dow">{DOW[d.getDay()][0]}</span>
+              <span className="pl-strip-num">{d.getDate()}</span>
+              <span className={`pl-strip-dot${plan[k]?" on":""}`}/>
+            </button>);})}
+        </div>
+        {mealsPlanned>0&&listLeft>0&&(
+          <button className="ds-linkrow" onClick={()=>goNav("list")}>
+            {Ic.cart(20)}<span>{listLeft} item{listLeft===1?"":"s"} on your grocery list</span>
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+          </button>
+        )}
         {household&&household.members.length>1&&(
           <button className="pl-hh-mini" onClick={()=>setShowHousehold(true)} aria-label={`Shared with ${household.members.filter(m=>m.id!==household.me).map(m=>m.name).join(", ")}. Manage household`}>
             <span className="pl-hh-avs" aria-hidden="true">{household.members.slice(0,4).map((m,i)=><span key={m.id} className="pl-hh-av" style={{background:HH_COLORS[i%HH_COLORS.length]}}>{m.name[0]?.toUpperCase()}</span>)}</span>
@@ -5299,9 +5414,7 @@ ${tiktok.text}`}]);
             <p className="qp-card-text">We'll pick dinners that fit how much time you have each night. Swap anything you don't love.</p>
             <button className="qp-card-btn" onClick={openQuickPlan}>Plan my week</button>
           </section>
-        ):(
-          <button className="qp-slim" onClick={openQuickPlan}>{Ic.shuffle(16)} {qpOpenDays().length?`Plan my week · ${qpOpenDays().length} open night${qpOpenDays().length===1?"":"s"}`:"Plan or switch dinners"}</button>
-        )}
+        ):null}
 
         <button className={`pl-earlier${missed.length?" has-missed":""}`} aria-expanded={showEarlier} onClick={()=>setShowEarlier(v=>!v)}>
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{transform:showEarlier?"rotate(180deg)":"none"}}><path d="m6 15 6-6 6 6"/></svg>
