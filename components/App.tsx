@@ -1404,7 +1404,10 @@ const CSS = `
   .ck-tonight-txt{flex:1;min-width:0;display:flex;flex-direction:column;}
   .ck-tonight-label{font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--amber);}
   .ck-tonight-title{font-family:'Fraunces',serif;font-weight:700;font-size:20px;line-height:1.15;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-  .ck-tonight-meta{font-size:14px;color:#C9C2B6;}
+  .ck-tonight-meta{font-size:14px;color:#C9C2B6;display:flex;flex-wrap:wrap;column-gap:6px;}
+  .ck-tonight-meta span{white-space:nowrap;}
+  .ck-tonight-meta span+span::before{content:"· ";}
+  .ck-hello{margin:4px 0 6px;}
   .ck-tonight-cta{flex-shrink:0;height:44px;padding:0 18px;border-radius:22px;font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
   .ck-tonight-open:focus-visible,.ck-tonight-cta:focus-visible{outline:3px solid var(--amber);outline-offset:3px;border-radius:var(--r-md);}
   .ck-idea{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:10px 12px 10px 14px;border:none;border-radius:var(--r-md);background:#fff;box-shadow:var(--sh2);text-align:left;cursor:pointer;font-family:'Figtree',sans-serif;color:var(--ink);}
@@ -3637,7 +3640,7 @@ ${tiktok.text}`}]);
           <div className="ck-page">
           {homeMode==="search"&&(
             <>
-              <h1 className="sr-only">What are we cooking tonight?</h1>
+              <h1 className="ds-title ck-hello">What are we<br/>cooking tonight?</h1>
 
               <div className="ck-search">
                 <span className="ck-search-icon" aria-hidden="true">{Ic.search(20)}</span>
@@ -3736,7 +3739,7 @@ ${tiktok.text}`}]);
                         <span className="ck-tonight-txt">
                           <span className="ck-tonight-label">Tonight</span>
                           <span className="ck-tonight-title">{tonight.title}</span>
-                          <span className="ck-tonight-meta">{[tt(tonight),sv?`serves ${sv}`:""].filter(Boolean).join(" · ")}</span>
+                          <span className="ck-tonight-meta">{tt(tonight)&&<span>{tt(tonight)}</span>}{sv>0&&<span>serves {sv}</span>}</span>
                         </span>
                       </button>
                       <button className="ck-tonight-cta" onClick={()=>{open();openCookMode(tonight);}}>Cook</button>
